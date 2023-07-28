@@ -15,7 +15,7 @@ class Application(Tk):
         self.file_path = None
         self.package = None
         self.resizable(1,1)
-        self.title("PKG-Viewer-python")
+        self.title("PS4-pkg-viewer-python")
 
         self.image_label = Label(self)
         self.image_label.pack(pady=10)
