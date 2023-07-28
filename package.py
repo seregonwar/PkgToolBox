@@ -129,7 +129,7 @@ class Package:
         except TypeError:
             pass  # is a file name
 
-        print_aligned("File Identifier:", file_name_or_id)
+        #print_aligned("File Identifier:", file_name_or_id)
 
         dir = os.path.dirname(out_path)
         if dir:
@@ -150,9 +150,9 @@ class Package:
 
         if "name" in chosen_file:
             print_aligned("File Name:", chosen_file["name"], color=bcolors.OKGREEN)
-        print_aligned("File ID:", f"0x{format(chosen_key, 'X')}", color=bcolors.OKGREEN)
-        print_aligned("File Offset:", f"0x{format(chosen_file['offset'], 'X')}", color=bcolors.OKGREEN)
-        print_aligned("File Size:", f"0x{format(chosen_file['size'], 'X')}", color=bcolors.OKGREEN)
+        #print_aligned("File ID:", f"0x{format(chosen_key, 'X')}", color=bcolors.OKGREEN)
+        #print_aligned("File Offset:", f"0x{format(chosen_file['offset'], 'X')}", color=bcolors.OKGREEN)
+        #print_aligned("File Size:", f"0x{format(chosen_file['size'], 'X')}", color=bcolors.OKGREEN)
 
         # Open the file and seek to offset
         with open(self.original_file, "rb") as pkg_file:
