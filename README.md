@@ -24,9 +24,16 @@ returns:Extracts everything to directory `extracted`
 ![info.png](img/info.png)
 
 ### Dump
-
 ```
 python3 main.py dump File.pkg --out extracted
 ```
 
 Extracts everything to directory `extracted`
+
+# PS4-pkg-viewer-python
+
+Displays certain pkg information such as :
+```
+APP_TYPE,CONTENT_ID,TITLE_ID,TITLE,APP_VER,SDK_version,PUBTOOLINFO 
+```
+
