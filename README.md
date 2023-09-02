@@ -36,3 +36,13 @@ Displays certain PS4 pkg information such as :
 ```
 APP_TYPE,CONTENT_ID,TITLE_ID,TITLE,APP_VER,SDK_version,PUBTOOLINFO 
 ```
+<img src="img/view1.png" alt="view1">
+<img src="img/view2.png" alt="view2">
+
+<img src="img/view3.png" alt="view3">
+<img src="img/view4.png" alt="view4">
+
+Note: `TITLEID` may not be recovered correctly under certain conditions.
+    this code was developed on macos but can be compiled on Windows after installing all dependencies.
+    Add the latest version of the application 
+
