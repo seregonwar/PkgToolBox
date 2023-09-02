@@ -32,8 +32,17 @@ Extracts everything to directory `extracted`
 
 # PS4-pkg-viewer-python
 
-Displays certain pkg information such as :
+Displays certain PS4 pkg information such as :
 ```
 APP_TYPE,CONTENT_ID,TITLE_ID,TITLE,APP_VER,SDK_version,PUBTOOLINFO 
 ```
+---------[23.8.4]---------
+[o]Interface redesign 
+[ø]Bug fixes 
+
+---------[23.9.2]---------
+[ø]improved interface
+[ø]copy feature
+[ø]Bug fixes
+
 
