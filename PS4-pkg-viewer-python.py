@@ -72,7 +72,7 @@ class Application(Tk):
     
     def display_img(self, image_path):
         image = Image.open(image_path)
-        image = image.resize((208, 205))
+        image = image.resize((199, 198))
         photo = ImageTk.PhotoImage(image)
         self.pkg_icon0.configure(image=photo)
         self.pkg_icon0.image = photo
@@ -101,20 +101,21 @@ class Application(Tk):
         data1 = sfo[offset1:offset1 + 14].decode("ascii", errors='ignore')
 
         offset2 = sfo.find(b"\x5F00-") - 20
-        data2 = sfo[offset2:offset2 + 4].decode("ascii", errors='ignore')
-        data2 = re.sub(Hexpattern, '', data2)
+        data2 = sfo[offset2:offset2 + 2].decode("ascii", errors='ignore')
 
         offset3 = sfo.find(b"\x5F00-") - 16
         data3 = sfo[offset3:offset3 + 36].decode("ascii", errors='ignore')
 
         offset4 = sfo.find(b"\x2Csdk_ver=") + 9
         data4 = sfo[offset4:offset4 + 8].decode("ascii", errors='ignore')
-        data4 = data4[:2] + "." + data4[2:4]
 
         offset5 = sfo.find(b"\x00\x00\x00\x00CUSA") - 128
         data5 = sfo[offset5:offset5 + 64].decode("ascii", errors='ignore')
 
+        data5 = re.sub(Hexpattern, '', data5)
+
         offset6 = sfo.find(b"\x5F00-") - 9
+
         data6 = sfo[offset6:offset6 + 9].decode("ascii", errors='ignore')
 
         offset7 = sfo.find(b"\x00c_date") + 1
@@ -122,7 +123,7 @@ class Application(Tk):
         
         pkg_size_fmt = os.path.getsize(self.file_path)
         pkg_size_formatted = self.pkg_size_fmt(pkg_size_fmt)
-        
+
         sfo_dict = {
             "APP_TYPE": data2,
             "CONTENT_ID": data3,
@@ -133,24 +134,26 @@ class Application(Tk):
             "PUBTOOLINFO": data7,
             "Size": pkg_size_formatted,
         }
+
+        if data2 =="gp":
+            [sfo_dict.pop(key, None) for key in ["SDK_version"]]
+        elif data2 =="ac":
+            [sfo_dict.pop(key, None) for key in ["SDK_version","APP_VER"]]
         
-        if data2 != "gd":
-            sfo_dict.pop("SDK_version")
-            sfo_dict.pop("APP_VER")
+        if len(data5) <= 3:
+            [sfo_dict.pop(key, None) for key in ["TITLE", "SDK_version"]]
 
         self.treeview.delete(*self.treeview.get_children())  # Clear the Treeview first
 
         for key, value in sfo_dict.items():
             out_data = re.sub(Hexpattern, '', value)
-           
-            if "APP_TYPE":
-                if out_data == "gd":
-                    out_data = "Game(gd)"
-                elif out_data == "gp":
-                    out_data = "Patch(gp)"
-                elif out_data == "ac":
-                    out_data = "Addon(ac)"
-            
+            if out_data == "gd":
+                out_data = "Game(gd)"
+            elif out_data == "gp":
+                out_data = "Patch(gp)"
+            elif out_data == "ac":
+                out_data = "Addon(ac)"
+        
             self.treeview.insert("", "end", text=key, values=(out_data,))
 
     def close(self):
@@ -164,7 +167,6 @@ class Application(Tk):
         super().__init__()
         self.file_path = None
         self.package = None
-        self.dict_show = {}
 
         self.resizable(0,0)
         self.title("PS4-pkg-viewer-python")
@@ -177,14 +179,14 @@ class Application(Tk):
         self.pkg_icon0Frame = ttk.LabelFrame(self,text='icon0',labelanchor='n')
         self.pkg_icon0Frame.grid(row=0, column=0,padx=3,pady=4)
         
-        self.pkg_icon0 = Label(self.pkg_icon0Frame,text='Load file...',padx=70,pady=90)
+        self.pkg_icon0 = Label(self.pkg_icon0Frame,text='Load file...',padx=68,pady=90)
         self.pkg_icon0.grid(row=0, column=0)
 
         #Treeview
         self.treeview = ttk.Treeview(self, columns=("Value"),selectmode='browse')
         self.treeview.heading("#0", text="Key")
         self.treeview.heading("Value", text="Informations")
-        self.treeview.grid(row=0, column=1, pady=1,sticky="nsew")
+        self.treeview.grid(row=0, column=1, pady=3,sticky="s")
         self.treeview.column("#0", anchor="w", width=110)
         self.treeview.column("Value", anchor="w", width=400)
         
@@ -195,9 +197,9 @@ class Application(Tk):
 
         # Button 
         self.select_file_button = ttk.Button(self, text="Select pkg file", command=self.select_file)
-        self.select_file_button.grid(row=1, column=1, pady=8)
+        self.select_file_button.grid(row=1, column=1, pady=3)
         
-        app_version= ttk.Label(self, text="Ver : 23.8.4")
+        app_version= ttk.Label(self, text="Ver : 23.9.2")
         app_version.grid(row=1, column=0,sticky='w',padx=3)
 
 if __name__ == "__main__":
