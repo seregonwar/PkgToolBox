@@ -42,8 +42,8 @@ APP_TYPE,CONTENT_ID,TITLE_ID,TITLE,APP_VER,SDK_version,PUBTOOLINFO
 <img src="img/view3.png" alt="view3">
 <img src="img/view4.png" alt="view4">
 
-<img src="img/view5.png" alt="view5">
-<img src="img/view6.png" alt="view6">
+<img src="img/view5" alt="view5">
+<img src="img/view6" alt="view6">
 
 Note: `TITLEID` may not be recovered correctly under certain conditions.
     this code was developed on macos but can be compiled on Windows after installing all dependencies.
