@@ -108,6 +108,7 @@ class Application(Tk):
 
         offset4 = sfo.find(b"\x2Csdk_ver=") + 9
         data4 = sfo[offset4:offset4 + 8].decode("ascii", errors='ignore')
+        data4 = data4[:2] + "." + data4[2:4]
 
         offset5 = sfo.find(b"\x00\x00\x00\x00CUSA") - 128
         data5 = sfo[offset5:offset5 + 64].decode("ascii", errors='ignore')
@@ -199,7 +200,7 @@ class Application(Tk):
         self.select_file_button = ttk.Button(self, text="Select pkg file", command=self.select_file)
         self.select_file_button.grid(row=1, column=1, pady=3)
         
-        app_version= ttk.Label(self, text="Ver : 23.9.2")
+        app_version= ttk.Label(self, text="Ver : 23.9.3")
         app_version.grid(row=1, column=0,sticky='w',padx=3)
 
 if __name__ == "__main__":
