@@ -30,7 +30,7 @@ python3 main.py dump File.pkg --out extracted
 
 Extracts everything to directory `extracted`
 
-# PS4-pkg-viewer-python
+# PS4-pkg-viewer
 
 Displays certain PS4 pkg information such as :
 ```
