@@ -170,7 +170,7 @@ class Application(Tk):
         self.package = None
 
         self.resizable(0,0)
-        self.title("PS4-pkg-viewer-python")
+        self.title("PS4-pkg-viewer")
         
         for index in [0, 1, 2]:
             self.columnconfigure(index=index, weight=1)
