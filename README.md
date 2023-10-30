@@ -49,6 +49,6 @@ APP_TYPE,CONTENT_ID,TITLE_ID,TITLE,APP_VER,SDK_version,PUBTOOLINFO
    ```
 Tkinter,Pillow,re
 ``` 
-Note: `TITLEID` may not be recovered correctly under certain conditions.
+Note: `TITLE` may not be recovered correctly under certain conditions.
     this code was developed on macos but can be compiled on Windows after installing all dependencies.
     All contribution to improve the program are welcome...
