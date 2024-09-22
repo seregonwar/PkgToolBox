@@ -2,6 +2,7 @@ import struct
 import os
 import typing
 from enum import Enum
+import io
 
 from utils import print_aligned, bcolors
 
@@ -123,42 +124,37 @@ class Package:
             print_aligned(f"0x{format(key, 'X')}:", f"{file.get('name', '<unnamed>')} ({file['size']} bytes, "
                                                     f"starts 0x{format(file['offset'], 'X')}, {enc_txt})")
 
-    def extract(self, file_name_or_id: typing.Union[str, int], out_path: str) -> None:
-        try:
-            file_name_or_id = int(file_name_or_id, 16)
-        except TypeError:
-            pass  # is a file name
-
-        #print_aligned("File Identifier:", file_name_or_id)
-
-        dir = os.path.dirname(out_path)
-        if dir:
-            os.makedirs(dir, exist_ok=True)
-
+    def extract(self, file_name_or_id: typing.Union[str, int], out_path: typing.Union[str, io.BytesIO]) -> None:
+        if isinstance(file_name_or_id, str):
+            try:
+                file_name_or_id = int(file_name_or_id, 16)
+            except ValueError:
+                pass  # è un nome file
+        
         # Find the target
-        chosen_file = self._files[file_name_or_id] if file_name_or_id in self._files else None
+        chosen_file = self._files.get(file_name_or_id)
         chosen_key = file_name_or_id
         if not chosen_file:
-            for key in self._files:
-                if self._files[key].get("name", "") == file_name_or_id:
-                    chosen_file = self._files[key]
+            for key, file in self._files.items():
+                if file.get("name") == file_name_or_id:
+                    chosen_file = file
                     chosen_key = key
                     break
 
         if not chosen_file:
             raise ValueError(f"Couldn't find file {file_name_or_id} in package!")
 
-        if "name" in chosen_file:
-            print_aligned("File Name:", chosen_file["name"], color=bcolors.OKGREEN)
-        #print_aligned("File ID:", f"0x{format(chosen_key, 'X')}", color=bcolors.OKGREEN)
-        #print_aligned("File Offset:", f"0x{format(chosen_file['offset'], 'X')}", color=bcolors.OKGREEN)
-        #print_aligned("File Size:", f"0x{format(chosen_file['size'], 'X')}", color=bcolors.OKGREEN)
-
         # Open the file and seek to offset
         with open(self.original_file, "rb") as pkg_file:
             pkg_file.seek(chosen_file["offset"])
-            with open(out_path, "wb") as out_file:
-                out_file.write(pkg_file.read(chosen_file["size"]))
+            if isinstance(out_path, io.BytesIO):
+                out_path.write(pkg_file.read(chosen_file["size"]))
+            else:
+                dir = os.path.dirname(out_path)
+                if dir:
+                    os.makedirs(dir, exist_ok=True)
+                with open(out_path, "wb") as out_file:
+                    out_file.write(pkg_file.read(chosen_file["size"]))
 
     def extract_raw(self, offset: int, size: int, out_file: str):
         with open(self.original_file, "rb") as pkg_file:
@@ -174,7 +170,7 @@ class Package:
             out = os.path.join(out_path, self._files[key].get("name", f"{key}"))
 
             if os.path.isfile(out):
-                print_aligned("Error:", f"Cancelled dump as found file with matching ({out}) already exists!",
-                              color=bcolors.FAIL)
-                exit(1)
+                raise FileExistsError(f"File with matching name already exists: {out}")
             self.extract(key, out)
+
+        return "Dump completed successfully"

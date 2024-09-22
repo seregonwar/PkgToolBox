@@ -1,0 +1,7 @@
+argparse
+contextlib
+io
+logging
+PyQt5
+struct
+typing
