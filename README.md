@@ -18,11 +18,16 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
 ## Installation
 1. Clone the repository:
     ```sh
-    git clone https://github.com/your-username/ps4-pkg-tool.git
-    cd ps4-pkg-tool
+    git clone https://github.com/seregonwar/PS4-PKG-Tool-Box.git
+    cd PS4-PKG-Tool-Box
     ```
 
 2. Install the dependencies:
     ```sh
     pip install -r requirements.txt
     ```
+## Gui 
+![image](https://github.com/user-attachments/assets/2397206a-a0e5-413a-80c9-a6c910d35a15)
+
+![image](https://github.com/user-attachments/assets/9f5fe70c-19bb-4509-9135-c4071bdab2ed)
+![image](https://github.com/user-attachments/assets/63d2bb01-6980-487f-b852-cb33fbdb57f3)
