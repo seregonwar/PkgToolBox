@@ -1,54 +1,28 @@
-# ps4-pkgtools
+# PS4 PKG Tool
 
-Performs some read-only operations on PS4 .pkg files:
+## Description
+PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract, inject, modify, and obtain information about PKG files.
 
-## Usage
+## Features
+- **Extraction**: Extract specific files from a PKG.
+- **Injection**: Inject new data into an existing PKG file.
+- **Modification**: Modify the header of a PKG file.
+- **Dump**: Perform a complete dump of the contents of a PKG.
+- **Information**: Obtain detailed information about a PKG file.
 
-### Extract
+## Requirements
+- Python 3.x
+- PyQt5
+- cx_Freeze (for creating the executable)
 
-```
-python3 main.py extract File.pkg --file 0x126C --out out.mxl
-```
+## Installation
+1. Clone the repository:
+    ```sh
+    git clone https://github.com/your-username/ps4-pkg-tool.git
+    cd ps4-pkg-tool
+    ```
 
-Extracts file with ID `0x126C` to `out.xml`. 
-The argument to `--file` can be a file ID or filename 
-
-### Info
-
-```
-python3 main.py info File.pkg
-```
-
-returns:Extracts everything to directory `extracted`
-
-![info.png](img/info.png)
-
-### Dump
-```
-python3 main.py dump File.pkg --out extracted
-```
-
-Extracts everything to directory `extracted`
-
-# PS4-pkg-viewer
-
-Displays certain PS4 pkg information such as :
-```
-APP_TYPE,CONTENT_ID,TITLE_ID,TITLE,APP_VER,SDK_version,PUBTOOLINFO 
-```
-<img src="img/view1.png" alt="view1">
-<img src="img/view2.png" alt="view2">
-
-<img src="img/view3.png" alt="view3">
-<img src="img/view4.png" alt="view4">
-
-<img src="img/view5.PNG" alt="view5">
-<img src="img/view6.PNG" alt="view6">
-
-### Dependencies
-   ```
-Tkinter,Pillow,re
-``` 
-Note: `TITLE` may not be recovered correctly under certain conditions.
-    this code was developed on macos but can be compiled on Windows after installing all dependencies.
-    All contribution to improve the program are welcome...
+2. Install the dependencies:
+    ```sh
+    pip install -r requirements.txt
+    ```
