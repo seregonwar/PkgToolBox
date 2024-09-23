@@ -13,7 +13,7 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
 ## Requirements
 - Python 3.x
 - PyQt5
-- cx_Freeze (for creating the executable)
+- pyinstaller and cx_freeze (for creating the executable)
 
 ## Installation
 1. Clone the repository:
