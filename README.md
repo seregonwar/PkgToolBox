@@ -26,6 +26,12 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
     ```sh
     pip install -r requirements.txt
     ```
+## Next steps
+- addition of an advanced directory file explorer to navigate internally to pkg files
+- advanced reading of information
+- improvement in the analysis of values in hex format + add tools related to ida pro.
+- improvements and bug fixes
+
 ## Gui 
 ![image](https://github.com/user-attachments/assets/2397206a-a0e5-413a-80c9-a6c910d35a15)
 
