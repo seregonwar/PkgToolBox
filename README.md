@@ -9,11 +9,18 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
 - **Modification**: Modify the header of a PKG file.
 - **Dump**: Perform a complete dump of the contents of a PKG.
 - **Information**: Obtain detailed information about a PKG file.
+- **File Explorer**: Navigate and manage files within the PKG using an integrated file explorer.
+- **Hex Reader**: View and edit files in hexadecimal format.
+- **Text Reader**: View and edit text files.
+- **Delete**: Delete files from the PKG.
+- **Trophy Management**: Load, read, and manage trophy files.
+- **Integration with OpenOrbis**: Utilize `orbis-pub-cmd.exe` for advanced PKG manipulation.
 
 ## Requirements
 - Python 3.x
 - PyQt5
 - pyinstaller and cx_freeze (for creating the executable)
+- `orbis-pub-cmd.exe` (included in the OpenOrbis toolchain)
 
 ## Installation
 1. Clone the repository:
@@ -26,14 +33,43 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
     ```sh
     pip install -r requirements.txt
     ```
-## Next steps
-- addition of an advanced directory file explorer to navigate internally to pkg files
-- advanced reading of information
-- improvement in the analysis of values in hex format + add tools related to ida pro.
-- improvements and bug fixes
 
-## Gui 
-![image](https://github.com/user-attachments/assets/2397206a-a0e5-413a-80c9-a6c910d35a15)
+3. Ensure `orbis-pub-cmd.exe` is located in the `OrbisLibrary` directory:
+    ```sh
+    PS4-PKG-Tool-Box/
+    ├── OrbisLibrary/
+    │   └── orbis-pub-cmd.exe
+    └── ...
+    ```
 
-![image](https://github.com/user-attachments/assets/9f5fe70c-19bb-4509-9135-c4071bdab2ed)
-![image](https://github.com/user-attachments/assets/63d2bb01-6980-487f-b852-cb33fbdb57f3)
+## Usage
+1. Run the application:
+    ```sh
+    python main.py
+    ```
+
+2. Use the GUI to interact with PKG files:
+    - **Browse**: Select a PKG file to work with.
+    - **Extract**: Extract specific files from the PKG.
+    - **Inject**: Inject new data into the PKG.
+    - **Modify**: Modify the header of the PKG.
+    - **Dump**: Perform a complete dump of the PKG contents.
+    - **Info**: Obtain detailed information about the PKG.
+    - **File Explorer**: Navigate and manage files within the PKG.
+    - **Hex Reader**: View and edit files in hexadecimal format.
+    - **Text Reader**: View and edit text files.
+    - **Delete**: Delete files from the PKG.
+    - **Trophy Management**: Load, read, and manage trophy files.
+
+## Next Steps
+- Addition of an advanced directory file explorer to navigate internally to PKG files.
+- Advanced reading of information.
+- Improvement in the analysis of values in hex format + add tools related to IDA Pro.
+- Improvements and bug fixes.
+
+## GUI
+![image](https://github.com/user-attachments/assets/8cae42c5-6d63-4556-8a88-3ae9cca14b93)
+
+![image](https://github.com/user-attachments/assets/9d559248-95a5-4f32-a0fb-13605e7a7de6)
+
+![image](https://github.com/user-attachments/assets/b020fe51-7d44-4ee4-a8a4-de3e0a73a948)
