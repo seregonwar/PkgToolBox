@@ -174,3 +174,12 @@ class Package:
             self.extract(key, out)
 
         return "Dump completed successfully"
+
+    def extract_pkg_info(self):
+        sfo_info = {
+            "TITLE_ID": self.pkg_content_id,
+            "VERSION": getattr(self, 'pkg_version', "1.00"),
+            "SYSTEM_VER": getattr(self, 'pkg_system_version', "N/A"),
+            "CATEGORY": self.pkg_content_type.name
+        }
+        return sfo_info
