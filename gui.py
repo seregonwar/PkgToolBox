@@ -786,6 +786,7 @@ def start_gui(run_command_callback):
     window.show()
     sys.exit(app.exec_())
     
+
     def display_img(self, image_path):
         pixmap = QPixmap(image_path)
         self.image_label.setPixmap(pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation))

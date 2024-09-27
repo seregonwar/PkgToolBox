@@ -1,54 +1,89 @@
-# ps4-pkgtools
+# PS4 PKG Tool Box
 
-Performs some read-only operations on PS4 .pkg files:
+## 🤝 Contributions Welcome!
+
+**Contributions to the development are welcome!** If you have any ideas 💡 on how to improve the code, feel free to:
+
+- ✉️ Message me privately on [X (Twitter)](https://twitter.com/SeregonWar)
+- 🔧 Open a [Pull Request](https://github.com/)
+- 🐛 Report an issue through [Issues](https://github.com/)
+
+Currently, I am the only developer 👨‍💻 and handling all the work can be challenging. Any support is greatly appreciated! 🙌
+
+**P.S.** if you are able to use the OpenOrbis sdk you could be really useful. I would like to create a version of this application that can run directly on PlayStation so that I can manipulate pkg files directly from there! Contact me! ;)
+
+## Description
+PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract, inject, modify, and obtain information about PKG files.
+
+## Features
+- **Extraction**: Extract specific files from a PKG.
+- **Injection**: Inject new data into an existing PKG file.
+- **Modification**: Modify the header of a PKG file.
+- **Dump**: Perform a complete dump of the contents of a PKG.
+- **Information**: Obtain detailed information about a PKG file.
+- **File Explorer**: Navigate and manage files within the PKG using an integrated file explorer.
+- **Hex Reader**: View and edit files in hexadecimal format.
+- **Text Reader**: View and edit text files.
+- **Delete**: Delete files from the PKG.
+- **Trophy Management**: Load, read, and manage trophy files.
+- **Integration with OpenOrbis**: Utilize `orbis-pub-cmd.exe` for advanced PKG manipulation.
+
+## Requirements
+- Python 3.x
+- PyQt5
+- pyinstaller and cx_freeze (for creating the executable)
+- `orbis-pub-cmd.exe` (included in the OpenOrbis toolchain)
+
+## Installation
+1. Clone the repository:
+    ```sh
+    git clone https://github.com/seregonwar/PS4-PKG-Tool-Box.git
+    cd PS4-PKG-Tool-Box
+    ```
+
+2. Install the dependencies:
+    ```sh
+    pip install -r requirements.txt
+    ```
+
+3. Ensure `orbis-pub-cmd.exe` is located in the `OrbisLibrary` directory:
+    ```sh
+    PS4-PKG-Tool-Box/
+    ├── OrbisLibrary/
+    │   └── orbis-pub-cmd.exe
+    └── ...
+    ```
 
 ## Usage
+1. Run the application:
+    ```sh
+    python main.py
+    ```
 
-### Extract
+2. Use the GUI to interact with PKG files:
+    - **Browse**: Select a PKG file to work with.
+    - **Extract**: Extract specific files from the PKG.
+    - **Inject**: Inject new data into the PKG.
+    - **Modify**: Modify the header of the PKG.
+    - **Dump**: Perform a complete dump of the PKG contents.
+    - **Info**: Obtain detailed information about the PKG.
+    - **File Explorer**: Navigate and manage files within the PKG.
+    - **Hex Reader**: View and edit files in hexadecimal format.
+    - **Text Reader**: View and edit text files.
+    - **Delete**: Delete files from the PKG.
+    - **Trophy Management**: Load, read, and manage trophy files.
 
-```
-python3 main.py extract File.pkg --file 0x126C --out out.mxl
-```
+## Next Steps
+- [x] Addition of an advanced directory file explorer to navigate internally to PKG files.
+- [x] Advanced reading of information.
+- [x] Improvement in the analysis of values in hex format.
+- [ ] add tools related to IDA Pro.
+- [ ] Improvements and bug fixes.
 
-Extracts file with ID `0x126C` to `out.xml`. 
-The argument to `--file` can be a file ID or filename 
 
-### Info
+## GUI
+![image](https://github.com/user-attachments/assets/8cae42c5-6d63-4556-8a88-3ae9cca14b93)
 
-```
-python3 main.py info File.pkg
-```
+![image](https://github.com/user-attachments/assets/9d559248-95a5-4f32-a0fb-13605e7a7de6)
 
-returns:Extracts everything to directory `extracted`
-
-![info.png](img/info.png)
-
-### Dump
-```
-python3 main.py dump File.pkg --out extracted
-```
-
-Extracts everything to directory `extracted`
-
-# PS4-pkg-viewer
-
-Displays certain PS4 pkg information such as :
-```
-APP_TYPE,CONTENT_ID,TITLE_ID,TITLE,APP_VER,SDK_version,PUBTOOLINFO 
-```
-<img src="img/view1.png" alt="view1">
-<img src="img/view2.png" alt="view2">
-
-<img src="img/view3.png" alt="view3">
-<img src="img/view4.png" alt="view4">
-
-<img src="img/view5.PNG" alt="view5">
-<img src="img/view6.PNG" alt="view6">
-
-### Dependencies
-   ```
-Tkinter,Pillow,re
-``` 
-Note: `TITLE` may not be recovered correctly under certain conditions.
-    this code was developed on macos but can be compiled on Windows after installing all dependencies.
-    All contribution to improve the program are welcome...
+![image](https://github.com/user-attachments/assets/b020fe51-7d44-4ee4-a8a4-de3e0a73a948)

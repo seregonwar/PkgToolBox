@@ -15,6 +15,5 @@ from Utilities.PS4PKGToolHelper.Helper import Helper
 from Utilities.PS4PKGToolHelper.MessageBoxHelper import MessageBoxHelper
 from Utilities.Settings.AppSettings import AppSettings
 from Utilities.Settings.SettingsManager import SettingsManager
-from Utilities.Trophy.Utils import Utils
 
 # Other common imports can be added here
