@@ -1,5 +1,15 @@
 # PS4 PKG Tool Box
 
+## 🤝 Contributions Welcome!
+
+**Contributions to the development are welcome!** If you have any ideas 💡 on how to improve the code, feel free to:
+
+- ✉️ Message me privately on [X (Twitter)](https://twitter.com/)
+- 🔧 Open a [Pull Request](https://github.com/)
+- 🐛 Report an issue through [Issues](https://github.com/)
+
+Currently, I am the only developer 👨‍💻 and handling all the work can be challenging. Any support is greatly appreciated! 🙌
+
 ## Description
 PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract, inject, modify, and obtain information about PKG files.
 
