@@ -62,10 +62,12 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
     - **Trophy Management**: Load, read, and manage trophy files.
 
 ## Next Steps
-- Addition of an advanced directory file explorer to navigate internally to PKG files.
-- Advanced reading of information.
-- Improvement in the analysis of values in hex format + add tools related to IDA Pro.
-- Improvements and bug fixes.
+- [x] Addition of an advanced directory file explorer to navigate internally to PKG files.
+- [x] Advanced reading of information.
+- [x] Improvement in the analysis of values in hex format.
+- [ ] add tools related to IDA Pro.
+- [ ]Improvements and bug fixes.
+
 
 ## GUI
 ![image](https://github.com/user-attachments/assets/8cae42c5-6d63-4556-8a88-3ae9cca14b93)
