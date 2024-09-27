@@ -10,6 +10,8 @@
 
 Currently, I am the only developer 👨‍💻 and handling all the work can be challenging. Any support is greatly appreciated! 🙌
 
+**P.S.** if you are able to use the OpenOrbis sdk you could be really useful. I would like to create a version of this application that can run directly on PlayStation so that I can manipulate pkg files directly from there! Contact me! ;)
+
 ## Description
 PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract, inject, modify, and obtain information about PKG files.
 
