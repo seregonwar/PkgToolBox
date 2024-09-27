@@ -66,7 +66,7 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
 - [x] Advanced reading of information.
 - [x] Improvement in the analysis of values in hex format.
 - [ ] add tools related to IDA Pro.
-- [ ]Improvements and bug fixes.
+- [ ] Improvements and bug fixes.
 
 
 ## GUI
