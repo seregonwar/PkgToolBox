@@ -3,14 +3,19 @@ import os
 import re
 import shutil
 import binascii
+import subprocess
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem,
                              QFileDialog, QMessageBox, QTabWidget, QScrollArea, QSizePolicy,
-                             QTextEdit, QSpinBox, QFrame, QStatusBar, QToolBar, QAction)
+                             QTextEdit, QSpinBox, QFrame, QStatusBar, QToolBar, QAction, QMenu)
 from PyQt5.QtGui import QFont, QPixmap, QPalette, QColor, QRegExpValidator, QIcon
 from PyQt5.QtCore import Qt, QRegExp, QSize
 from package import Package
 from file_operations import extract_file, inject_file, modify_file_header
+
+# Import utilities
+from Utilities import Logger, SettingsManager, TRPReader  
+from Utilities.Trophy import Archiver, TrophyFile, TRPCreator, TRPReader  
 
 OUTPUT_FOLDER = "._temp_output"
 Hexpattern = re.compile(r'[^\x20-\x7E]')
@@ -21,7 +26,7 @@ class PS4PKGTool(QMainWindow):
         self.setWindowTitle("PS4 PKG Tool")
         self.setGeometry(100, 100, 1200, 800)
         
-        # set the icon of the main window
+        # Set the icon of the main window
         self.setWindowIcon(QIcon("icons/toolbox-png.svg"))
         
         # Set blue background with a more modern shade
@@ -30,8 +35,6 @@ class PS4PKGTool(QMainWindow):
         self.setPalette(palette)
         
         self.pkg_entry = QLineEdit()
-        self.extract_pkg_entry = QLineEdit()
-        self.file_entry = QLineEdit()
         self.extract_out_entry = QLineEdit()
         self.dump_pkg_entry = QLineEdit()
         self.dump_out_entry = QLineEdit()
@@ -47,10 +50,23 @@ class PS4PKGTool(QMainWindow):
         self.current_pkg = None
         
         self.setup_ui()
+        self.setup_context_menu()  # Aggiunta del menu contestuale
 
         self.file_path = None
         self.package = None
         self.run_command_callback = None
+        
+        # Load settings
+        try:
+            self.settings = SettingsManager.load_settings("path/to/settings.conf")
+            Logger.log_information("Application started with loaded settings.")
+        except Exception as e:
+            Logger.log_error(f"Errore durante il caricamento delle impostazioni: {e}")
+            QMessageBox.critical(self, "Errore", f"Errore durante il caricamento delle impostazioni: {e}")
+            sys.exit(1)
+        
+        # Path to orbis-pub-cmd.exe
+        self.orbis_pub_cmd_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "OrbisLibrary", "orbis-pub-cmd.exe")
 
     def setup_ui(self):
         self.create_statusbar()
@@ -90,12 +106,16 @@ class PS4PKGTool(QMainWindow):
         self.dump_tab = QWidget()
         self.inject_tab = QWidget()
         self.modify_tab = QWidget()
+        self.trophy_tab = QWidget()
+        self.file_browser_tab = QWidget()  # Aggiunta della scheda per la navigazione dei file
         
         self.tab_widget.addTab(self.info_tab, "Info")
         self.tab_widget.addTab(self.extract_tab, "Extract")
         self.tab_widget.addTab(self.dump_tab, "Dump")
         self.tab_widget.addTab(self.inject_tab, "Inject")
         self.tab_widget.addTab(self.modify_tab, "Modify")
+        self.tab_widget.addTab(self.trophy_tab, "Trophy")
+        self.tab_widget.addTab(self.file_browser_tab, "File Browser")  # Aggiunta della scheda per la navigazione dei file
         
         self.tab_widget.setStyleSheet("""
             QTabWidget::pane { border: 1px solid #3498db; }
@@ -110,6 +130,8 @@ class PS4PKGTool(QMainWindow):
         self.setup_dump_tab()
         self.setup_inject_tab()
         self.setup_modify_tab()
+        self.setup_trophy_tab()
+        self.setup_file_browser_tab()  # Configurazione della scheda per la navigazione dei file
 
         main_layout.addWidget(right_widget, 2)
 
@@ -140,6 +162,10 @@ class PS4PKGTool(QMainWindow):
         modify_action = QAction(QIcon("icons/modify.png"), "Modify", self)
         modify_action.triggered.connect(lambda: self.tab_widget.setCurrentIndex(4))
         toolbar.addAction(modify_action)
+
+        trophy_action = QAction(QIcon("icons/trophy.png"), "Trophy", self)
+        trophy_action.triggered.connect(lambda: self.tab_widget.setCurrentIndex(5))
+        toolbar.addAction(trophy_action)
 
         toolbar.setStyleSheet(icon_style)
 
@@ -182,9 +208,12 @@ class PS4PKGTool(QMainWindow):
     def setup_extract_tab(self):
         layout = QVBoxLayout(self.extract_tab)
         
-        layout.addLayout(self.create_file_selection_layout(self.extract_pkg_entry, lambda: self.browse_pkg(self.extract_pkg_entry)))
-        layout.addLayout(self.create_file_selection_layout(self.file_entry, self.browse_file))
         layout.addLayout(self.create_file_selection_layout(self.extract_out_entry, lambda: self.browse_out(self.extract_out_entry)))
+
+        self.extract_log = QTextEdit()
+        self.extract_log.setReadOnly(True)
+        self.extract_log.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
+        layout.addWidget(self.extract_log)
 
         run_button = QPushButton("Execute Extract")
         run_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
@@ -280,19 +309,159 @@ class PS4PKGTool(QMainWindow):
         
         layout.addStretch(1)
 
+    def setup_trophy_tab(self):
+        layout = QVBoxLayout(self.trophy_tab)
+        
+        self.trophy_entry = QLineEdit()
+        layout.addLayout(self.create_file_selection_layout(self.trophy_entry, self.browse_trophy))
+
+        self.trophy_info = QTextEdit()
+        self.trophy_info.setReadOnly(True)
+        self.trophy_info.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
+        layout.addWidget(self.trophy_info)
+
+        run_button = QPushButton("Execute Trophy")
+        run_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
+        run_button.clicked.connect(lambda: self.run_command("trophy"))
+        layout.addWidget(run_button)
+        
+        layout.addStretch(1)
+
+    def setup_file_browser_tab(self):
+        layout = QVBoxLayout(self.file_browser_tab)
+        
+        self.file_tree = QTreeWidget()
+        self.file_tree.setHeaderLabels(["File Name", "Size"])
+        self.file_tree.setColumnWidth(0, 200)
+        self.file_tree.setStyleSheet("QTreeWidget { background-color: white; color: #2c3e50; font-size: 14px; border: none; }")
+        self.file_tree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.file_tree.customContextMenuRequested.connect(self.open_context_menu)
+        layout.addWidget(self.file_tree)
+
+        self.load_files_button = QPushButton("Load Files")
+        self.load_files_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
+        self.load_files_button.clicked.connect(self.load_files)
+        layout.addWidget(self.load_files_button)
+
+    def setup_context_menu(self):
+        self.context_menu = QMenu(self)
+        self.context_menu.addAction("Hex Reader", self.open_hex_reader)
+        self.context_menu.addAction("Text Reader", self.open_text_reader)
+        self.context_menu.addAction("Extract", self.extract_file)
+        self.context_menu.addAction("Delete", self.delete_file)
+
+    def open_context_menu(self, position):
+        indexes = self.file_tree.selectedIndexes()
+        if indexes:
+            self.context_menu.exec_(self.file_tree.viewport().mapToGlobal(position))
+
+    def open_hex_reader(self):
+        selected_item = self.file_tree.currentItem()
+        if selected_item:
+            file_name = selected_item.text(0)
+            file_path = os.path.join(self.current_pkg, file_name)
+            try:
+                with open(file_path, 'rb') as file:
+                    hex_data = file.read().hex()
+                    formatted_hex = ' '.join(hex_data[i:i+2] for i in range(0, len(hex_data), 2))
+                    self.hex_viewer.setPlainText(formatted_hex)
+                    self.hex_viewer.setWindowTitle(f"Hex Viewer - {file_name}")
+                    self.hex_viewer.show()
+            except FileNotFoundError:
+                QMessageBox.critical(self, "Error", f"File not found: {file_name}")
+            except IOError as e:
+                QMessageBox.critical(self, "Error", f"I/O error while opening the file: {e}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Unexpected error: {e}")
+
+    def open_text_reader(self):
+        selected_item = self.file_tree.currentItem()
+        if selected_item:
+            file_name = selected_item.text(0)
+            file_path = os.path.join(self.current_pkg, file_name)
+            try:
+                with open(file_path, 'rb') as file:
+                    text_data = file.read().decode('utf-8')
+                    self.text_viewer.setPlainText(text_data)
+                    self.text_viewer.setWindowTitle(f"Text Viewer - {file_name}")
+                    self.text_viewer.show()
+            except FileNotFoundError:
+                QMessageBox.critical(self, "Error", f"File not found: {file_name}")
+            except IOError as e:
+                QMessageBox.critical(self, "Error", f"I/O error while opening the file: {e}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Unexpected error: {e}")
+
+    def extract_file(self):
+        selected_item = self.file_tree.currentItem()
+        if selected_item:
+            file_name = selected_item.text(0)
+            file_path = os.path.join(self.current_pkg, file_name)
+            output_dir = QFileDialog.getExistingDirectory(self, "Select the destination folder")
+            if output_dir:
+                confirm = QMessageBox.question(self, "Confirm extraction", f"Do you want to extract the file '{file_name}' to '{output_dir}'?", QMessageBox.Yes | QMessageBox.No)
+                if confirm == QMessageBox.Yes:
+                    try:
+                        shutil.copy(file_path, output_dir)
+                        QMessageBox.information(self, "Success", f"File extracted to: {output_dir}")
+                    except FileNotFoundError:
+                        QMessageBox.critical(self, "Error", f"File not found: {file_name}")
+                    except IOError as e:
+                        QMessageBox.critical(self, "Error", f"I/O error while extracting the file: {e}")
+                    except Exception as e:
+                        QMessageBox.critical(self, "Error", f"Unexpected error: {e}")
+
+    def delete_file(self):
+        selected_item = self.file_tree.currentItem()
+        if selected_item:
+            file_name = selected_item.text(0)
+            file_path = os.path.join(self.current_pkg, file_name)
+            confirm = QMessageBox.question(self, "Confirm deletion", f"Do you want to delete the file '{file_name}'?", QMessageBox.Yes | QMessageBox.No)
+            if confirm == QMessageBox.Yes:
+                try:
+                    os.remove(file_path)
+                    self.file_tree.takeTopLevelItem(self.file_tree.indexOfTopLevelItem(selected_item))
+                    QMessageBox.information(self, "Success", f"File deleted: {file_name}")
+                except FileNotFoundError:
+                    QMessageBox.critical(self, "Error", f"File not found: {file_name}")
+                except IOError as e:
+                    QMessageBox.critical(self, "Error", f"I/O error while deleting the file: {e}")
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Unexpected error: {e}")
+
+    def load_files(self):
+        if not self.current_pkg:
+            QMessageBox.critical(self, "Error", "Select a PKG file first.")
+            return
+        
+        self.file_tree.clear()
+        package = Package(self.current_pkg)
+        for file_id, file_info in package._files.items():
+            item = QTreeWidgetItem([file_info.get("name", f"0x{file_id:X}"), str(file_info["size"])])
+            self.file_tree.addTopLevelItem(item)
+
     def browse_pkg(self, entry_widget=None):
         filename, _ = QFileDialog.getOpenFileName(self, "Select PKG file", "", "PKG files (*.pkg)")
         if filename:
             self.current_pkg = filename
             self.update_pkg_entries()
             self.file_path = filename
-            self.package = Package(self.file_path)
-            self.process_pkg()
+            try:
+                self.package = Package(self.file_path)
+                self.process_pkg()
+            except Exception as e:
+                Logger.log_error(f"Errore durante il caricamento del file PKG: {e}")
+                QMessageBox.critical(self, "Errore", f"Errore durante il caricamento del file PKG: {e}")
+
+    def browse_trophy(self):
+        filename, _ = QFileDialog.getOpenFileName(self, "Select Trophy file", "", "Trophy files (*.trp)")
+        if filename:
+            self.trophy_entry.setText(filename)
 
     def update_pkg_entries(self):
         # Update all PKG input fields with the current value
         self.pkg_entry.setText(self.current_pkg)
-        self.extract_pkg_entry.setText(self.current_pkg)
+        self.extract_out_entry.setText(self.current_pkg)
         self.dump_pkg_entry.setText(self.current_pkg)
         self.inject_pkg_entry.setText(self.current_pkg)
         self.modify_pkg_entry.setText(self.current_pkg)
@@ -313,8 +482,8 @@ class PS4PKGTool(QMainWindow):
             file = ""
             out = ""
         elif cmd == "extract":
-            pkg = self.extract_pkg_entry.text()
-            file = self.file_entry.text()
+            pkg = self.extract_out_entry.text()
+            file = ""
             out = self.extract_out_entry.text()
         elif cmd == "dump":
             pkg = self.dump_pkg_entry.text()
@@ -338,12 +507,31 @@ class PS4PKGTool(QMainWindow):
                 return
             file = offset
             out = data
+        elif cmd == "trophy":
+            trophy_file = self.trophy_entry.text()
+            if not trophy_file:
+                QMessageBox.critical(self, "Error", "Select a Trophy file for the trophy command.")
+                return
+            try:
+                trp_reader = TRPReader()
+                trp_reader.load(trophy_file)
+                if not trp_reader.is_error:
+                    Logger.log_information("TRP file loaded successfully.")
+                    self.trophy_info.setPlainText(f"Title: {trp_reader.title_name}\nNPCommID: {trp_reader.npcomm_id}\nFiles: {len(trp_reader.trophy_list)}")
+                    QMessageBox.information(self, "Trophy", "Trophy file loaded successfully.")
+                else:
+                    Logger.log_error("Error loading TRP file.", trp_reader._error)
+                    QMessageBox.critical(self, "Error", "Error loading TRP file.")
+            except Exception as e:
+                Logger.log_error(f"Error loading TRP file: {e}")
+                QMessageBox.critical(self, "Error", f"An error occurred while loading the TRP file: {str(e)}")
+            return
 
         if not pkg:
             QMessageBox.critical(self, "Error", f"Select a PKG file for the {cmd} command.")
             return
-        if cmd == "extract" and (not file or not out):
-            QMessageBox.critical(self, "Error", "PKG, File, and Output are required for the extract command.")
+        if cmd == "extract" and not out:
+            QMessageBox.critical(self, "Error", "PKG and Output are required for the extract command.")
             return
         if cmd == "dump" and not out:
             QMessageBox.critical(self, "Error", "PKG and Output are required for the dump command.")
@@ -357,23 +545,36 @@ class PS4PKGTool(QMainWindow):
 
         try:
             if cmd == "extract":
-                extract_file(pkg, file, out)
+                self.extract_log.append("Starting extraction...")
+                extract_file(pkg, file, out, self.update_extract_log)
+                Logger.log_information(f"Executed command: {cmd} on PKG: {pkg}, File: {file}, Output: {out}")
             elif cmd == "inject":
                 inject_file(pkg, file, out)
+                Logger.log_information(f"Executed command: {cmd} on PKG: {pkg}, File: {file}, Input: {out}")
             elif cmd == "modify":
                 modify_file_header(pkg, file, out)
+                Logger.log_information(f"Executed command: {cmd} on PKG: {pkg}, Offset: {file}, New Data: {out}")
             elif cmd == "info":
                 output = self.run_command_callback(cmd, pkg, file, out, self.update_info)
                 if output:
                     self.execute_output.setPlainText(self.normalize_output(output))
+                    Logger.log_information(f"Info command executed on PKG: {pkg}")
                 else:
                     self.execute_output.setPlainText("No output received from the command.")
+                    Logger.log_warning(f"No output received for command: {cmd} on PKG: {pkg}")
             else:
                 output = self.run_command_callback(cmd, pkg, file, out, self.update_info)
+                Logger.log_information(f"Executed unknown command: {cmd} on PKG: {pkg}")
+            
             QMessageBox.information(self, "Command Executed", f"The {cmd.capitalize()} command was executed successfully.")
+        except PermissionError as e:
+            Logger.log_error(f"Permission error during execution of command: {cmd}", str(e))
+            QMessageBox.critical(self, "Error", f"Permission denied: {str(e)}")
         except ValueError as e:
+            Logger.log_error(f"Value error during execution of command: {cmd}", str(e))
             QMessageBox.critical(self, "Error", str(e))
         except FileExistsError as e:
+            Logger.log_warning(f"File already exists during execution of command: {cmd}", str(e))
             response = QMessageBox.question(self, "File Exists", str(e) + "\nDo you want to overwrite the existing file?",
                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if response == QMessageBox.Yes:
@@ -382,18 +583,25 @@ class PS4PKGTool(QMainWindow):
                     if cmd == "dump":
                         shutil.rmtree(out)  # Remove existing directory
                         output = self.run_command_callback(cmd, pkg, file, out, self.update_info)
+                        Logger.log_information(f"Overwritten files during execution of command: {cmd}")
                         QMessageBox.information(self, "Command Executed", f"The {cmd.capitalize()} command was executed successfully, overwriting existing files.")
                 except Exception as e:
+                    Logger.log_error(f"Error while overwriting files in command: {cmd}", str(e))
                     QMessageBox.critical(self, "Error", f"An error occurred while executing the command: {str(e)}")
         except Exception as e:
+            Logger.log_error(f"Generic error during execution of command: {cmd}", str(e))
             QMessageBox.critical(self, "Error", f"An error occurred while executing the command: {str(e)}")
+    
     def update_info(self, info):
         if info:
+            self.tree.clear()
             for key, value in info.items():
-                if key == "icon0":
+                if key == "icon0" and value:
                     pixmap = QPixmap()
                     pixmap.loadFromData(value)
                     self.image_label.setPixmap(pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                else:
+                    QTreeWidgetItem(self.tree, [key, str(value)])
         else:
             QMessageBox.information(self, "Information", "No information found in the PKG file.")
 
@@ -417,42 +625,22 @@ class PS4PKGTool(QMainWindow):
         return '\n'.join(normalized)
 
     def process_pkg(self):
-        icon0 = False
-        if self.package is not None:
-            files_to_extract = [
-                {"file_id": 0x1000, "filename": "param.sfo"},
-                {"file_id": 0x1200, "filename": "icon0.png"}
-            ]
-            
-            self.image_label.clear()
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            output_folder_path = os.path.join(script_dir, OUTPUT_FOLDER)
-            os.makedirs(output_folder_path, exist_ok=True)
+        if self.package:
+            self.update_info(self.package.pkg_info)
+            # ... codice esistente ...
 
-            for file_info in files_to_extract:
-                file_id = file_info["file_id"]
-                filename = file_info["filename"]
-
-                output_file_path = os.path.join(output_folder_path, filename)
-
-                try:
-                    self.package.extract(file_id, output_file_path)
-                    if filename == "icon0.png":
-                        icon0 = True
-                except ValueError as e:
-                    pass
-                
-            if icon0:
-                icon0_path = os.path.join(output_folder_path, "icon0.png")
-                self.display_img(icon0_path)
-            sfo_path = os.path.join(output_folder_path, "param.sfo")
-
-            if os.path.exists(sfo_path):
-                sfo_info = self.sfo_offset_map(sfo_path)
-                self.update_tree_with_sfo_info(sfo_info)
-
-            # Update hex section
-            self.update_hex_view()
+    def browse_pkg(self, entry_widget=None):
+        filename, _ = QFileDialog.getOpenFileName(self, "Select PKG file", "", "PKG files (*.pkg)")
+        if filename:
+            self.current_pkg = filename
+            self.update_pkg_entries()
+            self.file_path = filename
+            try:
+                self.package = Package(self.file_path)
+                self.process_pkg()
+            except Exception as e:
+                Logger.log_error(f"Errore durante il caricamento del file PKG: {e}")
+                QMessageBox.critical(self, "Errore", f"Errore durante il caricamento del file PKG: {e}")
 
     def update_hex_view(self):
         if self.package:
@@ -465,7 +653,6 @@ class PS4PKGTool(QMainWindow):
     def display_img(self, image_path):
         pixmap = QPixmap(image_path)
         self.image_label.setPixmap(pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-
     def sfo_offset_map(self, file_path):
         with open(file_path, 'rb') as file:
             sfo = file.read()
@@ -524,15 +711,7 @@ class PS4PKGTool(QMainWindow):
     def update_tree_with_sfo_info(self, sfo_dict):
         self.tree.clear()
         for key, value in sfo_dict.items():
-            out_data = re.sub(Hexpattern, '', value)
-            if out_data == "gd":
-                out_data = "Game(gd)"
-            elif out_data == "gp":
-                out_data = "Patch(gp)"
-            elif out_data == "ac":
-                out_data = "Addon(ac)"
-        
-            QTreeWidgetItem(self.tree, [key, out_data])
+            QTreeWidgetItem(self.tree, [key, value])
 
     def pkg_size_fmt(self, sbytes):
         size_fmt = ["bytes", "KB", "MB", "GB"]
@@ -588,6 +767,17 @@ class PS4PKGTool(QMainWindow):
         QMessageBox.information(self, "Replace", "Replacement completed")
         self.update_hex_view()
 
+    def update_extract_log(self, message):
+        self.extract_log.append(message)
+    
+    def update_hex_view(self):
+        if self.package:
+            with open(self.package.original_file, 'rb') as f:
+                hex_data = f.read(1024)  # Read first 1024 bytes
+            hex_view = ' '.join([f'{b:02X}' for b in hex_data])
+            self.hex_viewer.setPlainText(hex_view)
+            self.hex_editor.setPlainText(hex_view)
+
 def start_gui(run_command_callback):
     app = QApplication(sys.argv)
     app.setStyle('Fusion')  # Use Fusion style for a modern look
@@ -595,6 +785,8 @@ def start_gui(run_command_callback):
     window.run_command_callback = run_command_callback
     window.show()
     sys.exit(app.exec_())
-
-if __name__ == "__main__":
-    start_gui(lambda cmd, pkg, file, out, update_info: print(f"Command: {cmd}, PKG: {pkg}, File: {file}, Out: {out}"))
+    
+    def display_img(self, image_path):
+        pixmap = QPixmap(image_path)
+        self.image_label.setPixmap(pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+    

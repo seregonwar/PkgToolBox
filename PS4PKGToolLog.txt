@@ -1,0 +1,253 @@
+2024-09-26 21:32:55 : [ERR] Error extracting trophy: unpack requires a buffer of 4 bytes
+2024-09-26 23:21:15 : [INFO] Creating PS4PKGToolTemp directory...
+2024-09-26 23:21:15 : [INFO] Settings loaded.
+2024-09-26 23:21:15 : [INFO] PKG Directory Settings form is shown.
+2024-09-26 23:21:16 : [INFO] Application started with loaded settings.
+2024-09-26 23:22:46 : [INFO] Settings loaded.
+2024-09-26 23:22:46 : [INFO] PKG Directory Settings form is shown.
+2024-09-26 23:22:46 : [INFO] Application started with loaded settings.
+2024-09-26 23:22:49 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-26 23:22:51 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-26 23:22:51 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-26 23:23:06 : [ERR] Generic error during execution of command: extract
+string indices must be integers, not 'str'
+2024-09-26 23:33:46 : [INFO] Settings loaded.
+2024-09-26 23:33:46 : [INFO] PKG Directory Settings form is shown.
+2024-09-26 23:33:46 : [INFO] Application started with loaded settings.
+2024-09-26 23:33:53 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-26 23:34:05 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-26 23:34:13 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-26 23:34:13 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-26 23:34:41 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-26 23:36:12 : [ERR] Generic error during execution of command: extract
+string indices must be integers, not 'str'
+2024-09-26 23:40:03 : [INFO] Settings loaded.
+2024-09-26 23:40:03 : [INFO] PKG Directory Settings form is shown.
+2024-09-26 23:40:03 : [INFO] Application started with loaded settings.
+2024-09-26 23:40:09 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-26 23:40:10 : [INFO] Executed command: info on PKG: C:/Users/marco/Downloads/IV0000-BREW00031_00-PATCHINSTA000000.pkg, File: , Output: 
+2024-09-26 23:40:10 : [INFO] Info command executed on PKG: C:/Users/marco/Downloads/IV0000-BREW00031_00-PATCHINSTA000000.pkg
+2024-09-26 23:40:25 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-26 23:40:33 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-26 23:40:35 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-26 23:40:50 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-26 23:40:50 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-26 23:40:59 : [ERR] Generic error during execution of command: extract
+string indices must be integers, not 'str'
+2024-09-26 23:41:11 : [ERR] Generic error during execution of command: extract
+string indices must be integers, not 'str'
+2024-09-26 23:41:54 : [WARN] File already exists during execution of command: dump - File with matching name already exists: D:/Gta5 dump\1
+2024-09-26 23:42:11 : [INFO] Settings loaded.
+2024-09-26 23:42:11 : [INFO] PKG Directory Settings form is shown.
+2024-09-26 23:42:11 : [INFO] Application started with loaded settings.
+2024-09-26 23:42:20 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-26 23:42:21 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-26 23:42:21 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-26 23:45:58 : [ERR] Generic error during execution of command: extract
+string indices must be integers, not 'str'
+2024-09-26 23:49:31 : [INFO] Settings loaded.
+2024-09-26 23:49:31 : [INFO] PKG Directory Settings form is shown.
+2024-09-26 23:49:31 : [INFO] Application started with loaded settings.
+2024-09-26 23:49:46 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-26 23:49:48 : [ERR] Generic error during execution of command: extract
+string indices must be integers, not 'str'
+2024-09-26 23:50:03 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-26 23:50:18 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-26 23:50:18 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-26 23:50:37 : [ERR] Generic error during execution of command: extract
+string indices must be integers, not 'str'
+2024-09-26 23:50:44 : [ERR] Generic error during execution of command: extract
+[Errno 13] Permission denied: 'D:/Gta5 dump'
+2024-09-26 23:52:21 : [INFO] Settings loaded.
+2024-09-26 23:52:21 : [INFO] PKG Directory Settings form is shown.
+2024-09-26 23:52:21 : [INFO] Application started with loaded settings.
+2024-09-26 23:52:27 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-26 23:52:28 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-26 23:52:28 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-26 23:52:36 : [ERR] Permission error during execution of command: extract
+[Errno 13] Permission denied: 'D:/Gta5 dump'
+2024-09-26 23:52:44 : [ERR] Permission error during execution of command: extract
+[Errno 13] Permission denied: 'C:/Users/marco/Documents/virus saga'
+2024-09-26 23:53:33 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-26 23:55:12 : [ERR] Permission error during execution of command: extract
+[Errno 13] Permission denied: 'C:/Users/marco/Documents/virus saga'
+2024-09-26 23:57:52 : [INFO] Settings loaded.
+2024-09-26 23:57:52 : [INFO] PKG Directory Settings form is shown.
+2024-09-26 23:57:53 : [INFO] Application started with loaded settings.
+2024-09-26 23:58:02 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-26 23:58:17 : [INFO] Application started with loaded settings.
+2024-09-27 00:03:45 : [INFO] Settings loaded.
+2024-09-27 00:03:45 : [INFO] PKG Directory Settings form is shown.
+2024-09-27 00:03:45 : [INFO] Application started with loaded settings.
+2024-09-27 00:03:50 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 00:04:07 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 00:04:07 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 00:04:18 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 00:16:41 : [INFO] Settings loaded.
+2024-09-27 00:16:41 : [INFO] PKG Directory Settings form is shown.
+2024-09-27 00:16:41 : [INFO] Application started with loaded settings.
+2024-09-27 00:16:50 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 00:16:52 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 00:16:52 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 00:16:58 : [ERR] Permission error during execution of command: extract
+[Errno 13] Permission denied: 'D:/Gta5 dump'
+2024-09-27 00:17:22 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 00:18:41 : [INFO] Settings loaded.
+2024-09-27 00:18:41 : [INFO] PKG Directory Settings form is shown.
+2024-09-27 00:18:42 : [INFO] Application started with loaded settings.
+2024-09-27 00:18:49 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 00:18:50 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 00:18:50 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 00:19:01 : [ERR] Permission error during execution of command: extract
+[Errno 13] Permission denied: 'D:/Gta5 dump'
+2024-09-27 00:19:09 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 00:31:24 : [INFO] Settings loaded.
+2024-09-27 00:31:24 : [INFO] PKG Directory Settings form is shown.
+2024-09-27 00:31:25 : [INFO] Application started with loaded settings.
+2024-09-27 00:31:54 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 00:31:56 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 00:31:56 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 00:32:29 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 00:32:30 : [INFO] Executed command: info on PKG: C:/Users/marco/Downloads/IV0000-BREW00031_00-PATCHINSTA000000.pkg, File: , Output: 
+2024-09-27 00:32:30 : [INFO] Info command executed on PKG: C:/Users/marco/Downloads/IV0000-BREW00031_00-PATCHINSTA000000.pkg
+2024-09-27 16:46:59 : [INFO] Settings loaded.
+2024-09-27 16:46:59 : [INFO] PKG Directory Settings form is shown.
+2024-09-27 16:46:59 : [INFO] Application started with loaded settings.
+2024-09-27 16:47:11 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 16:47:15 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 16:47:15 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 16:47:33 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 16:50:23 : [INFO] Settings loaded.
+2024-09-27 16:50:23 : [INFO] PKG Directory Settings form is shown.
+2024-09-27 16:50:24 : [INFO] Application started with loaded settings.
+2024-09-27 16:50:34 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 16:52:03 : [INFO] Settings loaded.
+2024-09-27 16:52:03 : [INFO] PKG Directory Settings form is shown.
+2024-09-27 16:52:03 : [INFO] Application started with loaded settings.
+2024-09-27 16:52:10 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 16:52:21 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 16:52:24 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 16:52:28 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 16:52:28 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 16:54:15 : [INFO] Settings loaded.
+2024-09-27 16:54:15 : [INFO] PKG Directory Settings form is shown.
+2024-09-27 16:54:15 : [INFO] Application started with loaded settings.
+2024-09-27 16:54:26 : [INFO] Settings loaded.
+2024-09-27 16:54:26 : [INFO] PKG Directory Settings form is shown.
+2024-09-27 16:54:26 : [INFO] Application started with loaded settings.
+2024-09-27 16:54:40 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 17:57:16 : [INFO] Impostazioni caricate.
+2024-09-27 17:57:16 : [INFO] La finestra delle impostazioni delle directory PKG è stata mostrata.
+2024-09-27 17:57:16 : [INFO] Application started with loaded settings.
+2024-09-27 17:57:22 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 17:57:23 : [INFO] Eseguito comando: info su PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 17:57:23 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 17:57:27 : [ERR] Generic error during execution of command: extract
+string indices must be integers, not 'str'
+2024-09-27 17:57:32 : [ERR] Permission error during execution of command: extract
+[Errno 13] Permission denied: 'D:/Gta5 dump'
+2024-09-27 17:57:39 : [WARN] Il file esiste già durante l'esecuzione del comando: dump - File with matching name already exists: D:/Gta5 dump\1
+2024-09-27 17:57:48 : [INFO] Impostazioni caricate.
+2024-09-27 17:57:48 : [INFO] La finestra delle impostazioni delle directory PKG è stata mostrata.
+2024-09-27 17:57:48 : [INFO] Application started with loaded settings.
+2024-09-27 17:57:53 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 17:58:15 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 19:03:00 : [INFO] Impostazioni caricate.
+2024-09-27 19:03:00 : [INFO] La finestra delle impostazioni delle directory PKG è stata mostrata.
+2024-09-27 19:03:01 : [INFO] Application started with loaded settings.
+2024-09-27 19:03:17 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 19:05:04 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 19:05:49 : [INFO] Impostazioni caricate.
+2024-09-27 19:05:49 : [INFO] La finestra delle impostazioni delle directory PKG è stata mostrata.
+2024-09-27 19:05:49 : [INFO] Application started with loaded settings.
+2024-09-27 19:06:06 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 19:06:45 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 19:08:23 : [INFO] Impostazioni caricate.
+2024-09-27 19:08:23 : [INFO] La finestra delle impostazioni delle directory PKG è stata mostrata.
+2024-09-27 19:08:24 : [INFO] Application started with loaded settings.
+2024-09-27 19:08:32 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 19:44:37 : [INFO] Settings loaded.
+2024-09-27 19:44:37 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 19:44:38 : [INFO] Application started with loaded settings.
+2024-09-27 19:45:21 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 19:46:05 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 19:46:11 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 19:46:11 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 20:19:35 : [INFO] Settings loaded.
+2024-09-27 20:19:35 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 20:19:35 : [INFO] Application started with loaded settings.
+2024-09-27 20:19:39 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 20:19:41 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 20:19:41 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 20:48:51 : [INFO] Settings loaded.
+2024-09-27 20:48:51 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 20:48:51 : [INFO] Application started with loaded settings.
+2024-09-27 20:48:56 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 20:48:59 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 20:48:59 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 20:57:18 : [INFO] Settings loaded.
+2024-09-27 20:57:18 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 20:57:18 : [INFO] Application started with loaded settings.
+2024-09-27 20:57:25 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 20:57:27 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 20:57:27 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 20:58:45 : [ERR] Generic error during execution of command: extract
+string indices must be integers, not 'str'
+2024-09-27 20:58:58 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 20:59:14 : [INFO] Settings loaded.
+2024-09-27 20:59:14 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 20:59:15 : [INFO] Application started with loaded settings.
+2024-09-27 20:59:18 : [ERR] Error loading TRP file: [Errno 2] No such file or directory: 'path/to/your/actual/file.trp'
+2024-09-27 20:59:20 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 20:59:20 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 21:02:57 : [INFO] Settings loaded.
+2024-09-27 21:02:57 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 21:02:57 : [INFO] Application started with loaded settings.
+2024-09-27 21:03:06 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 21:03:06 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 21:03:25 : [INFO] Executed command: info on PKG: C:/Users/marco/Downloads/IV0000-BREW00031_00-PATCHINSTA000000.pkg, File: , Output: 
+2024-09-27 21:03:25 : [INFO] Info command executed on PKG: C:/Users/marco/Downloads/IV0000-BREW00031_00-PATCHINSTA000000.pkg
+2024-09-27 21:07:44 : [INFO] Settings loaded.
+2024-09-27 21:07:44 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 21:07:44 : [INFO] Application started with loaded settings.
+2024-09-27 21:08:26 : [INFO] Settings loaded.
+2024-09-27 21:08:26 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 21:08:26 : [INFO] Application started with loaded settings.
+2024-09-27 21:11:32 : [INFO] Settings loaded.
+2024-09-27 21:11:32 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 21:11:32 : [INFO] Application started with loaded settings.
+2024-09-27 21:12:06 : [INFO] Settings loaded.
+2024-09-27 21:12:06 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 21:12:06 : [INFO] Application started with loaded settings.
+2024-09-27 21:14:41 : [INFO] Settings loaded.
+2024-09-27 21:14:41 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 21:14:41 : [INFO] Application started with loaded settings.
+2024-09-27 21:14:45 : [ERR] Errore durante il caricamento del file PKG: 'int' object has no attribute 'hex'
+2024-09-27 21:14:56 : [ERR] Generic error during execution of command: info
+'int' object has no attribute 'hex'
+2024-09-27 21:16:29 : [INFO] Settings loaded.
+2024-09-27 21:16:29 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 21:16:29 : [INFO] Application started with loaded settings.
+2024-09-27 21:16:40 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 21:16:40 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 21:18:35 : [INFO] Settings loaded.
+2024-09-27 21:18:35 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 21:18:35 : [INFO] Application started with loaded settings.
+2024-09-27 21:18:47 : [INFO] Executed command: info on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg, File: , Output: 
+2024-09-27 21:18:47 : [INFO] Info command executed on PKG: D:/UP1004-CUSA00419_00-GTAVDIGITALDOWNL-A0100-151FPKG.pkg
+2024-09-27 21:19:20 : [ERR] Error loading TRP file: unpack requires a buffer of 4 bytes
+2024-09-27 21:33:57 : [INFO] Settings loaded.
+2024-09-27 21:33:57 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 21:33:57 : [INFO] Application started with loaded settings.
+2024-09-27 21:34:03 : [INFO] Executed command: info on PKG: D:/Grand Theft Auto V [CUSA00419].pkg, File: , Output: 
+2024-09-27 21:34:03 : [INFO] Info command executed on PKG: D:/Grand Theft Auto V [CUSA00419].pkg
+2024-09-27 21:34:11 : [INFO] Executed command: info on PKG: D:/Grand Theft Auto V [CUSA00419].pkg, File: , Output: 
+2024-09-27 21:34:11 : [INFO] Info command executed on PKG: D:/Grand Theft Auto V [CUSA00419].pkg
+2024-09-27 21:37:44 : [INFO] Settings loaded.
+2024-09-27 21:37:44 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 21:38:01 : [INFO] Settings loaded.
+2024-09-27 21:38:01 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 21:38:01 : [INFO] Application started with loaded settings.
+2024-09-27 21:40:29 : [INFO] Settings loaded.
+2024-09-27 21:40:29 : [INFO] PKG Directory Settings window displayed.
+2024-09-27 21:40:29 : [INFO] Application started with loaded settings.

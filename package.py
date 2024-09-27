@@ -43,6 +43,7 @@ class Package:
 
     def __init__(self, file: str):
         self.original_file = file
+        self.pkg_info = {}
         if os.path.isfile(file):
             header_format = ">5I2H2I4Q36s12s12I"
             with open(file, "rb") as fp:
@@ -68,6 +69,7 @@ class Package:
                     self.pkg_iro_tag = IROTag(self.pkg_iro_tag)
 
                 self.__load_files(fp)
+                self.pkg_info = self.extract_pkg_info()
 
     def __load_files(self, fp):
         old_pos = fp.tell()
@@ -174,3 +176,65 @@ class Package:
             self.extract(key, out)
 
         return "Dump completed successfully"
+
+    def extract_pkg_info(self):
+        sfo_info = {
+            "pkg_magic": f"0x{format(self.pkg_magic, 'X')}",
+            "pkg_type": f"0x{format(self.pkg_type, 'X')}",
+            "pkg_0x008": self.pkg_0x008,
+            "pkg_file_count": self.pkg_file_count,
+            "pkg_entry_count": self.pkg_entry_count,
+            "pkg_sc_entry_count": self.pkg_sc_entry_count,
+            "pkg_entry_count_2": self.pkg_entry_count_2,
+            "pkg_table_offset": f"0x{format(self.pkg_table_offset, 'X')}",
+            "pkg_entry_data_size": self.pkg_entry_data_size,
+            "pkg_body_offset": f"0x{format(self.pkg_body_offset, 'X')}",
+            "pkg_body_size": self.pkg_body_size,
+            "pkg_content_offset": f"0x{format(self.pkg_content_offset, 'X')}",
+            "pkg_content_size": self.pkg_content_size,
+            "pkg_content_id": self.pkg_content_id,
+            "pkg_padding": self.pkg_padding,
+            "pkg_drm_type": DRMType(self.pkg_drm_type).name,
+            "pkg_content_type": self.pkg_content_type.name,
+            "pkg_content_flags": self.pkg_content_flags,
+            "pkg_promote_size": self.pkg_promote_size,
+            "pkg_version_date": self.pkg_version_date,
+            "pkg_version_hash": self.pkg_version_hash.hex() if isinstance(self.pkg_version_hash, bytes) else f"0x{format(self.pkg_version_hash, 'X')}",
+            "pkg_0x088": f"0x{format(self.pkg_0x088, 'X')}",
+            "pkg_0x08C": f"0x{format(self.pkg_0x08C, 'X')}",
+            "pkg_0x090": f"0x{format(self.pkg_0x090, 'X')}",
+            "pkg_0x094": f"0x{format(self.pkg_0x094, 'X')}",
+            "pkg_iro_tag": self.pkg_iro_tag.name if self.pkg_iro_tag else "N/A",
+            "pkg_drm_type_version": self.pkg_drm_type_version,
+            "Main Entry 1 Hash": self.digests[0],
+            "Main Entry 2 Hash": self.digests[1],
+            "Digest Table Hash": self.digests[2],
+            "Main Table Hash": self.digests[3],
+            "DESTINATION_COUNTRY": self.get_destination_country(),  # Aggiunto il paese di destinazione
+            "icon0": self.extract_icon0()  # Aggiunto per estrarre l'icona
+        }
+        return sfo_info
+
+    def get_destination_country(self):
+        # Logica per estrarre il paese di destinazione
+        try:
+            with open(self.original_file, 'rb') as f:
+                f.seek(self.pkg_table_offset)  # Posizione ipotetica
+                # Lettura ipotetica del paese di destinazione
+                # La logica reale dipenderà dal formato del file PKG
+                country_code = f.read(2).decode('utf-8')
+                return country_code
+        except Exception as e:
+            return "Unknown"
+
+    def extract_icon0(self):
+        # Logica per estrarre l'icona (icon0.png)
+        try:
+            icon0_file = next(file for file in self._files.values() if file.get("name") == "icon0.png")
+            with open(self.original_file, 'rb') as f:
+                f.seek(icon0_file["offset"])
+                return f.read(icon0_file["size"])
+        except StopIteration:
+            return None
+        except Exception as e:
+            return None
