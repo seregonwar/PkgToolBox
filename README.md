@@ -4,7 +4,7 @@
 
 **Contributions to the development are welcome!** If you have any ideas 💡 on how to improve the code, feel free to:
 
-- ✉️ Message me privately on [X (Twitter)](https://twitter.com/)
+- ✉️ Message me privately on [X (Twitter)](https://twitter.com/SeregonWar)
 - 🔧 Open a [Pull Request](https://github.com/)
 - 🐛 Report an issue through [Issues](https://github.com/)
 
