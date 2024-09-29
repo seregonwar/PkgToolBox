@@ -29,7 +29,7 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
 - **Integration with OpenOrbis**: Utilize `orbis-pub-cmd.exe` for advanced PKG manipulation.
 
 ## Requirements
-- Python 3.x
+- Python 3.13+
 - PyQt5
 - pyinstaller and cx_freeze (for creating the executable)
 - `orbis-pub-cmd.exe` (included in the OpenOrbis toolchain)
