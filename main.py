@@ -1,9 +1,13 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import logging
 import sys
 import os
 import ctypes
 import argparse
-from Utilities.Trophy.Utilities import Utilities
+from Utilities.Trophy import Archiver, TrophyFile, TRPCreator, TRPReader
 from package import Package
 from gui import start_gui
 import io
@@ -13,12 +17,9 @@ import json
 from Utilities import (
     Logger, 
     SettingsManager, 
-    TRPReader, 
-    Archiver, 
-    TrophyFile, 
-    TRPCreator,
     Utils
 )
+from repack import Repack
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -75,7 +76,7 @@ def load_settings(file_path):
     with open(file_path, 'r') as f:
         settings = json.load(f)
     app_settings = SettingsManager.load_settings(file_path)
-    Logger.log_information("Settings loaded.")
+    logging.info("Settings loaded.")
     return app_settings
 
 def choose_initial_form():
@@ -90,14 +91,32 @@ class Main:
         pass
 
     def show(self):
-        Logger.log_information("Main window displayed.")
+        logging.info("Main window displayed.")
 
 class PKGDirectorySettings:
     def __init__(self):
         pass
 
     def show(self):
-        Logger.log_information("PKG Directory Settings window displayed.")
+        logging.info("PKG Directory Settings window displayed.")
+
+def extract_necessary_files(package, temp_dir):
+    """
+    Extract necessary files (like icon0.png) from the package and save them in a temporary directory.
+    """
+    necessary_files = ['icon0.png', 'pic0.png', 'pic1.png']
+    extracted_files = {}
+
+    for file_name in necessary_files:
+        try:
+            file_path = os.path.join(temp_dir, file_name)
+            with open(file_path, 'wb') as f:
+                package.extract_file(file_name, f)
+            extracted_files[file_name] = file_path
+        except Exception as e:
+            logging.warning(f"File {file_name} not found in the package: {e}")
+    
+    return extracted_files
 
 def execute_command(cmd, pkg, file, out, update_callback_info):
     logging.debug(f"execute_command called with cmd={cmd}, pkg={pkg}, file={file}, out={out}")
@@ -111,7 +130,14 @@ def execute_command(cmd, pkg, file, out, update_callback_info):
     if (args.cmd == "extract" or args.cmd == "dump") and not args.out:
         raise ValueError("--out is required for the extract and dump commands")
 
-    target = Package(args.pkg)
+    try:
+        target = Package(args.pkg)
+    except FileNotFoundError as e:
+        logging.error(f"Error loading PKG file: {e}")
+        raise ValueError(f"Error loading PKG file: {e}")
+
+    temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PS4PKGToolTemp")
+    extracted_files = extract_necessary_files(target, temp_dir)
 
     try:
         if args.cmd == "info":
@@ -131,52 +157,48 @@ def execute_command(cmd, pkg, file, out, update_callback_info):
                     key, value = line.split(':', 1)
                     info_dict[key.strip()] = value.strip()
             
-            # Search for the image
-            image_data = None
-            image_files = ['icon0.png', 'pic0.png', 'pic1.png']
-            for img_file in image_files:
-                try:
-                    with io.BytesIO() as temp_buffer:
-                        target.extract(img_file, temp_buffer)
-                        image_data = temp_buffer.getvalue()
-                    break
-                except ValueError:
-                    continue
-            
-            if image_data:
-                info_dict['icon0'] = image_data
+            # Add extracted files to the info_dict
+            for file_name, file_path in extracted_files.items():
+                if os.path.exists(file_path):
+                    with open(file_path, 'rb') as f:
+                        info_dict[file_name] = f.read()
             
             # Extract country information
             country_info = target.extract_pkg_info().get("COUNTRY", "Unknown")
             info_dict['country'] = country_info
             
             update_callback_info(info_dict)
-            Logger.log_information(f"Executed command: {cmd} on PKG: {pkg}, File: {file}, Output: {out}")
+            logging.info(f"Executed command: {cmd} on PKG: {pkg}, File: {file}, Output: {out}")
             return info_output  # Return the output
         elif args.cmd == "extract":
             file_info = target.get_file_info(args.file)
             extract_file(args.pkg, file_info, args.out, update_callback_info)
-            Logger.log_information(f"Executed command: {cmd} on PKG: {pkg}, File: {file}, Output: {out}")
+            logging.info(f"Executed command: {cmd} on PKG: {pkg}, File: {file}, Output: {out}")
             return f"File extracted: {args.file}"
         elif args.cmd == "inject":
             file_info = target.get_file_info(args.file)
             injected_size = inject_file(args.pkg, file_info, args.out)
-            Logger.log_information(f"Executed command: {cmd} on PKG: {pkg}, File: {file}, Input: {out}")
+            logging.info(f"Executed command: {cmd} on PKG: {pkg}, File: {file}, Input: {out}")
             return f"Injected {injected_size} bytes"
         elif args.cmd == "modify":
             modified_size = modify_file_header(args.pkg, int(args.file, 16), args.out.encode())
-            Logger.log_information(f"Executed command: {cmd} on PKG: {pkg}, Offset: {file}, New Data: {out}")
+            logging.info(f"Executed command: {cmd} on PKG: {pkg}, Offset: {file}, New Data: {out}")
             return f"Modified {modified_size} bytes"
         elif args.cmd == "dump":
-            target.dump(args.out)
-            Logger.log_information(f"Executed command: {cmd} on PKG: {pkg}, Output: {out}")
-            return "Dump completed successfully"
+            try:
+                # Use a new function for safe dumping
+                safe_dump(target, args.out, update_callback_info)
+                logging.info(f"Executed command: {cmd} on PKG: {pkg}, Output: {out}")
+                return "Dump completed successfully"
+            except Exception as e:
+                logging.error(f"Error during dump: {e}")
+                raise ValueError(f"Error during dump: {e}")
         elif args.cmd == "trophy":
             trophy_file = TrophyFile(args.pkg)
             try:
                 trophy_file.load(args.pkg)
                 if not trophy_file._iserror:
-                    Logger.log_information("Trophy file loaded successfully.")
+                    logging.info("Trophy file loaded successfully.")
                     update_callback_info({
                         "Title": trophy_file.trphy.title,
                         "NPCommID": trophy_file.trphy.npcomm_id,
@@ -184,19 +206,36 @@ def execute_command(cmd, pkg, file, out, update_callback_info):
                     })
                     return "Trophy file loaded successfully"
                 else:
-                    Logger.log_error("Error loading the Trophy file.", trophy_file._error)
+                    logging.error("Error loading the Trophy file.", trophy_file._error)
                     raise ValueError("Error loading the Trophy file.")
             except Exception as e:
-                Logger.log_error(f"Error loading the Trophy file: {e}")
+                logging.error(f"Error loading the Trophy file: {e}")
                 raise ValueError(f"Error loading the Trophy file: {e}")
+        elif args.cmd == "reverse_dump":
+            try:
+                result = target.reverse_dump(args.out, update_callback_info)
+                logging.info(f"Executed command: {cmd} on PKG: {pkg}, Input Directory: {out}")
+                return result
+            except Exception as e:
+                logging.error(f"Error during reverse dump: {e}")
+                raise ValueError(f"Error during reverse dump: {e}")
+        elif args.cmd == "repack":
+            try:
+                repacker = Repack(args.pkg, target.pkg_table_offset, target.pkg_entry_count, target.files)
+                result = repacker.repack(args.file, args.out, "repack.log", update_callback_info)
+                logging.info(f"Executed command: {cmd} on PKG: {pkg}, Input Directory: {file}, Output: {out}")
+                return result
+            except Exception as e:
+                logging.error(f"Error during repack: {e}")
+                raise ValueError(f"Error during repack: {e}")
     except FileExistsError as e:
-        Logger.log_warning(f"The file already exists during command execution: {cmd} - {e}")
+        logging.warning(f"The file already exists during command execution: {cmd} - {e}")
         raise
     except ValueError as e:
-        Logger.log_error(f"Value error during command execution: {cmd} - {e}")
+        logging.error(f"Value error during command execution: {cmd} - {e}")
         raise
     except Exception as e:
-        Logger.log_error(f"Generic error during command execution: {cmd} - {e}")
+        logging.error(f"Generic error during command execution: {cmd} - {e}")
         raise
 
     return None  # Handle unexpected cases
@@ -207,21 +246,59 @@ def is_admin():
     except:
         return False
 
-def run_as_admin():
-    if not is_admin():
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
-        sys.exit()
-
 def main():
     pass
 
 if __name__ == "__main__":
-    run_as_admin()
-    
     temp_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PS4PKGToolTemp")
     settings_file_path = os.path.join(temp_directory, "Settings.conf")
 
     check_settings_file_presence()
-    app_settings = load_settings(settings_file_path)
-    choose_initial_form()
-    start_gui(execute_command)
+    app_settings = SettingsManager.load_settings(settings_file_path)
+    start_gui(execute_command, temp_directory)
+
+    # Add opening a terminal for debugging
+    if os.name == 'nt':
+        os.system('start cmd /K')  # Windows
+    else:
+        os.system('x-terminal-emulator -e bash')  # Linux
+
+def safe_dump(package, output_dir, update_callback):
+    """
+    Perform a safe dump of the package, verifying the integrity of each file.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    
+    for file_info in package.files():
+        file_path = os.path.join(output_dir, file_info.name)
+        
+        # Extract the file
+        with open(file_path, 'wb') as f:
+            package.extract_file(file_info.name, f)
+        
+        # Verify the integrity of the extracted file
+        if not verify_file_integrity(package, file_info, file_path):
+            raise ValueError(f"Integrity error in file: {file_info.name}")
+        
+        update_callback({"status": f"Extracted: {file_info.name}"})
+    
+    logging.info("Dump completed successfully and integrity verified.")
+
+def verify_file_integrity(package, file_info, extracted_path):
+    """
+    Verify the integrity of the extracted file by comparing it with the original in the package.
+    """
+    with open(extracted_path, 'rb') as f:
+        extracted_data = f.read()
+    
+    original_data = package.read_file(file_info.name)
+    
+    if len(extracted_data) != len(original_data):
+        logging.error(f"File size mismatch: {file_info.name}")
+        return False
+    
+    if extracted_data != original_data:
+        logging.error(f"File content mismatch: {file_info.name}")
+        return False
+    
+    return True
