@@ -1,5 +1,8 @@
 # PS4 PKG Tool Box
 
+## Donation
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/seregon)
+
 ## 🤝 Contributions Welcome!
 
 **Contributions to the development are welcome!** If you have any ideas 💡 on how to improve the code, feel free to:
