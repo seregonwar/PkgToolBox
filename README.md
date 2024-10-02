@@ -1,4 +1,4 @@
-# PS4 PKG Tool Box
+# PKG Tool Box
 
 ## Donation
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/seregon)
