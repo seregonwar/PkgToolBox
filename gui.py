@@ -880,42 +880,53 @@ class PS4PKGTool(QMainWindow):
             QMessageBox.critical(self, "Error", f"An unexpected error occurred: {str(e)}")
 
     def show_previous_wallpaper(self):
-        current_row = self.wallpaper_list.currentRow()
-        if current_row > 0:
-            self.wallpaper_list.setCurrentRow(current_row - 1)
-            self.display_selected_wallpaper(self.wallpaper_list.currentItem())
+        current_item = self.wallpaper_tree.currentItem()  
+        if current_item:
+            current_index = self.wallpaper_tree.indexOfTopLevelItem(current_item)
+            if current_index > 0:
+                previous_item = self.wallpaper_tree.topLevelItem(current_index - 1)
+                self.wallpaper_tree.setCurrentItem(previous_item)
+                self.display_selected_wallpaper(previous_item, 0)
 
     def show_next_wallpaper(self):
-        try:
-            current_row = self.wallpaper_list.currentRow()
-            if current_row < self.wallpaper_list.count() - 1:
-                self.wallpaper_list.setCurrentRow(current_row + 1)
-                self.display_selected_wallpaper(self.wallpaper_list.currentItem())
-        except Exception as e:
-            logging.error(f"Error during the display of the next wallpaper: {e}")
-            QMessageBox.critical(self, "Error", f"An error occurred: {e}")
+        current_item = self.wallpaper_tree.currentItem()  
+        if current_item:
+            current_index = self.wallpaper_tree.indexOfTopLevelItem(current_item)
+            if current_index < self.wallpaper_tree.topLevelItemCount() - 1:
+                next_item = self.wallpaper_tree.topLevelItem(current_index + 1)
+                self.wallpaper_tree.setCurrentItem(next_item)
+                self.display_selected_wallpaper(next_item, 0)
 
     def show_fullscreen_wallpaper(self):
-        current_item = self.wallpaper_tab.currentItem()
-        if current_item:
-            file_info = next((f for f in self.wallpaper_files if f["name"] == current_item.text()), None)
-            if file_info:
-                pixmap = QPixmap()
-                pixmap.loadFromData(self.package.read_file(file_info["id"]))
-                fullscreen_dialog = QDialog(self)
-                fullscreen_dialog.setWindowTitle("Fullscreen Wallpaper")
-                layout = QVBoxLayout(fullscreen_dialog)
-                label = QLabel()
-                label.setPixmap(pixmap.scaled(fullscreen_dialog.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
-                layout.addWidget(label)
-                fullscreen_dialog.showFullScreen()
+        try:
+            current_item = self.wallpaper_tree.currentItem()  
+            if current_item:
+                file_name = current_item.text(0)
+                file_info = next((f for f in self.package.files.values() if f.get("name") == file_name), None)
+                if file_info:
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(self.package.read_file(file_info["id"]))
+                    
+                    fullscreen_dialog = QDialog(self)
+                    fullscreen_dialog.setWindowTitle("Fullscreen Wallpaper")
+                    layout = QVBoxLayout(fullscreen_dialog)
+                    label = QLabel()
+                    
+                    screen_size = QApplication.primaryScreen().size()
+                    label.setPixmap(pixmap.scaled(screen_size, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                    
+                    layout.addWidget(label)
+                    fullscreen_dialog.showFullScreen()
+        except Exception as e:
+            Logger.log_error(f"Error displaying fullscreen wallpaper: {str(e)}")
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
 
     def modify_wallpaper(self):
-        selected_items = self.wallpaper_list.selectedItems()  
+        selected_items = self.wallpaper_tree.selectedItems()  # Usa il widget corretto
         if selected_items:
             item = selected_items[0]
-            file_name = item.text()
-            file_info = next((f for f in self.wallpaper_files if f["name"] == file_name), None)
+            file_name = item.text(0)
+            file_info = next((f for f in self.package.files.values() if f.get("name") == file_name), None)
             if file_info:
                 # Extract the file temporarily
                 temp_file_path = os.path.join(self.temp_directory, file_name)
@@ -945,7 +956,7 @@ class PS4PKGTool(QMainWindow):
                         self.package.update_file(file_info["id"], modified_data)
                         
                         # Update the display
-                        self.display_selected_wallpaper(item)
+                        self.display_selected_wallpaper(item, 0)
                         QMessageBox.information(self, "Success", "Wallpaper updated successfully")
                     
                     # Remove the temporary file
@@ -1391,18 +1402,18 @@ class PS4PKGTool(QMainWindow):
             trp_creator.set_title(title)
             trp_creator.set_npcommid(npcommid)
             
-            # Usa i file caricati in self.trophy_files
+            # Use the uploaded files in self.trophy_files
             for trophy_file in self.trophy_files:
                 trp_creator._trophyList.append(trophy_file)
             
             output_path, _ = QFileDialog.getSaveFileName(self, "Save TRP File", "", "TRP files (*.trp)")
             if output_path:
                 trp_creator.Create(output_path, [tf.name for tf in self.trophy_files])
-                return f"File TRP creato: {output_path}"
+                return f"TRP file created: {output_path}"
             else:
-                return "Creazione TRP annullata"
+                return "TRP creation cancelled"
         except Exception as e:
-            Logger.log_error(f"Errore durante la creazione del TRP: {e}")
+            Logger.log_error(f"Error during TRP creation: {e}")
             raise
 
     def load_wallpapers(self):
@@ -1496,7 +1507,7 @@ class PS4PKGTool(QMainWindow):
             with open(output_path, 'wb') as out_file:
                 out_file.write(data)
             
-            # Estrai sempre icon0.png nella directory del PKG
+            # Extract always icon0.png in the PKG directory
             if file_info['name'].lower() == 'icon0.png':
                 icon_path = os.path.join(os.path.dirname(pkg_path), "icon0.png")
                 with open(icon_path, 'wb') as icon_file:
@@ -1536,7 +1547,7 @@ class PS4PKGTool(QMainWindow):
                         pil_image = Image.open(io.BytesIO(icon_data))
                         Logger.log_information(f"Icon loaded with PIL: format={pil_image.format}, size={pil_image.size}, mode={pil_image.mode}")
                         
-                        # Converti l'immagine in RGB se è in modalità RGBA
+                        # Convert the image to RGB if it is in RGBA mode
                         if pil_image.mode == 'RGBA':
                             pil_image = pil_image.convert('RGB')
                         
@@ -1558,7 +1569,7 @@ class PS4PKGTool(QMainWindow):
             else:
                 Logger.log_warning("No icon0.png found in the package.")
             
-            # Se non è stato possibile caricare l'icona dal pacchetto, cerchiamo l'icona estratta
+            # If the icon could not be loaded from the package, search for the extracted icon
             extracted_icon_path = os.path.join(os.path.dirname(self.package.original_file), "icon0.png")
             if os.path.exists(extracted_icon_path):
                 Logger.log_information(f"Using extracted icon: {extracted_icon_path}")
@@ -1574,7 +1585,7 @@ class PS4PKGTool(QMainWindow):
             else:
                 Logger.log_warning(f"Extracted icon not found: {extracted_icon_path}")
             
-            # Se non è stato possibile caricare né l'icona dal pacchetto né quella estratta, usiamo un'icona di default
+            # If the icon could not be loaded from the package or extracted, use a default icon
             default_icon_path = os.path.join(os.path.dirname(__file__), "default_icon.png")
             if os.path.exists(default_icon_path):
                 Logger.log_information(f"Using default icon: {default_icon_path}")

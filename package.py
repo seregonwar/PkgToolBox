@@ -23,11 +23,13 @@ class DRMType(Enum):
     PS4 = 0xF
 
 
+
 class ContentType(Enum):
     CONTENT_TYPE_GD = 0x1A
     CONTENT_TYPE_AC = 0x1B
     CONTENT_TYPE_AL = 0x1C
     CONTENT_TYPE_DP = 0x1E
+
 
 
 class IROTag(Enum):
@@ -72,9 +74,16 @@ class Package:
                     data = fp.read(struct.calcsize("128H"))
                     self.digests = [data[0:32].hex(), data[32:64].hex(), data[64:96].hex(), data[96:128].hex()]
 
-                    self.pkg_content_type = ContentType(self.pkg_content_type)
-                    if self.pkg_iro_tag > 0:
+                    try:
+                        self.pkg_content_type = ContentType(self.pkg_content_type)
+                    except ValueError:
+                        Logger.log_warning(f"Warning: {self.pkg_content_type} is not a valid ContentType. Setting to None.")
+                        self.pkg_content_type = None  # Imposta a None se non è valido
+                    try:
                         self.pkg_iro_tag = IROTag(self.pkg_iro_tag)
+                    except ValueError:
+                        Logger.log_warning(f"Warning: {self.pkg_iro_tag} is not a valid IROTag. Setting to None.")
+                        self.pkg_iro_tag = None  # Imposta a None se non è valido
 
                     self.__load_files(fp)
                     self.files = self._files 
@@ -84,7 +93,16 @@ class Package:
             except struct.error:
                 raise ValueError("Error unpacking PKG file: Incorrect file structure.")
             except Exception as e:
-                raise ValueError(f"Error loading PKG file: {str(e)}")
+                self.__log_and_raise_error(e)
+
+    def __log_and_raise_error(self, error):
+        try:
+            file_list = self.list_files()
+            Logger.log_error(f"Error loading PKG file: {str(error)}. Files in PKG: {file_list}")
+            raise ValueError(f"Error loading PKG file: {str(error)}. Files in PKG: {file_list}")
+        except Exception as e:
+            Logger.log_error(f"Error loading PKG file: {str(error)}. Additionally, failed to list files: {str(e)}")
+            raise ValueError(f"Error loading PKG file: {str(error)}. Additionally, failed to list files: {str(e)}")
 
     def __load_files(self, fp):
         old_pos = fp.tell()
@@ -457,7 +475,7 @@ class Package:
             raise ValueError(f"File '{file_name}' not found in the package")
 
     def list_files(self):
-        return list(self.files.keys())
+        return list(self._files.keys())
 
     def reverse_dump(self, input_dir: str, progress_callback=None):
         """

@@ -64,12 +64,21 @@ class Repack:
 
     def reverse_dump(self, dump_dir):
         """
-        Reinsert the dumped files into the original package.
+        Reinsert the dumped files into a new package copy.
         :param dump_dir: Directory containing the dumped files.
         """
+        output_dir = "reverse_dump_output"
+        os.makedirs(output_dir, exist_ok=True)
+        output_pkg_file = os.path.join(output_dir, os.path.basename(self.original_file))
+
+        temp_pkg_file = output_pkg_file + ".temp"
         new_offset = self.pkg_table_offset + (self.pkg_entry_count * struct.calcsize(">6IQ"))
 
-        with open(self.original_file, 'r+b') as pkg_file:
+        with open(self.original_file, 'rb') as pkg_file, open(temp_pkg_file, 'wb') as new_pkg:
+            # Copy the package header
+            header_size = self.pkg_table_offset
+            new_pkg.write(pkg_file.read(header_size))
+
             # Repack the dumped files
             for file_id, file_info in self.files.items():
                 dump_file_path = os.path.join(dump_dir, file_info.get("name", f"file_{file_id}"))
@@ -82,9 +91,8 @@ class Repack:
                     file_info['offset'] = new_offset
                     file_info['size'] = len(file_content)
 
-                    # Write the file content to the package
-                    pkg_file.seek(new_offset)
-                    pkg_file.write(file_content)
+                    # Write the file content to the new package
+                    new_pkg.write(file_content)
                     new_offset += len(file_content)
                 else:
                     # If the file doesn't exist in the dump, copy it from the original package
@@ -92,18 +100,20 @@ class Repack:
                     file_content = pkg_file.read(file_info['size'])
                     
                     # Write the file content to the new location
-                    pkg_file.seek(new_offset)
-                    pkg_file.write(file_content)
+                    new_pkg.write(file_content)
                     
                     # Update the offset in file_info
                     file_info['offset'] = new_offset
                     new_offset += file_info['size']
 
             # Rewrite the updated file table
-            self._write_file_table(pkg_file)
+            self._write_file_table(new_pkg)
 
-        logging.info("Reverse dump completed.")
-        return "Reverse dump completed."
+        # Move the temporary file to the output directory
+        os.rename(temp_pkg_file, output_pkg_file)
+
+        logging.info(f"Reverse dump completed. Modified package saved to: {output_pkg_file}")
+        return f"Reverse dump completed. Modified package saved to: {output_pkg_file}"
 
     def _write_file_table(self, pkg_file):
         """
