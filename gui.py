@@ -636,23 +636,50 @@ class PS4PKGTool(QMainWindow):
         self.trophy_info.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
         layout.addWidget(self.trophy_info)
 
-        self.trophy_image_label = QLabel("No trophy image")
-        self.trophy_image_label.setFixedSize(300, 300)
-        self.trophy_image_label.setAlignment(Qt.AlignCenter)
-        self.trophy_image_label.setStyleSheet("background-color: white; border: 1px solid white; border-radius: 10px;")
-        layout.addWidget(self.trophy_image_label)
+        # Aggiungi un QTreeWidget per mostrare l'elenco dei trofei
+        self.trophy_tree = QTreeWidget()
+        self.trophy_tree.setHeaderLabels(["Nome", "Dimensione"])
+        self.trophy_tree.setStyleSheet("""
+            QTreeWidget { 
+                background-color: white; 
+                color: black; 
+                font-size: 14px; 
+                border: none; 
+            }
+            QTreeWidget::item { 
+                color: black; 
+            }
+        """)
+        self.trophy_tree.itemClicked.connect(self.display_selected_trophy)
+        layout.addWidget(self.trophy_tree)
 
-        self.trophy_edit_button = QPushButton("Edit Trophy Info")
+        # Aggiungi un QLabel per visualizzare l'immagine del trofeo selezionato
+        self.trophy_image_viewer = QLabel()
+        self.trophy_image_viewer.setAlignment(Qt.AlignCenter)
+        self.trophy_image_viewer.setStyleSheet("background-color: white; border: 1px solid #3498db; border-radius: 5px;")
+        layout.addWidget(self.trophy_image_viewer)
+
+        # Aggiungi pulsanti per navigare tra i trofei
+        button_layout = QHBoxLayout()
+        self.prev_trophy_button = QPushButton("Precedente")
+        self.next_trophy_button = QPushButton("Successivo")
+        self.prev_trophy_button.clicked.connect(self.show_previous_trophy)
+        self.next_trophy_button.clicked.connect(self.show_next_trophy)
+        button_layout.addWidget(self.prev_trophy_button)
+        button_layout.addWidget(self.next_trophy_button)
+        layout.addLayout(button_layout)
+
+        self.trophy_edit_button = QPushButton("Modifica informazioni trofeo")
         self.trophy_edit_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
         self.trophy_edit_button.clicked.connect(self.edit_trophy_info)
         layout.addWidget(self.trophy_edit_button)
 
-        self.trophy_recompile_button = QPushButton("Recompile TRP")
+        self.trophy_recompile_button = QPushButton("Ricompila TRP")
         self.trophy_recompile_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
         self.trophy_recompile_button.clicked.connect(self.recompile_trp)
         layout.addWidget(self.trophy_recompile_button)
 
-        run_button = QPushButton("Execute Trophy")
+        run_button = QPushButton("Esegui Trophy")
         run_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
         run_button.clicked.connect(lambda: self.run_command("trophy"))
         layout.addWidget(run_button)
@@ -1162,25 +1189,81 @@ class PS4PKGTool(QMainWindow):
             trp_reader = TRPReader(filename)
             trp_reader.load()
             
-            info = f"Title: {trp_reader._title}\n"
-            info += f"NPCommID: {trp_reader._npcommid}\n"
-            info += f"Number of trophies: {len(trp_reader._trophyList)}\n\n"
-            
-            for trophy in trp_reader._trophyList:
-                info += f"Trophy: {trophy.name}\n"
-                info += f"Size: {trophy.size} bytes\n\n"
+            info = f"Title: {trp_reader.title}\n"
+            info += f"NPCommID: {trp_reader.np_comm_id}\n"
+            info += f"Number of trophies: {len(trp_reader.trophy_list)}\n\n"
             
             self.trophy_info.setText(info)
             
-            # Carica l'icona del trofeo
-            icon_trophy = next((t for t in trp_reader._trophyList if t.name.upper() == "ICON0.PNG"), None)
-            if icon_trophy:
-                pixmap = QPixmap()
-                pixmap.loadFromData(icon_trophy.bytes)
-                self.trophy_image_label.setPixmap(pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            # Popola il QTreeWidget con l'elenco dei trofei
+            self.trophy_tree.clear()
+            for trophy in trp_reader.trophy_list:
+                item = QTreeWidgetItem(self.trophy_tree)
+                item.setText(0, trophy.name)
+                item.setText(1, str(trophy.size))
+            
+            # Estrai i file dei trofei
+            if hasattr(self, 'trophy_temp_dir') and self.trophy_temp_dir:
+                shutil.rmtree(self.trophy_temp_dir, ignore_errors=True)
+            self.trophy_temp_dir = trp_reader.extract()
+            
+            Logger.log_information(f"Trophy information loaded successfully: {filename}")
         except Exception as e:
             self.trophy_info.setText(f"Error loading trophy file: {str(e)}")
             Logger.log_error(f"Error loading trophy file: {e}")
+
+    def display_selected_trophy(self, item, column):
+        try:
+            file_name = item.text(0)
+            if not hasattr(self, 'trophy_temp_dir') or not self.trophy_temp_dir:
+                Logger.log_warning("Trophy temporary directory not set")
+                self.trophy_image_viewer.setText("No trophy file loaded")
+                return
+            
+            file_path = os.path.join(self.trophy_temp_dir, file_name)
+            
+            if os.path.exists(file_path):
+                pixmap = QPixmap(file_path)
+                if not pixmap.isNull():
+                    scaled_pixmap = pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    self.trophy_image_viewer.setPixmap(scaled_pixmap)
+                    Logger.log_information(f"Trophy image displayed successfully: {file_name}")
+                else:
+                    self.trophy_image_viewer.setText("Unable to load image")
+                    Logger.log_warning(f"Unable to load trophy image: {file_name}")
+            else:
+                self.trophy_image_viewer.setText("File not found")
+                Logger.log_warning(f"Trophy file not found: {file_path}")
+        except Exception as e:
+            Logger.log_error(f"Error displaying trophy: {str(e)}")
+            self.trophy_image_viewer.setText("Error displaying")
+
+    def show_previous_trophy(self):
+        current_item = self.trophy_tree.currentItem()
+        if current_item:
+            current_index = self.trophy_tree.indexOfTopLevelItem(current_item)
+            if current_index > 0:
+                previous_item = self.trophy_tree.topLevelItem(current_index - 1)
+                self.trophy_tree.setCurrentItem(previous_item)
+                self.display_selected_trophy(previous_item, 0)
+
+    def show_next_trophy(self):
+        current_item = self.trophy_tree.currentItem()
+        if current_item:
+            current_index = self.trophy_tree.indexOfTopLevelItem(current_item)
+            if current_index < self.trophy_tree.topLevelItemCount() - 1:
+                next_item = self.trophy_tree.topLevelItem(current_index + 1)
+                self.trophy_tree.setCurrentItem(next_item)
+                self.display_selected_trophy(next_item, 0)
+
+    def cleanup_trophy_temp_dir(self):
+        if hasattr(self, 'trophy_temp_dir') and self.trophy_temp_dir and os.path.exists(self.trophy_temp_dir):
+            shutil.rmtree(self.trophy_temp_dir, ignore_errors=True)
+            self.trophy_temp_dir = None
+            Logger.log_information("Trophy temporary directory cleaned up")
+
+    def __del__(self):
+        self.cleanup_trophy_temp_dir()
 
     def extract_selected_file(self):
         selected_items = self.file_tree.selectedItems()
@@ -1357,12 +1440,15 @@ class PS4PKGTool(QMainWindow):
                         output_path = QFileDialog.getExistingDirectory(self, "Select Output Directory")
                     if not output_path:
                         return  
-                    result = self.package.dump(output_path)
+                    result = self.package.dump(output_path) if self.package else "No package loaded"
                 elif cmd == "inject":
                     file_name = self.inject_file_entry.text()
                     input_file = self.inject_input_entry.text()
                     if not file_name or not input_file:
                         QMessageBox.warning(self, "Warning", "Please specify both file to inject and input file.")
+                        return
+                    if not self.package:
+                        QMessageBox.warning(self, "Warning", "No package loaded.")
                         return
                     file_info = self.package.files.get(file_name)
                     if not file_info:
@@ -1370,6 +1456,9 @@ class PS4PKGTool(QMainWindow):
                         return
                     result = inject_file(self.package.original_file, file_info, input_file)
                 elif cmd == "modify":
+                    if not self.package:
+                        QMessageBox.warning(self, "Warning", "No package loaded.")
+                        return
                     offset = self.offset_entry.text()
                     new_data = self.data_entry.text()
                     if not offset or not new_data:
@@ -1378,10 +1467,13 @@ class PS4PKGTool(QMainWindow):
                     offset = int(offset, 16)
                     new_data = bytes.fromhex(new_data)
                     result = modify_file_header(self.package.original_file, offset, new_data)
-                elif cmd == "create_trp":
-                    result = self.create_trp()
+                elif cmd == "trophy":
+                    if not hasattr(self, 'trophy_temp_dir') or not self.trophy_temp_dir:
+                        QMessageBox.warning(self, "Warning", "No trophy file loaded.")
+                        return
+                    result = f"Trophy files extracted to: {self.trophy_temp_dir}"
                 else:
-                    result = self.run_command_callback(cmd, self.package.original_file, None, None, None)
+                    result = self.run_command_callback(cmd, self.package.original_file if self.package else None, None, None, None)
                 if result:
                     QMessageBox.information(self, "Command Result", str(result))
             except Exception as e:
@@ -1498,30 +1590,6 @@ class PS4PKGTool(QMainWindow):
         directory = QFileDialog.getExistingDirectory(self, "Select output directory")
         if directory:
             entry_widget.setText(directory)
-    def extract_file(self, pkg_path, file_info, output_path, update_callback):
-        try:
-            with open(pkg_path, 'rb') as pkg_file:
-                pkg_file.seek(file_info['offset'])
-                data = pkg_file.read(file_info['size'])
-            
-            with open(output_path, 'wb') as out_file:
-                out_file.write(data)
-            
-            # Extract always icon0.png in the PKG directory
-            if file_info['name'].lower() == 'icon0.png':
-                icon_path = os.path.join(os.path.dirname(pkg_path), "icon0.png")
-                with open(icon_path, 'wb') as icon_file:
-                    icon_file.write(data)
-                Logger.log_information(f"icon0.png extracted to: {icon_path}")
-            
-            if update_callback:
-                update_callback(f"Extracted {file_info['name']} to {output_path}")
-            
-            Logger.log_information(f"File extracted successfully: {output_path}")
-            return f"File extracted successfully: {output_path}"
-        except Exception as e:
-            Logger.log_error(f"Failed to extract file: {str(e)}")
-            raise Exception(f"Failed to extract file: {str(e)}")
         
     def load_pkg(self, pkg_path):
         try:

@@ -1,44 +1,35 @@
-import os
-from datetime import datetime
+import logging
+import sys
 
 class Logger:
-    log_filename = "PS4PKGToolLog.txt"
-    lock_object = None
+    @staticmethod
+    def setup_logger():
+        logging.basicConfig(filename='PS4PKGToolLog.txt', level=logging.DEBUG,
+                            format='%(asctime)s - %(levelname)s: %(message)s',
+                            datefmt='%Y-%m-%d %H:%M:%S')
+        console = logging.StreamHandler(sys.stdout)
+        console.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(levelname)s: %(message)s')
+        console.setFormatter(formatter)
+        logging.getLogger('').addHandler(console)
 
     @staticmethod
-    def flush_log():
-        with open(Logger.log_filename, 'w'):
-            pass
-
-    @staticmethod
-    def log_information(msg):
-        Logger.log("INFO", msg)
-
-    @staticmethod
-    def log_warning(msg):
-        Logger.log("WARN", msg)
-
-    @staticmethod
-    def log_error(msg, ex=None):
-        Logger.log("ERR", msg, ex)
-
-    @staticmethod
-    def log(level, msg, ex=None):
+    def log_information(message):
         try:
-            if msg:
-                with open(Logger.log_filename, 'a') as f:
-                    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    log_message = f"{now} : [{level}] {msg}"
-                    if ex:
-                        log_message += f"\n{ex}"
-                    f.write(log_message + "\n")
+            logging.info(message)
         except Exception as e:
-            print(f"Logging error: {e}")
+            logging.error(f"Errore nel logging: {str(e)}")
 
     @staticmethod
-    def read_logs():
+    def log_error(message):
         try:
-            with open(Logger.log_filename, 'r') as f:
-                return f.read()
+            logging.error(message)
         except Exception as e:
-            return f"Error reading log file: {str(e)}"
+            logging.error(f"Errore nel logging: {str(e)}")
+
+    @staticmethod
+    def log_warning(message):
+        try:
+            logging.warning(message)
+        except Exception as e:
+            logging.error(f"Errore nel logging: {str(e)}")

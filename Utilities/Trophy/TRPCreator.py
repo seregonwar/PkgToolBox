@@ -133,9 +133,9 @@ class TRPCreator:
             bytes1 = item.name.encode('ascii')
             bytes1 = bytes1.ljust(32, b'\0')
             memoryStream.write(bytes1)
-            bytes2 = item.offset.to_bytes(4, 'big')
+            bytes2 = item.offset.to_bytes(4, 'big')      # Cambiato da 'little' a 'big'
             memoryStream.write(bytes2)
-            bytes3 = item.size.to_bytes(4, 'big')
+            bytes3 = item.size.to_bytes(4, 'big')        # Cambiato da 'little' a 'big'
             memoryStream.write(bytes3)
             if item.name.upper().endswith(".SFM"):
                 memoryStream.write(buffer1)
@@ -165,21 +165,21 @@ class TRPCreator:
         memoryStream = BytesIO()
         trpHeader.magic = self._hdrmagic
         memoryStream.write(trpHeader.magic)
-        trpHeader.version = version.to_bytes(4, 'big')
+        trpHeader.version = version.to_bytes(4, 'big')          # Cambiato da 'little' a 'big'
         memoryStream.write(trpHeader.version)
-        trpHeader.file_size = file_size.to_bytes(8, 'big')
+        trpHeader.file_size = file_size.to_bytes(8, 'big')      # Cambiato da 'little' a 'big'
         memoryStream.write(trpHeader.file_size)
-        trpHeader.files_count = files_count.to_bytes(4, 'big')
+        trpHeader.files_count = files_count.to_bytes(4, 'big')  # Cambiato da 'little' a 'big'
         memoryStream.write(trpHeader.files_count)
-        trpHeader.element_size = element_size.to_bytes(4, 'big')
+        trpHeader.element_size = element_size.to_bytes(4, 'big')# Cambiato da 'little' a 'big'
         memoryStream.write(trpHeader.element_size)
-        trpHeader.dev_flag = dev_flag.to_bytes(4, 'big')
+        trpHeader.dev_flag = dev_flag.to_bytes(4, 'big')        # Cambiato da 'little' a 'big'
         memoryStream.write(trpHeader.dev_flag)
         if version in [1, 2]:
             memoryStream.write(bytearray(36))
         elif version == 3:
             memoryStream.write(bytearray(20))
-            memoryStream.write(bytearray([48, 49, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+            memoryStream.write(bytearray([48, 49, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
         self._hdr = trpHeader
         return memoryStream.getvalue()
 
