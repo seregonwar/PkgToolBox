@@ -1,209 +1,379 @@
-﻿import struct
 import os
 import hashlib
-from typing import List, Optional
+import tempfile
+import shutil
+from io import FileIO, BytesIO
+import struct
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class Archiver:
-    def __init__(self, index: int, name: str, offset: int, size: int, data: Optional[bytes]):
+    def __init__(self, index, name, offset, size, bytes_data=None):
         self.index = index
         self.name = name
         self.offset = offset
         self.size = size
-        self.data = data
-
-class TRPHeader:
-    def __init__(self):
-        self.magic: bytes = b''
-        self.version: bytes = b''
-        self.file_size: bytes = b''
-        self.files_count: bytes = b''
-        self.element_size: bytes = b''
-        self.dev_flag: bytes = b''
-        self.sha1: bytes = b''
-        self.padding: bytes = b''
+        self.bytes_data = bytes_data
 
 class TRPReader:
-    def __init__(self):
-        self._hdr = TRPHeader()
-        self._trophy_list: List[Archiver] = []
-        self._hdr_magic = b'\xdc\xa2M\x00'
-        self._is_error = False
-        self._read_bytes = False
-        self._throw_error = True
-        self._error = ''
-        self._calculated_sha1: Optional[str] = None
-        self._input_file = ''
-        self._title_name = ''
-        self._npcomm_id = ''
+    class TRPHeader:
+        def __init__(self):
+            self.magic = None
+            self.version = None
+            self.file_size = None
+            self.files_count = None
+            self.element_size = None
+            self.dev_flag = None
+            self.padding = None
+            self.sha1 = None
 
-    def load(self, filename: str):
+    def __init__(self, filename=None):
+        self._hdr = self.TRPHeader()
+        self._trophyList = []
+        self._hdrmagic = bytes([220, 162, 77, 0])
+        self._iserror = False
+        self._readbytes = False
+        self._throwerror = True
+        self._error = ""
+        self._calculatedsha1 = None
+        self._inputfile = filename
+        self._title = None
+        self._npcommid = None
+        self._temp_dir = None
+        if filename:
+            self.load(filename)
+
+    def load(self, filename=None):
+        if filename is None and self._inputfile is None:
+            raise ValueError("Filename must be provided either in the constructor or in the load method")
+        
+        if filename is not None:
+            self._inputfile = filename
+
         try:
-            self._is_error = False
-            self._input_file = filename
-            self._calculated_sha1 = None
-            self._trophy_list = []
+            self._iserror = False
+            self._calculatedsha1 = None
+            self._trophyList = []
             
-            with open(self._input_file, 'rb') as fs:
-                self._read_header(fs)
-                if self._hdr.magic != self._hdr_magic:
-                    raise Exception("This file is not supported!")
-                self._read_content(fs)
-                if self.version > 1:
-                    self._calculated_sha1 = self._calculate_sha1_hash()
-        except Exception as ex:
-            self._is_error = True
-            self._error = str(ex)
-        
-        if self._is_error and self._throw_error:
+            if not os.path.exists(self._inputfile):
+                raise FileNotFoundError(f"File not found: {self._inputfile}")
+            
+            self.verify_file_structure()
+            
+            with open(self._inputfile, 'rb') as fs:
+                self.read_content(fs)
+                # Assicuriamoci che self._title venga impostato qui o in read_content
+                if self._title is None:
+                    self._title = "Unknown Title"  # O un valore predefinito appropriato
+        except Exception as e:
+            self._iserror = True
+            self._error = str(e)
+            logger.error(f"Error loading trophy file: {self._error}")
+
+        if self._iserror and self._throwerror:
             raise Exception(self._error)
-        if not self._is_error or self._throw_error:
-            return
-        # Qui andrebbe implementata una funzione per mostrare l'errore
 
-    def _read_header(self, fs):
-        hdr = TRPHeader()
-        hdr.magic = fs.read(4)
-        hdr.version = fs.read(4)
-        hdr.file_size = fs.read(8)
-        hdr.files_count = fs.read(4)
-        hdr.element_size = fs.read(4)
-        hdr.dev_flag = fs.read(4)
-        
-        # Aggiungi controlli per la lunghezza dei dati letti
-        if len(hdr.magic) < 4 or len(hdr.version) < 4 or len(hdr.file_size) < 8 or len(hdr.files_count) < 4 or len(hdr.element_size) < 4 or len(hdr.dev_flag) < 4:
-            self._is_error = True
-            self._error = "Errore durante il caricamento del file TRP: il buffer letto non ha la lunghezza corretta"
-            return
+    def read_header(self, fs):
+        try:
+            self._hdr.magic = fs.read(4)
+            self._hdr.version = fs.read(4)
+            self._hdr.file_size = fs.read(8)
+            self._hdr.files_count = fs.read(4)
+            self._hdr.element_size = fs.read(4)
+            self._hdr.dev_flag = fs.read(4)
 
-        version = struct.unpack('<I', hdr.version)[0]
-        if version == 1:
-            hdr.padding = fs.read(36)
-        elif version == 2:
-            hdr.sha1 = fs.read(20)
-            hdr.padding = fs.read(16)
-        elif version == 3:
-            hdr.sha1 = fs.read(20)
-            hdr.padding = fs.read(48)
-        
-        self._hdr = hdr
+            version = self.bytes_to_int(self._hdr.version, 32)
+            file_size = self.bytes_to_int(self._hdr.file_size, 64)
+            files_count = self.bytes_to_int(self._hdr.files_count, 32)
 
-    def _read_content(self, fs):
-        for i in range(self.file_count):
-            name = fs.read(36).decode('utf-8', errors='ignore').rstrip('\0')
-            offset = struct.unpack('<I', fs.read(4))[0]
-            size = struct.unpack('<Q', fs.read(8))[0]
-            fs.read(16)  # Skip unused bytes
-            
-            if self._read_bytes:
-                with open(self._input_file, 'rb') as file:
-                    file.seek(offset)
-                    data = file.read(size)
-                self._trophy_list.append(Archiver(i, name, offset, size, data))
+            logger.debug(f"Header: magic={self._hdr.magic.hex()}, version={version}, file_size={file_size}, files_count={files_count}")
+
+            if version == 1:
+                self._hdr.padding = fs.read(36)
+            elif version == 2:
+                self._hdr.sha1 = fs.read(20)
+                self._hdr.padding = fs.read(16)
+            elif version == 3:
+                self._hdr.sha1 = fs.read(20)
+                self._hdr.padding = fs.read(48)
             else:
-                self._trophy_list.append(Archiver(i, name, offset, size, None))
+                raise ValueError(f"Invalid version: {version}")
+        except Exception as e:
+            logger.error(f"Error reading header: {e}")
+            raise
+
+    def read_content(self, fs):
+        fs.seek(0)
+        data = fs.read()
+        png_signature = b'\x89PNG\r\n\x1a\n'
+        esfm_signature = b'ESFM'
+        
+        i = 0
+        while i < len(data):
+            if data[i:i+8] == png_signature:
+                offset = i
+                size = self.get_png_size(data[i:])
+                if size:
+                    name = f"TROP{len(self._trophyList):03d}.PNG"
+                    self._trophyList.append(Archiver(len(self._trophyList), name, offset, size))
+                    logger.info(f"Found PNG image '{name}' at offset 0x{offset:X}, size {size}")
+                    i += size
+                else:
+                    i += 1
+            elif data[i:i+4] == esfm_signature:
+                offset = i
+                size = struct.unpack('>I', data[i+4:i+8])[0] + 8  # ESFM header (4 bytes) + size (4 bytes)
+                name = f"FILE{len(self._trophyList):03d}.ESFM"
+                self._trophyList.append(Archiver(len(self._trophyList), name, offset, size))
+                logger.info(f"Found ESFM file '{name}' at offset 0x{offset:X}, size {size}")
+                i += size
+            else:
+                i += 1
+        
+        logger.info(f"Found {len(self._trophyList)} files")
+
+    def get_png_size(self, data):
+        try:
+            idx = data.index(b'IEND')
+            return idx + 12  # IEND chunk è lungo 12 byte, inclusi i 4 byte di CRC
+        except ValueError:
+            return None
 
     @property
-    def read_bytes(self) -> bool:
-        return self._read_bytes
+    def read_bytes(self):
+        return self._readbytes
 
     @read_bytes.setter
-    def read_bytes(self, value: bool):
-        self._read_bytes = value
+    def read_bytes(self, value):
+        self._readbytes = value
 
     @property
-    def trophy_list(self) -> List[Archiver]:
-        return self._trophy_list
+    def trophy_list(self):
+        return self._trophyList
 
     @property
-    def file_size(self) -> int:
-        return struct.unpack('>Q', self._hdr.file_size)[0]
+    def file_size(self):
+        return self.bytes_to_int(self._hdr.file_size, 64)
 
     @property
-    def file_count(self) -> int:
-        return struct.unpack('<I', self._hdr.files_count)[0]
+    def file_count(self):
+        return self.bytes_to_int(self._hdr.files_count, 32)
 
     @property
-    def version(self) -> int:
-        return struct.unpack('<I', self._hdr.version)[0]
+    def version(self):
+        return self.bytes_to_int(self._hdr.version, 32)
 
     @property
-    def sha1(self) -> Optional[str]:
+    def sha1(self):
         if self.version <= 1:
             return None
-        return self._hdr.sha1.hex().upper()
+        return self.byte_array_to_hex_string(self._hdr.sha1)
 
     @property
-    def calculated_sha1(self) -> Optional[str]:
-        return self._calculated_sha1
+    def calculated_sha1(self):
+        return self._calculatedsha1
 
     @property
-    def is_error(self) -> bool:
-        return self._is_error
+    def is_error(self):
+        return self._iserror
 
     @property
-    def throw_error(self) -> bool:
-        return self._throw_error
+    def throw_error(self):
+        return self._throwerror
 
     @throw_error.setter
-    def throw_error(self, value: bool):
-        self._throw_error = value
+    def throw_error(self, value):
+        self._throwerror = value
 
     @property
-    def title_name(self) -> str:
-        return self._title_name
+    def title(self):
+        return self._title
 
-    @title_name.setter
-    def title_name(self, value: str):
-        self._title_name = value
+    @title.setter
+    def title(self, value):
+        self._title = value
 
     @property
-    def npcomm_id(self) -> str:
-        return self._npcomm_id
+    def np_comm_id(self):
+        return self._npcommid
 
-    @npcomm_id.setter
-    def npcomm_id(self, value: str):
-        self._npcomm_id = value
+    @np_comm_id.setter
+    def np_comm_id(self, value):
+        self._npcommid = value
 
-    def extract(self, output_path: str):
-        os.makedirs(output_path, exist_ok=True)
-        with open(self._input_file, 'rb') as fs:
-            for item in self.trophy_list:
-                fs.seek(item.offset)
-                data = fs.read(item.size)
-                with open(os.path.join(output_path, item.name), 'wb') as out_file:
-                    out_file.write(data)
-
-    def extract_file(self, filename: str, output_path: str, custom_name: Optional[str] = None):
-        item = next((x for x in self.trophy_list if x.name.upper().startswith(filename.upper())), None)
-        if item is None:
-            return
-        
-        os.makedirs(output_path, exist_ok=True)
-        with open(self._input_file, 'rb') as fs:
-            fs.seek(item.offset)
-            data = fs.read(item.size)
-            out_name = custom_name if custom_name else item.name
-            with open(os.path.join(output_path, out_name), 'wb') as out_file:
-                out_file.write(data)
-
-    def extract_file_to_memory(self, filename: str) -> Optional[bytes]:
-        item = next((x for x in self.trophy_list if x.name.upper().startswith(filename.upper())), None)
-        if item is None:
+    def extract_file_to_memory(self, filename):
+        archiver = next((a for a in self._trophyList if a.name.upper().startswith(filename.upper())), None)
+        if archiver is None:
             return None
-        
-        with open(self._input_file, 'rb') as fs:
-            fs.seek(item.offset)
-            return fs.read(item.size)
 
-    def _calculate_sha1_hash(self) -> Optional[str]:
+        with open(self._inputfile, 'rb') as fs:
+            fs.seek(archiver.offset)
+            return fs.read(archiver.size)
+
+    def byte_arrays_equal(self, first, second):
+        if first == second:
+            return True
+        if len(first) != len(second):
+            return False
+        return all(a == b for a, b in zip(first, second))
+
+    @staticmethod
+    def byte_array_to_little_endian_int(byte_array):
+        return int.from_bytes(byte_array, byteorder='little')
+
+    @staticmethod
+    def byte_array_to_utf8_string(byte_array, errors='ignore'):
+        return ''.join(chr(b) for b in byte_array if 32 <= b <= 126 or b in (9, 10, 13))
+
+    @staticmethod
+    def byte_array_to_hex_string(byte_array):
+        return ''.join(f'{b:02x}' for b in byte_array)
+
+    @staticmethod
+    def hex_string_to_long(hex_string):
+        return int(hex_string, 16)
+
+    def calculate_sha1_hash(self):
         if self.version <= 1:
             return None
-        
+
         sha1 = hashlib.sha1()
-        with open(self._input_file, 'rb') as fs:
+        with open(self._inputfile, 'rb') as fs:
             sha1.update(fs.read(28))
-            sha1.update(b'\x00' * 20)
             fs.seek(48)
-            sha1.update(fs.read())
+            while chunk := fs.read(8192):
+                sha1.update(chunk)
+        return sha1.hexdigest()
+
+    def extract(self):
+        if self._inputfile is None:
+            raise ValueError("No input file specified")
+
+        input_dir = os.path.dirname(self._inputfile)
+        input_filename = os.path.splitext(os.path.basename(self._inputfile))[0]
         
-        return sha1.hexdigest().upper()
+        if self._temp_dir is None:
+            self._temp_dir = tempfile.mkdtemp(prefix=f"{input_filename}_extracted_", dir=input_dir)
+        
+        with open(self._inputfile, 'rb') as fs:
+            for archiver in self._trophyList:
+                fs.seek(archiver.offset)
+                data = fs.read(archiver.size)
+                output_file = os.path.join(self._temp_dir, archiver.name)
+                with open(output_file, 'wb') as out:
+                    out.write(data)
+                logger.info(f"Extracted {archiver.name} to {output_file}")
+        
+        logger.info(f"All files extracted to: {self._temp_dir}")
+        return self._temp_dir
+
+    def cleanup(self):
+        if self._temp_dir and os.path.exists(self._temp_dir):
+            try:
+                shutil.rmtree(self._temp_dir)
+                logger.info(f"Temporary directory {self._temp_dir} has been removed")
+            except Exception as e:
+                logger.error(f"Error removing temporary directory {self._temp_dir}: {e}")
+        self._temp_dir = None
+
+    def extract_file(self, filename, outputpath, custom_name=None):
+        archiver = next((a for a in self._trophyList if a.name.upper().startswith(filename.upper())), None)
+        if archiver is None:
+            return
+        if not os.path.exists(outputpath):
+            os.makedirs(outputpath)
+
+        with open(self._inputfile, 'rb') as fs:
+            fs.seek(archiver.offset)
+            data = fs.read(archiver.size)
+            output_file = os.path.join(outputpath, custom_name or archiver.name)
+            with open(output_file, 'wb') as out:
+                out.write(data)
+
+    def verify_integrity(self):
+        if self.version > 1 and self.sha1:
+            calculated_sha1 = self.calculate_sha1_hash()
+            if calculated_sha1.lower() != self.sha1.lower():
+                print(f"Warning: SHA1 mismatch. File may be corrupted.")
+                print(f"Calculated: {calculated_sha1}")
+                print(f"Expected:   {self.sha1}")
+            else:
+                print("SHA1 verification passed.")
+        
+        expected_size = self.file_size
+        actual_size = os.path.getsize(self._inputfile)
+        if expected_size != actual_size:
+            print(f"Warning: File size mismatch. Expected: {expected_size}, Actual: {actual_size}")
+        
+        if len(self._trophyList) != self.file_count:
+            print(f"Warning: Trophy count mismatch. Expected: {self.file_count}, Actual: {len(self._trophyList)}")
+
+        return self._trophyList
+
+    def verify_trophy_data(self, name, offset, size):
+        file_size = os.path.getsize(self._inputfile)
+        if offset < 0 or size < 0 or offset + size > file_size:
+            return False
+        if offset == 0 and size == 0:
+            return False
+        if len(name.strip()) == 0:
+            return False
+        return True
+
+    def verify_file_structure(self):
+        try:
+            actual_size = os.path.getsize(self._inputfile)
+            if actual_size < 64:  # Dimensione minima dell'header
+                logger.error(f"File too small: {actual_size} bytes")
+                return False
+            
+            with open(self._inputfile, 'rb') as fs:
+                magic = fs.read(4)
+                if magic != self._hdrmagic:
+                    logger.warning(f"Invalid file magic: {magic.hex()}, but continuing anyway")
+                
+                version_bytes = fs.read(4)
+                file_size_bytes = fs.read(8)
+                files_count_bytes = fs.read(4)
+                
+                version = self.bytes_to_int(version_bytes, 32)
+                file_size = self.bytes_to_int(file_size_bytes, 64)
+                files_count = self.bytes_to_int(files_count_bytes, 32)
+                
+                logger.debug(f"Raw bytes: version={version_bytes.hex()}, file_size={file_size_bytes.hex()}, files_count={files_count_bytes.hex()}")
+                logger.debug(f"File structure: version={version}, file_size={file_size}, files_count={files_count}")
+                
+                if file_size != actual_size:
+                    logger.warning(f"File size mismatch: expected {file_size}, actual {actual_size}")
+                
+                if version not in [1, 2, 3]:
+                    logger.warning(f"Invalid version: {version}, assuming version 3")
+                    version = 3
+                
+                if files_count <= 0 or files_count > 1000:
+                    logger.warning(f"Invalid files count: {files_count}, will try to extract anyway")
+                
+                return True
+        except Exception as e:
+            logger.error(f"Error verifying file structure: {e}")
+            return False
+
+    @staticmethod
+    def bytes_to_int(bytes_data, bits=32):
+        value = int.from_bytes(bytes_data, byteorder='little', signed=False)
+        if bits == 32:
+            return value & 0xFFFFFFFF
+        elif bits == 64:
+            return value & 0xFFFFFFFFFFFFFFFF
+        else:
+            raise ValueError(f"Unsupported bit size: {bits}")
+
+    def some_method_that_uses_title(self):
+        if self._title is None:
+            logger.warning("Title is not set")
+            return
+
+    def get_temp_dir(self):
+        return self._temp_dir
