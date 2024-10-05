@@ -628,15 +628,30 @@ class PS4PKGTool(QMainWindow):
     def setup_trophy_tab(self):
         layout = QVBoxLayout(self.trophy_tab)
         
+        # File selection
+        file_layout = QHBoxLayout()
         self.trophy_entry = QLineEdit()
-        layout.addLayout(self.create_file_selection_layout(self.trophy_entry, self.browse_trophy))
+        file_layout.addWidget(self.trophy_entry)
+        browse_button = QPushButton("Browse")
+        browse_button.clicked.connect(self.browse_trophy)
+        file_layout.addWidget(browse_button)
+        layout.addLayout(file_layout)
 
+        # Split the tab into two columns
+        split_layout = QHBoxLayout()
+        left_column = QVBoxLayout()
+        right_column = QVBoxLayout()
+        split_layout.addLayout(left_column)
+        split_layout.addLayout(right_column)
+        layout.addLayout(split_layout)
+
+        # Left column: Trophy info and list
         self.trophy_info = QTextEdit()
         self.trophy_info.setReadOnly(True)
         self.trophy_info.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
-        layout.addWidget(self.trophy_info)
+        self.trophy_info.setMaximumHeight(100)
+        left_column.addWidget(self.trophy_info)
 
-        # Aggiungi un QTreeWidget per mostrare l'elenco dei trofei
         self.trophy_tree = QTreeWidget()
         self.trophy_tree.setHeaderLabels(["Nome", "Dimensione"])
         self.trophy_tree.setStyleSheet("""
@@ -651,45 +666,65 @@ class PS4PKGTool(QMainWindow):
             }
         """)
         self.trophy_tree.itemClicked.connect(self.display_selected_trophy)
-        layout.addWidget(self.trophy_tree)
+        left_column.addWidget(self.trophy_tree)
 
-        # Aggiungi un QLabel per visualizzare l'immagine del trofeo selezionato
+        # Right column: Trophy image viewer
         self.trophy_image_viewer = QLabel()
         self.trophy_image_viewer.setAlignment(Qt.AlignCenter)
         self.trophy_image_viewer.setStyleSheet("background-color: white; border: 1px solid #3498db; border-radius: 5px;")
-        layout.addWidget(self.trophy_image_viewer)
+        self.trophy_image_viewer.setMinimumSize(300, 300)
+        right_column.addWidget(self.trophy_image_viewer)
 
-        # Aggiungi pulsanti per navigare tra i trofei
+        # Navigation buttons
         button_layout = QHBoxLayout()
-        self.prev_trophy_button = QPushButton("Precedente")
-        self.next_trophy_button = QPushButton("Successivo")
+        self.prev_trophy_button = QPushButton("Previous")
+        self.next_trophy_button = QPushButton("Next")
         self.prev_trophy_button.clicked.connect(self.show_previous_trophy)
         self.next_trophy_button.clicked.connect(self.show_next_trophy)
         button_layout.addWidget(self.prev_trophy_button)
         button_layout.addWidget(self.next_trophy_button)
-        layout.addLayout(button_layout)
+        right_column.addLayout(button_layout)
 
-        self.trophy_edit_button = QPushButton("Modifica informazioni trofeo")
-        self.trophy_edit_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
+        # Action buttons
+        self.trophy_edit_button = QPushButton("Edit Trophy Info")
         self.trophy_edit_button.clicked.connect(self.edit_trophy_info)
         layout.addWidget(self.trophy_edit_button)
 
-        self.trophy_recompile_button = QPushButton("Ricompila TRP")
-        self.trophy_recompile_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
+        self.trophy_recompile_button = QPushButton("Recompile TRP")
         self.trophy_recompile_button.clicked.connect(self.recompile_trp)
         layout.addWidget(self.trophy_recompile_button)
 
-        run_button = QPushButton("Esegui Trophy")
-        run_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
+        run_button = QPushButton("Execute Trophy")
         run_button.clicked.connect(lambda: self.run_command("trophy"))
         layout.addWidget(run_button)
-        
-        layout.addStretch(1)
-        self.trophy_files = [] 
-        
+
         load_trophy_files_button = QPushButton("Load trophy files")
         load_trophy_files_button.clicked.connect(self.load_trophy_files)
         layout.addWidget(load_trophy_files_button)
+
+        # Apply consistent styling to buttons
+        for button in [browse_button, self.prev_trophy_button, self.next_trophy_button, 
+                       self.trophy_edit_button, self.trophy_recompile_button, run_button, 
+                       load_trophy_files_button]:
+            button.setStyleSheet("""
+                QPushButton { 
+                    font-size: 14px; 
+                    padding: 8px 15px; 
+                    background-color: #3498db; 
+                    color: white; 
+                    border: none; 
+                    border-radius: 5px; 
+                } 
+                QPushButton:hover { 
+                    background-color: #2980b9; 
+                }
+            """)
+
+        # Set stretch factors to give more space to the trophy list and image viewer
+        split_layout.setStretch(0, 1)  # Left column
+        split_layout.setStretch(1, 2)  # Right column
+        left_column.setStretch(1, 1)   # Trophy tree
+        right_column.setStretch(0, 1)  # Image viewer
 
     def load_trophy_files(self):
         files, _ = QFileDialog.getOpenFileNames(self, "Seleziona i file dei trofei", "", "Tutti i file (*.*)")
@@ -1256,14 +1291,12 @@ class PS4PKGTool(QMainWindow):
                 self.trophy_tree.setCurrentItem(next_item)
                 self.display_selected_trophy(next_item, 0)
 
-    def cleanup_trophy_temp_dir(self):
+    def closeEvent(self, event):
         if hasattr(self, 'trophy_temp_dir') and self.trophy_temp_dir and os.path.exists(self.trophy_temp_dir):
             shutil.rmtree(self.trophy_temp_dir, ignore_errors=True)
             self.trophy_temp_dir = None
             Logger.log_information("Trophy temporary directory cleaned up")
-
-    def __del__(self):
-        self.cleanup_trophy_temp_dir()
+        event.accept()
 
     def extract_selected_file(self):
         selected_items = self.file_tree.selectedItems()
