@@ -1,7 +1,0 @@
-*.pkg
-*.xml
-.idea
-.DS_Store
-__pycache__
-tempCodeRunnerFile.py
-app.py
