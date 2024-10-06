@@ -32,7 +32,10 @@ class TRPReader:
     def __init__(self, filename=None):
         self._hdr = self.TRPHeader()
         self._trophyList = []
-        self._hdrmagic = bytes([220, 162, 77, 0])
+        self._hdrmagic = {
+            bytes([220, 162, 77, 0]),  # Original magic number
+            bytes([5, 216, 3, 164])    # New magic number (a403d805 in little-endian)
+        }
         self._iserror = False
         self._readbytes = False
         self._throwerror = True
@@ -64,9 +67,9 @@ class TRPReader:
             
             with open(self._inputfile, 'rb') as fs:
                 self.read_content(fs)
-                # Assicuriamoci che self._title venga impostato qui o in read_content
+                # Ensure that self._title is set here or in read_content
                 if self._title is None:
-                    self._title = "Unknown Title"  # O un valore predefinito appropriato
+                    self._title = "Unknown Title"  # Or an appropriate default value
         except Exception as e:
             self._iserror = True
             self._error = str(e)
@@ -137,7 +140,7 @@ class TRPReader:
     def get_png_size(self, data):
         try:
             idx = data.index(b'IEND')
-            return idx + 12  # IEND chunk è lungo 12 byte, inclusi i 4 byte di CRC
+            return idx + 12  # IEND chunk is 12 bytes long, including the 4-byte CRC
         except ValueError:
             return None
 
@@ -325,14 +328,16 @@ class TRPReader:
     def verify_file_structure(self):
         try:
             actual_size = os.path.getsize(self._inputfile)
-            if actual_size < 64:  # Dimensione minima dell'header
+            if actual_size < 64:  # Minimum header size
                 logger.error(f"File too small: {actual_size} bytes")
                 return False
             
             with open(self._inputfile, 'rb') as fs:
                 magic = fs.read(4)
-                if magic != self._hdrmagic:
-                    logger.warning(f"Invalid file magic: {magic.hex()}, but continuing anyway")
+                if magic not in self._hdrmagic:
+                    logger.warning(f"Invalid file magic number: {magic.hex()}, but continuing anyway")
+                else:
+                    logger.info(f"Valid magic number found: {magic.hex()}")
                 
                 version_bytes = fs.read(4)
                 file_size_bytes = fs.read(8)

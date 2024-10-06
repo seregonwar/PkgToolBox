@@ -25,6 +25,8 @@ from Utilities import Logger, SettingsManager, TRPReader
 from Utilities.Trophy import Archiver, TRPCreator, TRPReader  
 from repack import Repack
 
+from PS4_Passcode_Bruteforcer import PS4PasscodeBruteforcer
+
 OUTPUT_FOLDER = "._temp_output"
 Hexpattern = re.compile(r'[^\x20-\x7E]')
 
@@ -298,6 +300,56 @@ class PS4PKGTool(QMainWindow):
         donation_button.clicked.connect(lambda: open_url("https://ko-fi.com/seregon"))
         credits_layout.addWidget(donation_button)
 
+        # Aggiungi un nuovo tab per il Passcode Bruteforcer
+        self.bruteforce_tab = QWidget()
+        self.tab_widget.addTab(self.bruteforce_tab, "Passcode Bruteforcer")
+        self.setup_bruteforce_tab()
+
+    def setup_bruteforce_tab(self):
+        layout = QVBoxLayout(self.bruteforce_tab)
+        
+        self.bruteforce_out_entry = QLineEdit()
+        layout.addLayout(self.create_file_selection_layout(self.bruteforce_out_entry, lambda: self.browse_out(self.bruteforce_out_entry)))
+
+        self.bruteforce_log = QTextEdit()
+        self.bruteforce_log.setReadOnly(True)
+        self.bruteforce_log.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
+        layout.addWidget(self.bruteforce_log)
+
+        run_button = QPushButton("Start Bruteforce")
+        run_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
+        run_button.clicked.connect(self.run_bruteforce)
+        layout.addWidget(run_button)
+        
+        layout.addStretch(1)
+
+    def run_bruteforce(self):
+        if not self.package:
+            QMessageBox.warning(self, "Warning", "Please load a PKG file first.")
+            return
+
+        output_directory = self.bruteforce_out_entry.text()
+
+        if not output_directory:
+            QMessageBox.warning(self, "Warning", "Please select an output directory.")
+            return
+
+        self.bruteforce_log.clear()
+        self.bruteforcer = PS4PasscodeBruteforcer()
+        
+        def progress_callback(message):
+            self.bruteforce_log.append(message)
+            QApplication.processEvents()
+
+        result = self.bruteforcer.brute_force_passcode(self.package.original_file, output_directory, progress_callback)
+        self.bruteforce_log.append(result)
+
+        if "Passcode found" in result:
+            self.package = self.bruteforcer.get_package()
+            self.update_info(self.package.get_info())
+            self.load_wallpapers()
+            self.load_pkg_icon()
+            self.load_files()
 
     def add_night_mode_button(self):
         toolbar = QToolBar()
@@ -738,9 +790,6 @@ class PS4PKGTool(QMainWindow):
     def setup_trp_create_tab(self):
         layout = QVBoxLayout(self.trp_create_tab)
         
-        self.trp_entry = QLineEdit()
-        layout.addLayout(self.create_file_selection_layout(self.trp_entry, self.browse_trophy))
-
         self.trp_info = QTextEdit()
         self.trp_info.setReadOnly(True)
         self.trp_info.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
@@ -1328,7 +1377,6 @@ class PS4PKGTool(QMainWindow):
             Logger.log_warning("No file selected for extraction")
             QMessageBox.warning(self, "Warning", "No file selected.")
         return None
-
     def load_files(self):
         if self.package:
             self.file_tree.clear()
