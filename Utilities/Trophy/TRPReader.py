@@ -33,8 +33,9 @@ class TRPReader:
         self._hdr = self.TRPHeader()
         self._trophyList = []
         self._hdrmagic = {
-            bytes([220, 162, 77, 0]),  # Original magic number
-            bytes([5, 216, 3, 164])    # New magic number (a403d805 in little-endian)
+            bytes([220, 162, 77, 0]),    # Magic number originale
+            bytes([5, 216, 3, 164]),     # Nuovo magic number (a403d805 in little-endian)
+            bytes([126, 237, 245, 255])  # Nuovo magic number (fff5ed7e in little-endian)
         }
         self._iserror = False
         self._readbytes = False
@@ -121,21 +122,35 @@ class TRPReader:
                 if size:
                     name = f"TROP{len(self._trophyList):03d}.PNG"
                     self._trophyList.append(Archiver(len(self._trophyList), name, offset, size))
-                    logger.info(f"Found PNG image '{name}' at offset 0x{offset:X}, size {size}")
+                    logger.info(f"Trovata immagine PNG '{name}' all'offset 0x{offset:X}, dimensione {size}")
                     i += size
                 else:
                     i += 1
             elif data[i:i+4] == esfm_signature:
                 offset = i
-                size = struct.unpack('>I', data[i+4:i+8])[0] + 8  # ESFM header (4 bytes) + size (4 bytes)
-                name = f"FILE{len(self._trophyList):03d}.ESFM"
-                self._trophyList.append(Archiver(len(self._trophyList), name, offset, size))
-                logger.info(f"Found ESFM file '{name}' at offset 0x{offset:X}, size {size}")
-                i += size
+                try:
+                    size = struct.unpack('>I', data[i+4:i+8])[0] + 8  # Header ESFM (4 byte) + dimensione (4 byte)
+                    if size > 0 and size < len(data) - i:
+                        name = f"FILE{len(self._trophyList):03d}.ESFM"
+                        self._trophyList.append(Archiver(len(self._trophyList), name, offset, size))
+                        logger.info(f"Trovato file ESFM '{name}' all'offset 0x{offset:X}, dimensione {size}")
+                        i += size
+                    else:
+                        logger.warning(f"Dimensione ESFM non valida all'offset 0x{offset:X}: {size}")
+                        i += 1
+                except struct.error:
+                    logger.warning(f"Impossibile leggere la dimensione ESFM all'offset 0x{offset:X}")
+                    i += 1
             else:
                 i += 1
         
-        logger.info(f"Found {len(self._trophyList)} files")
+        if not self._trophyList:
+            logger.warning("Nessun file trovato nel TRP. Il file potrebbe essere corrotto o vuoto.")
+        else:
+            logger.info(f"Trovati {len(self._trophyList)} file")
+        
+        # Aggiorniamo il conteggio dei file nell'header
+        self._hdr.files_count = len(self._trophyList).to_bytes(4, byteorder='little')
 
     def get_png_size(self, data):
         try:
@@ -328,16 +343,16 @@ class TRPReader:
     def verify_file_structure(self):
         try:
             actual_size = os.path.getsize(self._inputfile)
-            if actual_size < 64:  # Minimum header size
-                logger.error(f"File too small: {actual_size} bytes")
+            if actual_size < 64:  # Dimensione minima dell'header
+                logger.error(f"File troppo piccolo: {actual_size} byte")
                 return False
             
             with open(self._inputfile, 'rb') as fs:
                 magic = fs.read(4)
                 if magic not in self._hdrmagic:
-                    logger.warning(f"Invalid file magic number: {magic.hex()}, but continuing anyway")
+                    logger.warning(f"Numero magico del file non valido: {magic.hex()}, ma continuo comunque")
                 else:
-                    logger.info(f"Valid magic number found: {magic.hex()}")
+                    logger.info(f"Numero magico valido trovato: {magic.hex()}")
                 
                 version_bytes = fs.read(4)
                 file_size_bytes = fs.read(8)
@@ -347,22 +362,26 @@ class TRPReader:
                 file_size = self.bytes_to_int(file_size_bytes, 64)
                 files_count = self.bytes_to_int(files_count_bytes, 32)
                 
-                logger.debug(f"Raw bytes: version={version_bytes.hex()}, file_size={file_size_bytes.hex()}, files_count={files_count_bytes.hex()}")
-                logger.debug(f"File structure: version={version}, file_size={file_size}, files_count={files_count}")
+                logger.debug(f"Byte grezzi: version={version_bytes.hex()}, file_size={file_size_bytes.hex()}, files_count={files_count_bytes.hex()}")
+                logger.debug(f"Struttura del file: version={version}, file_size={file_size}, files_count={files_count}")
                 
                 if file_size != actual_size:
-                    logger.warning(f"File size mismatch: expected {file_size}, actual {actual_size}")
+                    logger.warning(f"Dimensione del file non corrispondente: prevista {file_size}, effettiva {actual_size}")
+                    self._hdr.file_size = actual_size.to_bytes(8, byteorder='little')
                 
                 if version not in [1, 2, 3]:
-                    logger.warning(f"Invalid version: {version}, assuming version 3")
+                    logger.warning(f"Versione non valida: {version}, assumo versione 3")
                     version = 3
+                    self._hdr.version = version.to_bytes(4, byteorder='little')
                 
-                if files_count <= 0 or files_count > 1000:
-                    logger.warning(f"Invalid files count: {files_count}, will try to extract anyway")
+                if files_count <= 0 or files_count > 1000000:
+                    logger.warning(f"Conteggio file non valido: {files_count}, proverò a estrarre comunque")
+                    files_count = 0  # Resettiamo il conteggio e lasciamo che read_content lo determini
+                    self._hdr.files_count = files_count.to_bytes(4, byteorder='little')
                 
                 return True
         except Exception as e:
-            logger.error(f"Error verifying file structure: {e}")
+            logger.error(f"Errore durante la verifica della struttura del file: {e}")
             return False
 
     @staticmethod
@@ -382,3 +401,44 @@ class TRPReader:
 
     def get_temp_dir(self):
         return self._temp_dir
+
+    def read_content_flexible(self, fs):
+        fs.seek(0)
+        data = fs.read()
+        png_signature = b'\x89PNG\r\n\x1a\n'
+        esfm_signature = b'ESFM'
+        
+        i = 0
+        while i < len(data):
+            if data[i:i+8] == png_signature:
+                offset = i
+                size = self.get_png_size(data[i:])
+                if size:
+                    name = f"TROP{len(self._trophyList):03d}.PNG"
+                    self._trophyList.append(Archiver(len(self._trophyList), name, offset, size))
+                    logger.info(f"Trovata immagine PNG '{name}' all'offset 0x{offset:X}, dimensione {size}")
+                    i += size
+                else:
+                    i += 1
+            elif data[i:i+4] == esfm_signature:
+                offset = i
+                try:
+                    size = struct.unpack('>I', data[i+4:i+8])[0] + 8
+                    if size > 0 and size < len(data) - i:
+                        name = f"FILE{len(self._trophyList):03d}.ESFM"
+                        self._trophyList.append(Archiver(len(self._trophyList), name, offset, size))
+                        logger.info(f"Trovato file ESFM '{name}' all'offset 0x{offset:X}, dimensione {size}")
+                        i += size
+                    else:
+                        i += 1
+                except struct.error:
+                    i += 1
+            else:
+                i += 1
+        
+        if not self._trophyList:
+            logger.warning("Nessun file trovato nel TRP. Il file potrebbe essere corrotto o vuoto.")
+        else:
+            logger.info(f"Trovati {len(self._trophyList)} file")
+        
+        self._hdr.files_count = len(self._trophyList).to_bytes(4, byteorder='little')

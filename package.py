@@ -9,6 +9,10 @@ import logging
 import shutil
 from PIL import Image
 from utils import print_aligned, bcolors, Logger
+from typing import Dict, Any
+import json
+import re
+import unicodedata
 
 
 class Type(Enum):
@@ -57,17 +61,17 @@ class Package:
         self.original_file = file
         self.pkg_info = {}
         self.is_ps5 = False
-        self.files = {}  # Inizializza come dizionario vuoto
-        self.content_id = None  # Inizializza come None
-        self.drm_type = None  # Inizializza come None
-        self.content_type = None  # Inizializza come None
-        self.content_flags = None  # Inizializza come None
-        self.iro_tag = None  # Inizializza come None
-        self.version_date = None  # Inizializza come None
-        self.version_hash = None  # Inizializza come None
-        self.digest_table_hash = None  # Inizializza come None
-        self.entry_table_offset = None  # Inizializza come None
-        self.entry_table_size = None  # Inizializza come None
+        self._files = {}  # Inizializza _files come dizionario vuoto
+        self.content_id = None
+        self.drm_type = None
+        self.content_type = None
+        self.content_flags = None
+        self.iro_tag = None
+        self.version_date = None
+        self.version_hash = None
+        self.digest_table_hash = None
+        self.entry_table_offset = None
+        self.entry_table_size = None
         
         with open(file, "rb") as fp:
             magic = struct.unpack(">I", fp.read(4))[0]
@@ -120,18 +124,18 @@ class Package:
             Logger.log_error(f"Error loading PS4 PKG file: {str(e)}")
             raise ValueError(f"Error loading PS4 PKG file: {str(e)}")
 
-    def _safe_decode(self, data, encoding='utf-8'):
-        if data is None:
-            return ""
+    def _safe_decode(self, data):
         if isinstance(data, str):
             return data.rstrip('\x00')
-        try:
-            return data.decode(encoding).rstrip('\x00')
-        except UnicodeDecodeError:
+        elif isinstance(data, bytes):
             try:
-                return data.decode('latin-1').rstrip('\x00')
-            except:
-                return data.hex()
+                return data.decode('utf-8', errors='ignore').rstrip('\x00')
+            except UnicodeDecodeError:
+                return data.decode('latin-1', errors='ignore').rstrip('\x00')
+        elif isinstance(data, int):
+            return str(data)
+        else:
+            return str(data)
 
     def _read_null_terminated_string(self, fp):
         result = bytearray()
@@ -186,127 +190,201 @@ class Package:
     def _load_ps5_pkg(self, fp):
         try:
             self.is_ps5 = True
-            header_formats = [
-                ">4s2sH4sQ16s16s16s16s16s16s16s16s16s16s16s16s16s",  # Formato originale (17 valori)
-                ">4s2sH4sQ16s16s16s16s16s16s16s16s16s16s16s16s",     # Formato alternativo (16 valori)
-                ">4s2sH4sQ16s16s16s16s16s16s16s16s16s16s16s",        # Formato alternativo (15 valori)
-            ]
+            header_format = ">4s2sH4sQ4I4Q2I14s16s16s16s16s16s16s"
 
-            for header_format in header_formats:
-                try:
-                    fp.seek(0)
-                    data = fp.read(struct.calcsize(header_format))
-                    unpacked_data = struct.unpack(header_format, data)
+            fp.seek(0)
+            data = fp.read(struct.calcsize(header_format))
+            
+            unpacked_data = struct.unpack(header_format, data)
 
-                    # Assegna i valori in base al formato
-                    if len(unpacked_data) == 17:
-                        (self.magic, self.pkg_type, self.pkg_revision, self.pkg_0x008, self.pkg_file_count,
-                         self.entry_table_offset, self.entry_table_size, self.body_offset, self.body_size,
-                         self.content_id, self.drm_type, self.content_type, self.content_flags,
-                         self.promote_size, self.version_date, self.version_hash,
-                         self.iro_tag) = unpacked_data
-                    elif len(unpacked_data) == 16:
-                        (self.magic, self.pkg_type, self.pkg_revision, self.pkg_0x008, self.pkg_file_count,
-                         self.entry_table_offset, self.entry_table_size, self.body_offset, self.body_size,
-                         self.content_id, self.drm_type, self.content_type, self.content_flags,
-                         self.promote_size, self.version_date, self.version_hash) = unpacked_data
-                        self.iro_tag = None
-                    elif len(unpacked_data) == 15:
-                        (self.magic, self.pkg_type, self.pkg_revision, self.pkg_0x008, self.pkg_file_count,
-                         self.entry_table_offset, self.entry_table_size, self.body_offset, self.body_size,
-                         self.content_id, self.drm_type, self.content_type, self.content_flags,
-                         self.promote_size, self.version_date) = unpacked_data
-                        self.version_hash = None
-                        self.iro_tag = None
-                    else:
-                        continue  # Se il formato non corrisponde, prova il prossimo
+            Logger.log_information(f"Number of unpacked values: {len(unpacked_data)}")
 
-                    # Converti i bytes in stringhe e interi dove necessario
-                    self.content_id = self._safe_decode(self.content_id)
-                    self.drm_type = int.from_bytes(self.drm_type, byteorder='big') if isinstance(self.drm_type, bytes) else self.drm_type
-                    self.content_type = int.from_bytes(self.content_type, byteorder='big') if isinstance(self.content_type, bytes) else self.content_type
-                    self.content_flags = int.from_bytes(self.content_flags, byteorder='big') if isinstance(self.content_flags, bytes) else self.content_flags
-                    if self.iro_tag:
-                        self.iro_tag = int.from_bytes(self.iro_tag, byteorder='big') if isinstance(self.iro_tag, bytes) else self.iro_tag
+            self.magic = unpacked_data[0]
+            self.pkg_type = unpacked_data[1]
+            self.pkg_revision = unpacked_data[2]
+            self.pkg_0x008 = unpacked_data[3]
+            self.pkg_file_count = unpacked_data[4]
+            self.entry_table_offset, self.entry_table_size = unpacked_data[5:7]
+            self.body_offset, self.body_size = unpacked_data[7:9]
+            self.content_id = self._safe_decode(unpacked_data[9])
+            self.drm_type, self.content_type = unpacked_data[10:12]
+            self.content_flags, self.promote_size = unpacked_data[12:14]
+            self.version_date = unpacked_data[14]
+            self.version_hash = unpacked_data[15]
+            self.iro_tag = unpacked_data[16]
 
-                    # Converti entry_table_offset e entry_table_size in interi
-                    self.entry_table_offset = int.from_bytes(self.entry_table_offset, byteorder='big') if isinstance(self.entry_table_offset, bytes) else self.entry_table_offset
-                    self.entry_table_size = int.from_bytes(self.entry_table_size, byteorder='big') if isinstance(self.entry_table_size, bytes) else self.entry_table_size
-                    self.pkg_file_count = int.from_bytes(self.pkg_file_count, byteorder='big') if isinstance(self.pkg_file_count, bytes) else self.pkg_file_count
+            # Aggiungi questa verifica dopo aver letto l'offset della tabella di ingresso
+            if self.entry_table_offset == 0:
+                Logger.log_warning("Entry table offset is 0, attempting to find the correct offset")
+                self.entry_table_offset = self._find_entry_table_offset(fp)
 
-                    # Verifica che i valori siano ragionevoli
-                    file_size = fp.seek(0, 2)
-                    if self.entry_table_offset > file_size or self.entry_table_size > file_size:
-                        Logger.log_warning(f"Invalid entry table offset or size. Offset: 0x{self.entry_table_offset:X}, Size: 0x{self.entry_table_size:X}, File size: 0x{file_size:X}")
-                        continue  # Prova il prossimo formato se i valori non sono validi
+            # Assicurati che i valori siano ragionevoli
+            file_size = fp.seek(0, 2)
+            self.entry_table_offset = min(self.entry_table_offset, file_size)
+            self.entry_table_size = min(self.entry_table_size, 1024 * 1024 * 10)  # Limita a 10 MB
+            self.body_offset = min(self.body_offset, file_size)
+            self.body_size = min(self.body_size, file_size - self.body_offset)
 
-                    # Converti i campi rimanenti
-                    self.pkg_revision = int.from_bytes(self.pkg_revision, byteorder='big') if isinstance(self.pkg_revision, bytes) else self.pkg_revision
-                    self.pkg_0x008 = int.from_bytes(self.pkg_0x008, byteorder='big') if isinstance(self.pkg_0x008, bytes) else self.pkg_0x008
-                    self.body_offset = int.from_bytes(self.body_offset, byteorder='big') if isinstance(self.body_offset, bytes) else self.body_offset
-                    self.body_size = int.from_bytes(self.body_size, byteorder='big') if isinstance(self.body_size, bytes) else self.body_size
-                    self.promote_size = int.from_bytes(self.promote_size, byteorder='big') if isinstance(self.promote_size, bytes) else self.promote_size
+            # Log dei valori principali
+            Logger.log_information(f"magic: {self.magic.hex()}")
+            Logger.log_information(f"pkg_type: {self.pkg_type.hex()}")
+            Logger.log_information(f"pkg_revision: {self.pkg_revision}")
+            Logger.log_information(f"pkg_file_count: {self.pkg_file_count}")
+            Logger.log_information(f"entry_table_offset: 0x{self.entry_table_offset:X}")
+            Logger.log_information(f"entry_table_size: 0x{self.entry_table_size:X}")
+            Logger.log_information(f"body_offset: 0x{self.body_offset:X}")
+            Logger.log_information(f"body_size: 0x{self.body_size:X}")
+            Logger.log_information(f"content_id: {self.content_id}")
+            Logger.log_information(f"drm_type: 0x{self.drm_type:X}")
+            Logger.log_information(f"content_type: 0x{self.content_type:X}")
+            Logger.log_information(f"content_flags: 0x{self.content_flags:X}")
+            Logger.log_information(f"promote_size: 0x{self.promote_size:X}")
 
-                    Logger.log_information(f"Successfully loaded PS5 PKG with {len(unpacked_data)} fields")
-                    Logger.log_information(f"Entry table offset: 0x{self.entry_table_offset:X}, size: 0x{self.entry_table_size:X}")
-                    Logger.log_information(f"File count: {self.pkg_file_count}")
-
-                    # Se siamo arrivati qui, abbiamo trovato un formato valido
-                    break
-                except struct.error as e:
-                    Logger.log_warning(f"Failed to unpack with format {header_format}: {str(e)}")
-                    continue
-            else:
-                # Se nessun formato funziona, solleva un'eccezione
-                raise ValueError("Unable to parse PS5 PKG header with any known format")
-
-            # Carica le entry dei file
+            self._initialize_ps5_fields()
             self.__load_ps5_files(fp)
+            self._parse_param_json(fp)
+            self._read_digests_and_layout(fp)
             self.files = self._files
         except Exception as e:
             Logger.log_error(f"Error loading PS5 PKG file: {str(e)}")
             raise ValueError(f"Error loading PS5 PKG file: {str(e)}")
 
+    def _find_entry_table_offset(self, fp):
+        # Cerca l'offset corretto della tabella di ingresso
+        # Questo è un esempio, potrebbe essere necessario adattarlo in base alla struttura esatta del file
+        fp.seek(0)
+        data = fp.read(0x1000)  # Leggi i primi 4KB del file
+        offset = data.find(b'\x00\x00\x00\x01\x00\x00\x00\x01')  # Cerca un pattern comune all'inizio della tabella
+        if offset != -1:
+            return offset
+        return 0  # Ritorna 0 se non trova nulla
+
+    def _initialize_ps5_fields(self):
+        self.application_category_type = None
+        self.application_drm_type = None
+        self.title_id = None
+        self.title_name = None
+        self.content_version = None
+        self.required_system_software_version = None
+        self.sdk_version = None
+        self.publishing_tools_version = None
+        self.creation_date = None
+        self.pfs_timestamp = None
+        self.package_digest = None
+        self.pfs_area_digest = None
+        self.fih_offset = self.fih_size = None
+        self.pfs_offset = self.pfs_size = None
+        self.sc_offset = self.sc_size = None
+        self.si_offset = self.si_size = None
+        self.master_version = None  # Aggiungi questa riga
+
+    def _parse_param_json(self, fp):
+        param_json = next((file for file in self._files.values() if file.get("name", "").lower() == "param.json"), None)
+        if not param_json:
+            Logger.log_warning("param.json not found in the package")
+            return
+        
+        try:
+            fp.seek(param_json["offset"])
+            json_data = fp.read(param_json["size"])
+            json_content = json.loads(json_data)
+            
+            # Estrai le informazioni rilevanti dal JSON
+            self.title_id = json_content.get("titleId")
+            self.content_id = json_content.get("contentId")
+            self.content_version = json_content.get("contentVersion")
+            self.required_system_software_version = json_content.get("requiredSystemSoftwareVersion")
+            self.application_category_type = json_content.get("applicationCategoryType")
+            self.application_drm_type = json_content.get("applicationDrmType")
+            
+            # Estrai il nome del titolo dalla sezione localizedParameters
+            localized_params = json_content.get("localizedParameters", {})
+            default_language = localized_params.get("defaultLanguage")
+            if default_language and default_language in localized_params:
+                self.title_name = localized_params[default_language].get("titleName")
+            else:
+                self.title_name = next(iter(localized_params.values()), {}).get("titleName")
+            
+            # Estrai altre informazioni utili
+            self.sdk_version = json_content.get("sdkVersion")
+            self.master_version = json_content.get("masterVersion")
+            self.pubtools = json_content.get("pubtools", {})
+            self.creation_date = self.pubtools.get("creationDate")
+            self.publishing_tools_version = self.pubtools.get("toolVersion")
+            
+            Logger.log_information(f"Parsed param.json: Title ID: {self.title_id}, Content ID: {self.content_id}, Title: {self.title_name}")
+        except Exception as e:
+            Logger.log_error(f"Error parsing param.json: {str(e)}")
+
+    def _read_digests_and_layout(self, fp):
+        try:
+            fp.seek(0x100)
+            self.package_digest = fp.read(32).hex()
+            self.pfs_area_digest = fp.read(32).hex()
+            
+            if self.package_digest == '0' * 64 and self.pfs_area_digest == '0' * 64:
+                Logger.log_warning("Digests are all zeros, package might be corrupted or encrypted")
+            
+            fp.seek(0x400)
+            layout_data = struct.unpack(">QQQQQQQQ", fp.read(64))
+            self.fih_offset, self.fih_size = layout_data[0:2]
+            self.pfs_offset, self.pfs_size = layout_data[2:4]
+            self.sc_offset, self.sc_size = layout_data[4:6]
+            self.si_offset, self.si_size = layout_data[6:8]
+            
+            if all(v == 0 for v in layout_data):
+                Logger.log_warning("All layout values are zero, package might be corrupted or encrypted")
+            
+            Logger.log_information(f"Package digest: {self.package_digest}")
+            Logger.log_information(f"PFS area digest: {self.pfs_area_digest}")
+
+            Logger.log_information(f"FIH: offset 0x{self.fih_offset:X}, size 0x{self.fih_size:X}")
+            Logger.log_information(f"PFS: offset 0x{self.pfs_offset:X}, size 0x{self.pfs_size:X}")
+            Logger.log_information(f"SC: offset 0x{self.sc_offset:X}, size 0x{self.sc_size:X}")
+            Logger.log_information(f"SI: offset 0x{self.si_offset:X}, size 0x{self.si_size:X}")
+
+        except Exception as e:
+            Logger.log_error(f"Errore durante la lettura dei digest e del layout: {str(e)}")
+            raise
+
     def __load_ps5_files(self, fp):
         try:
-            if self.entry_table_offset is None or self.entry_table_size is None:
-                raise ValueError("Entry table offset or size is not set")
-
-            Logger.log_information(f"Entry table offset: 0x{self.entry_table_offset:X}, size: 0x{self.entry_table_size:X}")
-
-            # Verifica che i valori siano ragionevoli
-            file_size = fp.seek(0, 2)
-            if self.entry_table_offset > file_size or self.entry_table_size > file_size:
-                raise ValueError(f"Entry table offset or size is too large. Offset: 0x{self.entry_table_offset:X}, Size: 0x{self.entry_table_size:X}, File size: 0x{file_size:X}")
+            Logger.log_information(f"Loading PS5 files. Entry table offset: 0x{self.entry_table_offset:X}, size: 0x{self.entry_table_size:X}")
 
             fp.seek(self.entry_table_offset)
-            entry_count = self.entry_table_size // 32  # Assumiamo che ogni entry sia di 32 byte
-            
-            if entry_count > 1000000:  # Impostiamo un limite ragionevole
-                raise ValueError(f"Too many entries: {entry_count}")
+            entry_count = min(self.entry_table_size // 32, self.pkg_file_count, 10000)  # Limitiamo a 10000 file per sicurezza
 
-            entry_format = ">IIQQ"
+            # Modifichiamo il formato della tabella dei file per PS5
+            entry_format = ">IIQQII"
             self._files = {}
             for i in range(entry_count):
-                entry_data = fp.read(32)
-                if len(entry_data) < 32:
-                    Logger.log_warning(f"Reached end of file while reading entries. Processed {i} entries.")
-                    break
-                file_id, file_type, file_offset, file_size = struct.unpack(entry_format, entry_data)
-                
-                # Verifica che i valori siano ragionevoli
-                if file_offset > fp.seek(0, 2) or file_size > fp.seek(0, 2):
-                    Logger.log_warning(f"Skipping file with unreasonable offset or size: ID {file_id}, offset 0x{file_offset:X}, size 0x{file_size:X}")
-                    continue
+                try:
+                    entry_data = fp.read(32)
+                    if len(entry_data) < 32:
+                        Logger.log_warning(f"Reached end of file while reading entries. Processed {i} entries.")
+                        break
+                    file_id, file_type, file_offset, file_size, padding1, padding2 = struct.unpack(entry_format, entry_data)
+                    
+                    # Modifica questa parte per essere più permissiva
+                    file_end = os.path.getsize(self.original_file)
+                    if file_offset >= file_end or file_size > file_end - file_offset:
+                        Logger.log_warning(f"File with unreasonable offset or size: ID {file_id}, offset 0x{file_offset:X}, size 0x{file_size:X}")
+                        continue
 
-                self._files[file_id] = {
-                    "id": file_id,
-                    "type": file_type,
-                    "offset": file_offset,
-                    "size": file_size,
-                    "encrypted": (file_type & Package.FLAG_ENCRYPTED) == Package.FLAG_ENCRYPTED
-                }
-            
+                    self._files[file_id] = {
+                        "id": file_id,
+                        "type": file_type,
+                        "offset": file_offset,
+                        "size": file_size,
+                        "encrypted": (file_type & Package.FLAG_ENCRYPTED) == Package.FLAG_ENCRYPTED
+                    }
+                except struct.error as e:
+                    Logger.log_warning(f"Error unpacking file entry {i}: {str(e)}")
+                    break
+
+            if not self._files:
+                Logger.log_error("No valid files found in the package")
+
             # Load file names (if available)
             for key, file in self._files.items():
                 try:
@@ -331,36 +409,44 @@ class Package:
 
     def _get_ps5_info(self):
         info = {
-            "pkg_magic": f"0x{self.magic.hex()}",
-            "pkg_type": f"0x{self.pkg_type.hex()}",
+            "pkg_magic": self.magic.hex() if isinstance(self.magic, bytes) else str(self.magic),
+            "pkg_type": self.pkg_type.hex() if isinstance(self.pkg_type, bytes) else str(self.pkg_type),
             "pkg_revision": self.pkg_revision,
-            "pkg_file_count": int.from_bytes(self.pkg_file_count, byteorder='big') if isinstance(self.pkg_file_count, bytes) else self.pkg_file_count,
+            "pkg_file_count": self.pkg_file_count,
             "content_id": self.content_id,
-            "drm_type": f"0x{self.drm_type:X}" if hasattr(self, 'drm_type') else "Unknown",
-            "content_type": f"0x{self.content_type:X}" if hasattr(self, 'content_type') else "Unknown",
-            "content_flags": f"0x{self.content_flags:X}" if hasattr(self, 'content_flags') else "Unknown",
+            "title_id": self.title_id,
+            "title_name": self.title_name,
+            "content_version": self.content_version,
+            "required_system_software_version": self.required_system_software_version,
+            "application_category_type": self.application_category_type,
+            "application_drm_type": self.application_drm_type,
+            "sdk_version": self.sdk_version,
+            "master_version": self.master_version,
+            "creation_date": self.creation_date,
+            "publishing_tools_version": self.publishing_tools_version,
+            "drm_type": f"0x{self.drm_type:X}" if isinstance(self.drm_type, int) else str(self.drm_type),
+            "content_type": f"0x{self.content_type:X}" if isinstance(self.content_type, int) else str(self.content_type),
+            "content_flags": f"0x{self.content_flags:X}" if isinstance(self.content_flags, int) else str(self.content_flags),
+            "package_digest": self.package_digest,
+            "pfs_area_digest": self.pfs_area_digest,
+            "fih_offset": f"0x{self.fih_offset:X}" if isinstance(self.fih_offset, int) else str(self.fih_offset),
+            "fih_size": f"0x{self.fih_size:X}" if isinstance(self.fih_size, int) else str(self.fih_size),
+            "pfs_offset": f"0x{self.pfs_offset:X}" if isinstance(self.pfs_offset, int) else str(self.pfs_offset),
+            "pfs_size": f"0x{self.pfs_size:X}" if isinstance(self.pfs_size, int) else str(self.pfs_size),
+            "sc_offset": f"0x{self.sc_offset:X}" if isinstance(self.sc_offset, int) else str(self.sc_offset),
+            "sc_size": f"0x{self.sc_size:X}" if isinstance(self.sc_size, int) else str(self.sc_size),
+            "si_offset": f"0x{self.si_offset:X}" if isinstance(self.si_offset, int) else str(self.si_offset),
+            "si_size": f"0x{self.si_size:X}" if isinstance(self.si_size, int) else str(self.si_size),
         }
         if hasattr(self, 'iro_tag') and self.iro_tag is not None:
-            info["iro_tag"] = f"0x{self.iro_tag:X}"
+            info["iro_tag"] = f"0x{self.iro_tag:X}" if isinstance(self.iro_tag, int) else str(self.iro_tag)
         if hasattr(self, 'version_date') and self.version_date is not None:
-            info["version_date"] = self.version_date
+            info["version_date"] = str(self.version_date)
         if hasattr(self, 'version_hash') and self.version_hash is not None:
-            info["version_hash"] = self.version_hash
+            info["version_hash"] = self.version_hash.hex() if isinstance(self.version_hash, bytes) else str(self.version_hash)
         if hasattr(self, 'digest_table_hash') and self.digest_table_hash is not None:
             info["digest_table_hash"] = self.digest_table_hash
         return info
-
-    # Rimuovi o commenta questo metodo se non viene utilizzato
-    """
-    def __log_and_raise_error(self, error):
-        try:
-            file_list = self.list_files()
-            Logger.log_error(f"Error loading PKG file: {str(error)}. Files in PKG: {file_list}")
-            raise ValueError(f"Error loading PKG file: {str(error)}. Files in PKG: {file_list}")
-        except Exception as e:
-            Logger.log_error(f"Error loading PKG file: {str(error)}. Additionally, failed to list files: {str(e)}")
-            raise ValueError(f"Error loading PKG file: {str(error)}. Additionally, failed to list files: {str(e)}")
-    """
 
     def get_info(self):
         if self.is_ps5:
@@ -494,9 +580,24 @@ class Package:
         else:
             dir = os.path.dirname(out_path)
             if dir:
-                os.makedirs(dir, exist_ok=True)
-            with open(out_path, "wb") as out_file:
-                out_file.write(data)
+                try:
+                    os.makedirs(dir, exist_ok=True)
+                except OSError as e:
+                    Logger.log_error(f"Error creating directory {dir}: {e}")
+                    # Usa una directory di fallback
+                    dir = os.path.dirname(self.original_file)
+                    out_path = os.path.join(dir, os.path.basename(out_path))
+            
+            try:
+                with open(out_path, "wb") as out_file:
+                    out_file.write(data)
+            except OSError as e:
+                Logger.log_error(f"Error writing file {out_path}: {e}")
+                # Usa un nome file di fallback
+                safe_name = self.sanitize_filename(os.path.basename(out_path))
+                out_path = os.path.join(dir, safe_name)
+                with open(out_path, "wb") as out_file:
+                    out_file.write(data)
 
     def extract_raw(self, offset: int, size: int, out_file: str):
         with open(self.original_file, "rb") as pkg_file:
@@ -796,7 +897,13 @@ class Package:
             raise ValueError(f"File with ID {file_id} not found in the package")
 
     def is_encrypted(self):
-        return (self.pkg_content_flags & Package.FLAG_ENCRYPTED) == Package.FLAG_ENCRYPTED
+        if hasattr(self, 'pkg_content_flags'):
+            return (self.pkg_content_flags & Package.FLAG_ENCRYPTED) == Package.FLAG_ENCRYPTED
+        elif hasattr(self, 'content_flags'):
+            return (self.content_flags & Package.FLAG_ENCRYPTED) == Package.FLAG_ENCRYPTED
+        else:
+            Logger.log_warning("Neither pkg_content_flags nor content_flags found. Assuming package is not encrypted.")
+            return False
 
     def extract_with_passcode(self, passcode, output_directory):
         if self.is_correct_passcode(passcode):
@@ -817,8 +924,20 @@ class Package:
 
     def extract_all_files(self, output_directory):
         for file_id, file_info in self.files.items():  # Cambia self.files invece di self._files
-            output_path = os.path.join(output_directory, file_info.get("name", f"file_{file_id}"))
+            safe_name = self.sanitize_filename(file_info.get("name", f"file_{file_id}"))
+            output_path = os.path.join(output_directory, safe_name)
             self.extract(file_id, output_path)
+
+    def sanitize_filename(self, filename):
+        # Rimuovi caratteri non ASCII
+        filename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore').decode()
+        # Sostituisci caratteri non alfanumerici con underscore
+        filename = re.sub(r'[^\w\-_\. ]', '_', filename)
+        # Rimuovi spazi multipli
+        filename = re.sub(r'\s+', ' ', filename).strip()
+        # Limita la lunghezza del filename
+        filename = filename[:255]  # Massima lunghezza per la maggior parte dei filesystem
+        return filename if filename else "unnamed_file"
 
     def decrypt_data(self, data, key):
         return data
