@@ -28,7 +28,10 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
 - **Hex Reader**: View and edit files in hexadecimal format.
 - **Text Reader**: View and edit text files.
 - **Delete**: Delete files from the PKG.
-- **Trophy Management**: Load, read, and manage trophy files.
+- **Trophy Management**: Load, unpack, read, and manage trophy files.
+- **Trophy Creator**: Create new trophy files for games, customizing icons, descriptions, and achievements based on specific game requirements or user preferences.
+- **Wallpapers**: Explore, extract, and modify wallpapers included in the PKG, allowing for the customization of background images used in the system or game.
+- **Passcode Bruteforce**: Perform brute force attacks on passcodes included in the PKG, enabling the recovery or access to protected files within the package.
 - **Integration with OpenOrbis**: Utilize `orbis-pub-cmd.exe` for advanced PKG manipulation.
 
 ## Requirements
