@@ -81,11 +81,12 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
 - [x] Advanced reading of information.
 - [x] Improvement in the analysis of values in hex format.
 - [x] Improvements and bug fixes.
-- [ ] PS5 pkg support
+- [x] PS5 pkg support
+- [ ] Support full ps5 pkg file
 - [ ] Fpkg updates
 - [ ] Advanced pkg file splitting.
 - [ ] Implementation of the inject section for loading dlc directly into pkg packages.
-- [ ] Increased program stability and improved error handling.
+- [x] Increased program stability and improved error handling.
 - [ ] Implementation of the project on other platforms(e.g. linux, macos etc.).
 - [ ] Implementation of PkgToolBox directly on ps4 and ps5 systems.
 
