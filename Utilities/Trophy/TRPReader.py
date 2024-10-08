@@ -113,6 +113,7 @@ class TRPReader:
         data = fs.read()
         png_signature = b'\x89PNG\r\n\x1a\n'
         esfm_signature = b'ESFM'
+        ucp_signature = b'\x00\x00\x00\x00'  # Magic number for Trophy00.ucp
         
         i = 0
         while i < len(data):
@@ -140,6 +141,21 @@ class TRPReader:
                         i += 1
                 except struct.error:
                     logger.warning(f"Impossibile leggere la dimensione ESFM all'offset 0x{offset:X}")
+                    i += 1
+            elif data[i:i+4] == ucp_signature:
+                offset = i
+                try:
+                    size = struct.unpack('>I', data[i+4:i+8])[0] + 8  # Header UCP (4 byte) + dimensione (4 byte)
+                    if size > 0 and size < len(data) - i:
+                        name = f"TROPHY{len(self._trophyList):03d}.UCP"
+                        self._trophyList.append(Archiver(len(self._trophyList), name, offset, size))
+                        logger.info(f"Trovato file UCP '{name}' all'offset 0x{offset:X}, dimensione {size}")
+                        i += size
+                    else:
+                        logger.warning(f"Dimensione UCP non valida all'offset 0x{offset:X}: {size}")
+                        i += 1
+                except struct.error:
+                    logger.warning(f"Impossibile leggere la dimensione UCP all'offset 0x{offset:X}")
                     i += 1
             else:
                 i += 1
@@ -407,6 +423,7 @@ class TRPReader:
         data = fs.read()
         png_signature = b'\x89PNG\r\n\x1a\n'
         esfm_signature = b'ESFM'
+        ucp_signature = b'\x00\x00\x00\x00'  # Magic number for Trophy00.ucp
         
         i = 0
         while i < len(data):
@@ -428,6 +445,19 @@ class TRPReader:
                         name = f"FILE{len(self._trophyList):03d}.ESFM"
                         self._trophyList.append(Archiver(len(self._trophyList), name, offset, size))
                         logger.info(f"Trovato file ESFM '{name}' all'offset 0x{offset:X}, dimensione {size}")
+                        i += size
+                    else:
+                        i += 1
+                except struct.error:
+                    i += 1
+            elif data[i:i+4] == ucp_signature:
+                offset = i
+                try:
+                    size = struct.unpack('>I', data[i+4:i+8])[0] + 8
+                    if size > 0 and size < len(data) - i:
+                        name = f"TROPHY{len(self._trophyList):03d}.UCP"
+                        self._trophyList.append(Archiver(len(self._trophyList), name, offset, size))
+                        logger.info(f"Trovato file UCP '{name}' all'offset 0x{offset:X}, dimensione {size}")
                         i += size
                     else:
                         i += 1

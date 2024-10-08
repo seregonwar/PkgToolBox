@@ -11,8 +11,8 @@ from PIL import Image, UnidentifiedImageError
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem,
                              QFileDialog, QMessageBox, QTabWidget, QScrollArea, QSizePolicy,
-                             QTextEdit, QSpinBox, QFrame, QStatusBar, QToolBar, QAction, QMenu, QInputDialog,
-                             QProgressDialog, QListWidget, QListWidgetItem, QDialog)
+                             QTextEdit, QSpinBox, QFrame, QStatusBar, QToolBar, QAction, QMenu, QInputDialog, QHeaderView,
+                             QProgressDialog, QListWidget, QListWidgetItem, QDialog, QTableWidget, QTableWidgetItem)
 from PyQt5.QtGui import QFont, QPixmap, QPalette, QColor, QRegExpValidator, QIcon, QBrush, QImage, QDesktopServices
 from PyQt5.QtCore import Qt, QRegExp, QSize, QTimer, QUrl
 from kiwisolver import *
@@ -26,6 +26,7 @@ from Utilities.Trophy import Archiver, TRPCreator, TRPReader
 from repack import Repack
 
 from PS4_Passcode_Bruteforcer import PS4PasscodeBruteforcer
+from PS5_Game_Info import PS5GameInfo
 
 OUTPUT_FOLDER = "._temp_output"
 Hexpattern = re.compile(r'[^\x20-\x7E]')
@@ -126,6 +127,7 @@ class PS4PKGTool(QMainWindow):
         self.trp_create_tab = QWidget()  
         self.file_browser_tab = QWidget() 
         self.wallpaper_tab = QWidget() 
+        self.ps5_game_info_tab = QWidget()
         
         self.tab_widget.addTab(self.info_tab, "Info")
         self.tab_widget.addTab(self.extract_tab, "Extract")
@@ -136,6 +138,7 @@ class PS4PKGTool(QMainWindow):
         self.tab_widget.addTab(self.trp_create_tab, "Create TRP")  
         self.tab_widget.addTab(self.file_browser_tab, "File Browser")  
         self.tab_widget.addTab(self.wallpaper_tab, "Wallpaper")  
+        self.tab_widget.addTab(self.ps5_game_info_tab, "PS5 Game Info - by sinajet")
         
         self.tab_widget.setStyleSheet("""
             QTabWidget::pane { border: 1px solid #3498db; }
@@ -154,6 +157,7 @@ class PS4PKGTool(QMainWindow):
         self.setup_trp_create_tab()
         self.setup_file_browser_tab()
         self.setup_wallpaper_tab()
+        self.setup_ps5_game_info_tab()
 
         main_layout.addWidget(right_widget, 2)
 
@@ -790,6 +794,241 @@ class PS4PKGTool(QMainWindow):
     def setup_trp_create_tab(self):
         layout = QVBoxLayout(self.trp_create_tab)
         
+        self.trp_create_entry = QLineEdit()
+        layout.addLayout(self.create_file_selection_layout(self.trp_create_entry, lambda: self.browse_trp_create(self.trp_create_entry)))
+
+        self.trp_create_log = QTextEdit()
+        self.trp_create_log.setReadOnly(True)
+        self.trp_create_log.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
+        layout.addWidget(self.trp_create_log)
+
+        run_button = QPushButton("Create TRP")
+        run_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
+        run_button.clicked.connect(lambda: self.run_command("trp_create"))
+        layout.addWidget(run_button)
+        
+        layout.addStretch(1)
+
+    def setup_file_browser_tab(self):
+        layout = QVBoxLayout(self.file_browser_tab)
+        
+        self.file_browser_entry = QLineEdit()
+        layout.addLayout(self.create_file_selection_layout(self.file_browser_entry, lambda: self.browse_file_browser(self.file_browser_entry)))
+
+        self.file_browser_tree = QTreeWidget()
+        self.file_browser_tree.setHeaderLabels(["Name", "Size"])
+        self.file_browser_tree.setStyleSheet("""
+            QTreeWidget {
+                background-color: white;
+                color: black;
+                font-size: 14px;
+                border: none;
+            }
+            QTreeWidget::item {
+                color: black;
+            }
+        """)
+        self.file_browser_tree.itemClicked.connect(self.display_selected_file)
+        layout.addWidget(self.file_browser_tree)
+
+        self.file_viewer = QTextEdit()
+        self.file_viewer.setReadOnly(True)
+        self.file_viewer.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
+        layout.addWidget(self.file_viewer)
+
+        self.file_browser_log = QTextEdit()
+        self.file_browser_log.setReadOnly(True)
+        self.file_browser_log.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
+        layout.addWidget(self.file_browser_log)
+
+        run_button = QPushButton("Execute File Browser")
+        run_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
+        run_button.clicked.connect(lambda: self.run_command("file_browser"))
+        layout.addWidget(run_button)
+        
+        layout.addStretch(1)
+
+    def setup_wallpaper_tab(self):
+        layout = QVBoxLayout(self.wallpaper_tab)
+        
+        self.wallpaper_tree = QTreeWidget()
+        self.wallpaper_tree.setHeaderLabels(["Name", "Size"])
+        self.wallpaper_tree.setStyleSheet("""
+            QTreeWidget {
+                background-color: white;
+                color: black;
+                font-size: 14px;
+                border: none;
+            }
+            QTreeWidget::item {
+                color: black;
+            }
+        """)
+        self.wallpaper_tree.itemClicked.connect(self.display_selected_wallpaper)
+        layout.addWidget(self.wallpaper_tree)
+
+        self.wallpaper_viewer = QLabel()
+        self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
+        self.wallpaper_viewer.setStyleSheet("background-color: white; border: 1px solid #3498db; border-radius: 5px;")
+        self.wallpaper_viewer.setMinimumSize(300, 300)
+        layout.addWidget(self.wallpaper_viewer)
+
+        button_layout = QHBoxLayout()
+        self.prev_wallpaper_button = QPushButton("Previous")
+        self.next_wallpaper_button = QPushButton("Next")
+        self.prev_wallpaper_button.clicked.connect(self.show_previous_wallpaper)
+        self.next_wallpaper_button.clicked.connect(self.show_next_wallpaper)
+        button_layout.addWidget(self.prev_wallpaper_button)
+        button_layout.addWidget(self.next_wallpaper_button)
+        layout.addLayout(button_layout)
+
+        for button in [self.prev_wallpaper_button, self.next_wallpaper_button]:
+            button.setStyleSheet("""
+                QPushButton {
+                    font-size: 14px;
+                    padding: 8px 15px;
+                    background-color: #3498db;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                }
+                QPushButton:hover {
+                    background-color: #2980b9;
+                }
+            """)
+
+    def setup_ps5_game_info_tab(self):
+        layout = QVBoxLayout(self.ps5_game_info_tab)
+        layout.setSpacing(10)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        # Titolo
+        title_label = QLabel("PS5 Game Information")
+        title_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #3498db; margin-bottom: 15px;")
+        layout.addWidget(title_label, alignment=Qt.AlignCenter)
+
+        # Crea un'istanza di PS5GameInfo
+        self.ps5_game_info = PS5GameInfo()
+
+        # File selection area
+        file_frame = QFrame()
+        file_frame.setStyleSheet("background-color: #f0f0f0; border-radius: 10px; padding: 10px;")
+        file_layout = QHBoxLayout(file_frame)
+        self.ps5_game_path_entry = QLineEdit()
+        self.ps5_game_path_entry.setPlaceholderText("Select eboot.bin file")
+        self.ps5_game_path_entry.setStyleSheet("padding: 8px; border: 1px solid #bdc3c7; border-radius: 5px;")
+        self.ps5_game_path_button = QPushButton("Browse")
+        self.ps5_game_path_button.setStyleSheet(
+            "QPushButton { background-color: #3498db; color: white; padding: 8px 15px; border: none; border-radius: 5px; }"
+            "QPushButton:hover { background-color: #2980b9; }"
+        )
+        file_layout.addWidget(self.ps5_game_path_entry, 3)  # Proporzione 3
+        file_layout.addWidget(self.ps5_game_path_button, 1)  # Proporzione 1
+        layout.addWidget(file_frame)
+
+        # Game info table
+        self.ps5_game_info_table = QTableWidget()
+        self.ps5_game_info_table.setColumnCount(2)
+        self.ps5_game_info_table.setHorizontalHeaderLabels(["Parameter", "Value"])
+        self.ps5_game_info_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.ps5_game_info_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.ps5_game_info_table.setStyleSheet(
+            "QTableWidget { border: 1px solid #bdc3c7; border-radius: 5px; }"
+            "QHeaderView::section { background-color: #3498db; color: white; padding: 8px; }"
+            "QTableWidget::item { padding: 5px; }"
+        )
+        layout.addWidget(self.ps5_game_info_table)
+
+        # Buttons
+        button_layout = QHBoxLayout()
+        self.save_button = QPushButton("Save Changes")
+        self.reload_button = QPushButton("Reload")
+        for button in [self.save_button, self.reload_button]:
+            button.setStyleSheet(
+                "QPushButton { background-color: #2ecc71; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; }"
+                "QPushButton:hover { background-color: #27ae60; }"
+            )
+        button_layout.addWidget(self.save_button)
+        button_layout.addWidget(self.reload_button)
+        layout.addLayout(button_layout)
+
+        # Total Size Label
+        self.total_size_label = QLabel()
+        self.total_size_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #2c3e50; margin-top: 10px;")
+        layout.addWidget(self.total_size_label)
+
+        # Connetti i pulsanti alle azioni
+        self.ps5_game_path_button.clicked.connect(self.browse_ps5_eboot)
+        self.save_button.clicked.connect(self.save_ps5_game_info)
+        self.reload_button.clicked.connect(self.reload_ps5_game_info)
+
+    def browse_ps5_eboot(self):
+        filename, _ = QFileDialog.getOpenFileName(self, "Select PS5 eboot.bin file", "", "eboot.bin files (eboot.bin)")
+        if filename:
+            self.ps5_game_path_entry.setText(filename)
+            self.load_ps5_game_info(os.path.dirname(filename))
+
+    def load_ps5_game_info(self, directory):
+        try:
+            info = self.ps5_game_info.process(directory)
+            if isinstance(info, dict):
+                self.ps5_game_info_table.setRowCount(0)  # Clear existing rows
+                for key, value in info.items():
+                    row_position = self.ps5_game_info_table.rowCount()
+                    self.ps5_game_info_table.insertRow(row_position)
+                    key_item = QTableWidgetItem(key)
+                    key_item.setFlags(key_item.flags() & ~Qt.ItemIsEditable)  # Make key non-editable
+                    self.ps5_game_info_table.setItem(row_position, 0, key_item)
+                    value_item = QTableWidgetItem(str(value))
+                    self.ps5_game_info_table.setItem(row_position, 1, value_item)
+                
+                self.ps5_game_info_table.resizeColumnsToContents()
+                
+                # Display file size
+                file_size = self.ps5_game_info.Fsize
+                self.total_size_label.setText(f"Total Size: {file_size}")
+            else:
+                QMessageBox.warning(self, "Error", str(info))
+        except Exception as e:
+            error_message = f"Error loading PS5 game info: {str(e)}"
+            Logger.log_error(error_message)
+            QMessageBox.warning(self, "Error", error_message)
+
+    def save_ps5_game_info(self):
+        try:
+            updated_info = {}
+            for row in range(self.ps5_game_info_table.rowCount()):
+                key = self.ps5_game_info_table.item(row, 0).text()
+                value = self.ps5_game_info_table.item(row, 1).text()
+                updated_info[key] = value
+            
+            # Aggiorna il dizionario main_dict in PS5GameInfo
+            self.ps5_game_info.main_dict = updated_info
+            
+            # Salva le modifiche nel file param.json
+            param_json_path = os.path.join(os.path.dirname(self.ps5_game_path_entry.text()), "sce_sys/param.json")
+            with open(param_json_path, "r+") as f:
+                existing_data = json.load(f)
+                for key, value in updated_info.items():
+                    if key in existing_data:
+                        existing_data[key] = value
+                f.seek(0)
+                json.dump(existing_data, f, indent=4)
+                f.truncate()
+            
+            QMessageBox.information(self, "Success", "Changes saved successfully")
+        except Exception as e:
+            error_message = f"Error saving PS5 game info: {str(e)}"
+            Logger.log_error(error_message)
+            QMessageBox.warning(self, "Error", error_message)
+
+    def reload_ps5_game_info(self):
+        directory = os.path.dirname(self.ps5_game_path_entry.text())
+        self.load_ps5_game_info(directory)
+
+    def setup_trp_create_tab(self):
+        layout = QVBoxLayout(self.trp_create_tab)
+        
         self.trp_info = QTextEdit()
         self.trp_info.setReadOnly(True)
         self.trp_info.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
@@ -1263,7 +1502,7 @@ class PS4PKGTool(QMainWindow):
             QMessageBox.critical(self, "Error", "No PKG file loaded")
 
     def browse_trophy(self):
-        filename, _ = QFileDialog.getOpenFileName(self, "Select Trophy file", "", "Trophy files (*.trp)")
+        filename, _ = QFileDialog.getOpenFileName(self, "Select Trophy file", "", "Trophy files (*.trp *.ucp)")
         if filename:
             self.trophy_entry.setText(filename)
             self.load_trophy_info(filename)
@@ -1377,6 +1616,7 @@ class PS4PKGTool(QMainWindow):
             Logger.log_warning("No file selected for extraction")
             QMessageBox.warning(self, "Warning", "No file selected.")
         return None
+
     def load_files(self):
         if self.package:
             self.file_tree.clear()

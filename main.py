@@ -20,6 +20,7 @@ from Utilities import (
     Utils
 )
 from repack import Repack
+from PS5_Game_Info import PS5GameInfo
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -228,6 +229,24 @@ def execute_command(cmd, pkg, file, out, update_callback_info):
             except Exception as e:
                 logging.error(f"Error during repack: {e}")
                 raise ValueError(f"Error during repack: {e}")
+        elif args.cmd == "ps5_game_info":
+            ps5_game_info = PS5GameInfo()
+            ps5_game_info.setupUi(None)  # Passa None come parametro poiché non abbiamo una finestra QMainWindow
+            ps5_game_info.le_game_path.setText(args.pkg)
+            ps5_game_info.main_procress()
+            
+            # Raccogli le informazioni dal QTreeWidget
+            info_dict = {}
+            root = ps5_game_info.tree.invisibleRootItem()
+            child_count = root.childCount()
+            for i in range(child_count):
+                item = root.child(i)
+                key = item.text(0)
+                value = item.text(1)
+                info_dict[key] = value
+            
+            update_callback_info(info_dict)
+            return "PS5 Game Info extracted successfully"
     except FileExistsError as e:
         logging.warning(f"The file already exists during command execution: {cmd} - {e}")
         raise
