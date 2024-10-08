@@ -13,10 +13,13 @@
 
 Currently, I am the only developer 👨‍💻 and handling all the work can be challenging. Any support is greatly appreciated! 🙌
 
-**P.S.** if you are able to use the OpenOrbis sdk you could be really useful. I would like to create a version of this application that can run directly on PlayStation so that I can manipulate pkg files directly from there! Contact me! ;)
+**P.S.** If you are able to use the OpenOrbis SDK, you could be really useful. I would like to create a version of this application that can run directly on PlayStation so that I can manipulate PKG files directly from there! Contact me! 😉
 
 ## Description
 PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract, inject, modify, and obtain information about PKG files.
+
+## Contributions
+- **[Sinajet](https://github.com/sinajet/)**: Creator of **[PS5-Game-Info](https://github.com/sinajet/PS5-Game-Info)**, used in the program to read `eboot.bin` packages from `.pkg` files and recognize whether they are fake or not.
 
 ## Features
 - **Extraction**: Extract specific files from a PKG.
@@ -84,16 +87,16 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
 - [x] Advanced reading of information.
 - [x] Improvement in the analysis of values in hex format.
 - [x] Improvements and bug fixes.
-- [x] PS5 pkg support
-- [ ] Full support ps5 pkgs file
-- [ ] Fpkg updates
-- [ ] Advanced pkg file splitting.
-- [ ] Implementation of the inject section for loading dlc directly into pkg packages.
+- [x] PS5 pkg support.
+- [x] Full .trp (PS4) and .ucp (PS5) trophy file support.
+- [ ] Full support for PS5 PKG files.
+- [ ] Fpkg updates.
+- [ ] Advanced PKG file splitting.
+- [ ] Implementation of the inject section for loading DLC directly into PKG packages.
 - [x] Increased program stability and improved error handling.
-- [ ] Implementation of the project on other platforms(e.g. linux, macos etc.).
-- [ ] Implementation of PkgToolBox directly on ps4 and ps5 systems.
+- [ ] Implementation of the project on other platforms (e.g., Linux, macOS, etc.).
+- [ ] Implementation of PKGToolBox directly on PS4 and PS5 systems.
 
 ## GUI
 
 ![image](https://github.com/user-attachments/assets/a31614ec-631f-4284-bdcc-144be87fbebe)
-
