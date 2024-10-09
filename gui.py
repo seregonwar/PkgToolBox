@@ -35,7 +35,7 @@ Hexpattern = re.compile(r'[^\x20-\x7E]')
 class PS4PKGTool(QMainWindow):
     def __init__(self, temp_directory):
         super().__init__()
-        self.setWindowTitle("PKG Tool Box v1.1")
+        self.setWindowTitle("PKG Tool Box v1.4")
         self.setGeometry(100, 100, 1200, 800)
         
         # Initialize all necessary widgets
@@ -286,12 +286,12 @@ class PS4PKGTool(QMainWindow):
         donation_button = QPushButton("Support me on Ko-fi")
         donation_button.setStyleSheet("""
             QPushButton {
-                font-size: 14px;
+                font-size: 16px;
                 color: white;
                 background-color: #e74c3c;
                 font-weight: bold;
                 border: none;
-                padding: 5px 10px;
+                padding: 10px 20px;
                 border-radius: 5px;
             }
             QPushButton:hover {
@@ -586,7 +586,7 @@ class PS4PKGTool(QMainWindow):
 
         try:
             reply = QMessageBox.question(self, 'Confirm', 
-                                         "You are about to perform a reverse dump. This operation will modify the original PKG file. Do you want to continue?",
+                                         "You are about to perform a reverse dump. This operation will create a new modified PKG file. Do you want to continue?",
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             
             if reply == QMessageBox.Yes:
@@ -902,12 +902,12 @@ class PS4PKGTool(QMainWindow):
         layout.setSpacing(10)
         layout.setContentsMargins(20, 20, 20, 20)
 
-        # Titolo
+        # Title
         title_label = QLabel("PS5 Game Information")
-        title_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #3498db; margin-bottom: 15px;")
+        title_label.setStyleSheet("font-size: 20px; font-weight: bold; color: #3498db; margin-bottom: 10px;")
         layout.addWidget(title_label, alignment=Qt.AlignCenter)
 
-        # Crea un'istanza di PS5GameInfo
+        # Create an instance of PS5GameInfo
         self.ps5_game_info = PS5GameInfo()
 
         # File selection area
@@ -916,14 +916,14 @@ class PS4PKGTool(QMainWindow):
         file_layout = QHBoxLayout(file_frame)
         self.ps5_game_path_entry = QLineEdit()
         self.ps5_game_path_entry.setPlaceholderText("Select eboot.bin file")
-        self.ps5_game_path_entry.setStyleSheet("padding: 8px; border: 1px solid #bdc3c7; border-radius: 5px;")
+        self.ps5_game_path_entry.setStyleSheet("padding: 6px; border: 1px solid #bdc3c7; border-radius: 5px;")
         self.ps5_game_path_button = QPushButton("Browse")
         self.ps5_game_path_button.setStyleSheet(
-            "QPushButton { background-color: #3498db; color: white; padding: 8px 15px; border: none; border-radius: 5px; }"
+            "QPushButton { background-color: #3498db; color: white; padding: 6px 12px; border: none; border-radius: 5px; }"
             "QPushButton:hover { background-color: #2980b9; }"
         )
-        file_layout.addWidget(self.ps5_game_path_entry, 3)  # Proporzione 3
-        file_layout.addWidget(self.ps5_game_path_button, 1)  # Proporzione 1
+        file_layout.addWidget(self.ps5_game_path_entry, 3)
+        file_layout.addWidget(self.ps5_game_path_button, 1)
         layout.addWidget(file_frame)
 
         # Game info table
@@ -934,8 +934,8 @@ class PS4PKGTool(QMainWindow):
         self.ps5_game_info_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.ps5_game_info_table.setStyleSheet(
             "QTableWidget { border: 1px solid #bdc3c7; border-radius: 5px; }"
-            "QHeaderView::section { background-color: #3498db; color: white; padding: 8px; }"
-            "QTableWidget::item { padding: 5px; }"
+            "QHeaderView::section { background-color: #3498db; color: white; padding: 6px; }"
+            "QTableWidget::item { padding: 4px; }"
         )
         layout.addWidget(self.ps5_game_info_table)
 
@@ -945,7 +945,7 @@ class PS4PKGTool(QMainWindow):
         self.reload_button = QPushButton("Reload")
         for button in [self.save_button, self.reload_button]:
             button.setStyleSheet(
-                "QPushButton { background-color: #2ecc71; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; }"
+                "QPushButton { background-color: #2ecc71; color: white; padding: 8px 16px; border: none; border-radius: 5px; font-weight: bold; }"
                 "QPushButton:hover { background-color: #27ae60; }"
             )
         button_layout.addWidget(self.save_button)
@@ -954,10 +954,15 @@ class PS4PKGTool(QMainWindow):
 
         # Total Size Label
         self.total_size_label = QLabel()
-        self.total_size_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #2c3e50; margin-top: 10px;")
+        self.total_size_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #2c3e50; margin-top: 10px;")
         layout.addWidget(self.total_size_label)
 
-        # Connetti i pulsanti alle azioni
+        # PKG Status Label
+        self.pkg_status_label = QLabel()
+        self.pkg_status_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #2c3e50; margin-top: 10px;")
+        layout.addWidget(self.pkg_status_label)
+
+        # Connect buttons to actions
         self.ps5_game_path_button.clicked.connect(self.browse_ps5_eboot)
         self.save_button.clicked.connect(self.save_ps5_game_info)
         self.reload_button.clicked.connect(self.reload_ps5_game_info)
@@ -987,6 +992,9 @@ class PS4PKGTool(QMainWindow):
                 # Display file size
                 file_size = self.ps5_game_info.Fsize
                 self.total_size_label.setText(f"Total Size: {file_size}")
+                
+                # Set PKG status (fake or original)
+                self.pkg_status_label.setText(f"PKG Status: {self.ps5_game_info.Fcheck}")
             else:
                 QMessageBox.warning(self, "Error", str(info))
         except Exception as e:
@@ -1002,11 +1010,16 @@ class PS4PKGTool(QMainWindow):
                 value = self.ps5_game_info_table.item(row, 1).text()
                 updated_info[key] = value
             
-            # Aggiorna il dizionario main_dict in PS5GameInfo
+            # Update the main_dict in PS5GameInfo
             self.ps5_game_info.main_dict = updated_info
             
-            # Salva le modifiche nel file param.json
+            # Save changes to param.json
             param_json_path = os.path.join(os.path.dirname(self.ps5_game_path_entry.text()), "sce_sys/param.json")
+            
+            if not os.path.exists(param_json_path):
+                QMessageBox.warning(self, "Error", "The param.json file does not exist.")
+                return
+            
             with open(param_json_path, "r+") as f:
                 existing_data = json.load(f)
                 for key, value in updated_info.items():

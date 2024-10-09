@@ -3,6 +3,10 @@ import re
 import hashlib
 from decimal import Decimal
 from io import BytesIO
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class Archiver:
     def __init__(self, index, name, offset, size, bytes_data):
@@ -29,36 +33,41 @@ class TRPCreator:
         self._setversion = value
 
     def Create(self, filename, contents):
-        if self._setversion < 1 or self._setversion > 3:
-            raise Exception("File version must be one of these { 1, 2, 3 }.")
-        self._trophyList.clear()
-        contents = self.SortList(contents)
-        memoryStream = BytesIO()
-        num1 = 0
-        count = len(contents)
-        num2 = 64 * len(contents)
-        for m_Index, path in enumerate(contents):
-            fileName = os.path.basename(path)
-            with open(path, 'rb') as f:
-                m_Bytes = f.read()
-            length = len(m_Bytes)
-            pads = self.GetPads(length, 16)
-            num1 += pads
-            self._trophyList.append(Archiver(m_Index, fileName, int(Decimal(num2) + Decimal(96 if self._setversion == 3 else 64)), length, m_Bytes))
-            num2 = int(Decimal(num2) + Decimal(length) + Decimal(pads))
-        size = self.GetSize()
-        header = self.GetHeader(self._setversion, int(Decimal((96 if self._setversion == 3 else 64) + len(self.GetHeaderFiles()) + size + num1)), count, 64, 0, None)
-        memoryStream.write(header)
-        headerFiles = self.GetHeaderFiles()
-        memoryStream.write(headerFiles)
-        bytes1 = self.GetBytes()
-        memoryStream.write(bytes1)
-        if self._setversion > 1:
-            bytes2 = self.HexStringToBytes(self.CalculateSHA1Hash(memoryStream.getvalue()))
-            memoryStream.seek(28)
-            memoryStream.write(bytes2)
-        with open(filename, 'wb') as f:
-            f.write(memoryStream.getvalue())
+        try:
+            if self._setversion < 1 or self._setversion > 3:
+                raise ValueError("File version must be one of these { 1, 2, 3 }.")
+            self._trophyList.clear()
+            contents = self.SortList(contents)
+            memoryStream = BytesIO()
+            num1 = 0
+            count = len(contents)
+            num2 = 64 * len(contents)
+            for m_Index, path in enumerate(contents):
+                fileName = os.path.basename(path)
+                with open(path, 'rb') as f:
+                    m_Bytes = f.read()
+                length = len(m_Bytes)
+                pads = self.GetPads(length, 16)
+                num1 += pads
+                self._trophyList.append(Archiver(m_Index, fileName, int(Decimal(num2) + Decimal(96 if self._setversion == 3 else 64)), length, m_Bytes))
+                num2 = int(Decimal(num2) + Decimal(length) + Decimal(pads))
+            size = self.GetSize()
+            header = self.GetHeader(self._setversion, int(Decimal((96 if self._setversion == 3 else 64) + len(self.GetHeaderFiles()) + size + num1)), count, 64, 0, None)
+            memoryStream.write(header)
+            headerFiles = self.GetHeaderFiles()
+            memoryStream.write(headerFiles)
+            bytes1 = self.GetBytes()
+            memoryStream.write(bytes1)
+            if self._setversion > 1:
+                bytes2 = self.HexStringToBytes(self.CalculateSHA1Hash(memoryStream.getvalue()))
+                memoryStream.seek(28)
+                memoryStream.write(bytes2)
+            with open(filename, 'wb') as f:
+                f.write(memoryStream.getvalue())
+            logger.info(f"File '{filename}' created successfully.")
+        except Exception as e:
+            logger.error(f"Error creating file: {e}")
+            raise
 
     def CreateFromList(self, filename, contents):
         if self._setversion < 1 or self._setversion > 3:

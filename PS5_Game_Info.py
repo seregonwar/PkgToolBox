@@ -169,7 +169,7 @@ class PS5GameInfo:
             "Fake Self": "True" if self.Fcheck == '(<span style=" color:#55aa00;">Fake</span>)' else "False"
         }
 
-        
+        # Aggiungi altri parametri al main_dict
         for key, value in dict_param.items():
             if isinstance(value, dict):
                 for sub_key, sub_value in value.items():

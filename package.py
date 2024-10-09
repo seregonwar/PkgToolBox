@@ -13,6 +13,8 @@ from typing import Dict, Any
 import json
 import re
 import unicodedata
+from PS5_Game_Info import PS5GameInfo
+import io
 
 
 class Type(Enum):
@@ -190,7 +192,7 @@ class Package:
     def _load_ps5_pkg(self, fp):
         try:
             self.is_ps5 = True
-            header_format = ">4s2sH4sQ4I4Q2I14s16s16s16s16s16s16s"
+            header_format = ">4s2sH4sQ4I4Q2I14s16s16s16s16s16s16s16s"
 
             fp.seek(0)
             data = fp.read(struct.calcsize(header_format))
@@ -213,41 +215,175 @@ class Package:
             self.version_hash = unpacked_data[15]
             self.iro_tag = unpacked_data[16]
 
-            # Aggiungi questa verifica dopo aver letto l'offset della tabella di ingresso
-            if self.entry_table_offset == 0:
-                Logger.log_warning("Entry table offset is 0, attempting to find the correct offset")
-                self.entry_table_offset = self._find_entry_table_offset(fp)
-
-            # Assicurati che i valori siano ragionevoli
-            file_size = fp.seek(0, 2)
-            self.entry_table_offset = min(self.entry_table_offset, file_size)
-            self.entry_table_size = min(self.entry_table_size, 1024 * 1024 * 10)  # Limita a 10 MB
-            self.body_offset = min(self.body_offset, file_size)
-            self.body_size = min(self.body_size, file_size - self.body_offset)
-
-            # Log dei valori principali
-            Logger.log_information(f"magic: {self.magic.hex()}")
-            Logger.log_information(f"pkg_type: {self.pkg_type.hex()}")
-            Logger.log_information(f"pkg_revision: {self.pkg_revision}")
-            Logger.log_information(f"pkg_file_count: {self.pkg_file_count}")
-            Logger.log_information(f"entry_table_offset: 0x{self.entry_table_offset:X}")
-            Logger.log_information(f"entry_table_size: 0x{self.entry_table_size:X}")
-            Logger.log_information(f"body_offset: 0x{self.body_offset:X}")
-            Logger.log_information(f"body_size: 0x{self.body_size:X}")
-            Logger.log_information(f"content_id: {self.content_id}")
-            Logger.log_information(f"drm_type: 0x{self.drm_type:X}")
-            Logger.log_information(f"content_type: 0x{self.content_type:X}")
-            Logger.log_information(f"content_flags: 0x{self.content_flags:X}")
-            Logger.log_information(f"promote_size: 0x{self.promote_size:X}")
-
+            # Inizializza i campi con valori predefiniti
             self._initialize_ps5_fields()
-            self.__load_ps5_files(fp)
-            self._parse_param_json(fp)
+
+            if self.entry_table_offset == 0 or self.entry_table_size == 0:
+                Logger.log_warning("Invalid entry table offset or size, package might be encrypted")
+                self._files = {}
+            else:
+                self.__load_ps5_files(fp)
+
+            # Cerca specificamente il file param.json
+            param_json = self._find_file_by_name("sce_sys/param.json")
+            if param_json:
+                self._parse_param_json(fp, param_json)
+            else:
+                Logger.log_warning("param.json not found in the package")
+
             self._read_digests_and_layout(fp)
-            self.files = self._files
+            self.files = self._files if hasattr(self, '_files') else {}
+
+            # Cerca altri file importanti
+            self._find_important_files()
+
         except Exception as e:
             Logger.log_error(f"Error loading PS5 PKG file: {str(e)}")
+            self._files = {}
+            self.files = {}
             raise ValueError(f"Error loading PS5 PKG file: {str(e)}")
+
+    def _find_file_by_name(self, name):
+        return next((file for file in self._files.values() if file.get("name") == name), None)
+
+    def _parse_param_json(self, fp, param_json):
+        try:
+            fp.seek(param_json["offset"])
+            json_data = fp.read(param_json["size"])
+            json_content = json.loads(json_data)
+            
+            # Informazioni di base
+            self.title_id = json_content.get("titleId")
+            self.content_id = json_content.get("contentId")
+            self.content_version = json_content.get("contentVersion")
+            self.required_system_software_version = json_content.get("requiredSystemSoftwareVersion")
+            self.application_category_type = json_content.get("applicationCategoryType")
+            self.application_drm_type = json_content.get("applicationDrmType")
+            
+            # Informazioni localizzate
+            localized_params = json_content.get("localizedParameters", {})
+            self.default_language = localized_params.get("defaultLanguage")
+            self.title_names = {}
+            for lang, data in localized_params.items():
+                if isinstance(data, dict) and "titleName" in data:
+                    self.title_names[lang] = data["titleName"]
+            
+            # Versioni e SDK
+            self.sdk_version = json_content.get("sdkVersion")
+            self.master_version = json_content.get("masterVersion")
+            self.target_content_version = json_content.get("targetContentVersion")
+            self.origin_content_version = json_content.get("originContentVersion")
+            
+            # Informazioni sulla pubblicazione
+            self.pubtools = json_content.get("pubtools", {})
+            self.creation_date = self.pubtools.get("creationDate")
+            self.publishing_tools_version = self.pubtools.get("toolVersion")
+            
+            # Attributi e categorie
+            self.attribute = json_content.get("attribute")
+            self.attribute2 = json_content.get("attribute2")
+            self.attribute3 = json_content.get("attribute3")
+            self.content_badge_type = json_content.get("contentBadgeType")
+            
+            # Informazioni sul download e sulla dimensione
+            self.download_data_size = json_content.get("downloadDataSize")
+            self.mass_size = json_content.get("massSize")
+            
+            # Informazioni sul kernel e sulla memoria
+            kernel_info = json_content.get("kernel", {})
+            self.flexible_memory_size = kernel_info.get("flexibleMemorySize")
+            
+            # Informazioni sull'età
+            self.age_levels = json_content.get("ageLevel", {})
+            
+            # Intenti di gioco
+            game_intents = json_content.get("gameIntent", {}).get("permittedIntents", [])
+            self.game_intents = [intent.get("intentType") for intent in game_intents if "intentType" in intent]
+            
+            # URI per deeplink e aggiornamenti
+            self.deeplink_uri = json_content.get("deeplinkUri")
+            self.version_file_uri = json_content.get("versionFileUri")
+            
+            Logger.log_information(f"Parsed param.json: Title ID: {self.title_id}, Content ID: {self.content_id}, Default Title: {self.title_names.get(self.default_language)}")
+        except Exception as e:
+            Logger.log_error(f"Error parsing param.json: {str(e)}")
+
+    def _find_important_files(self):
+        important_files = [
+            "eboot.bin",
+            "sce_sys/icon0.png",
+            "sce_sys/pic0.png",
+            "sce_sys/pic1.png",
+            "sce_sys/playgo-chunk.dat",
+            "sce_sys/playgo-manifest.xml",
+            "sce_sys/trophy/trophy00.trp"
+        ]
+        
+        for file_name in important_files:
+            file_info = self._find_file_by_name(file_name)
+            if file_info:
+                Logger.log_information(f"Found important file: {file_name}")
+            else:
+                Logger.log_warning(f"Important file not found: {file_name}")
+
+    def _read_eboot_info(self, fp):
+        eboot_file = next((file for file in self.files.values() if file.get("name") == "eboot.bin"), None)
+        if eboot_file:
+            fp.seek(eboot_file['offset'])
+            eboot_data = fp.read(eboot_file['size'])
+            
+            # Crea un oggetto file-like in memoria
+            eboot_io = io.BytesIO(eboot_data)
+            
+            # Usa PS5GameInfo per analizzare eboot.bin
+            ps5_info = PS5GameInfo()
+            ps5_info.gPath = self.original_file  # Usa il percorso del file PKG
+            ps5_info.Fcheck = ps5_info.eboot_fake_checker_from_data(eboot_data)
+            
+            # Simula la struttura delle cartelle per param.json
+            param_json = next((file for file in self.files.values() if file.get("name") == "sce_sys/param.json"), None)
+            if param_json:
+                fp.seek(param_json['offset'])
+                param_data = fp.read(param_json['size'])
+                ps5_info.param_table_inputer_from_data(param_data)
+            
+            self.ps5_game_info = ps5_info.main_dict
+        else:
+            Logger.log_warning("eboot.bin not found in the package")
+
+    def get_info(self):
+        info = super().get_info()  # Ottieni le informazioni di base
+        if self.is_ps5:
+            info.update({
+                "title_id": self.title_id,
+                "content_id": self.content_id,
+                "content_version": self.content_version,
+                "required_system_software_version": self.required_system_software_version,
+                "application_category_type": self.application_category_type,
+                "application_drm_type": self.application_drm_type,
+                "default_language": self.default_language,
+                "title_names": self.title_names,
+                "sdk_version": self.sdk_version,
+                "master_version": self.master_version,
+                "target_content_version": self.target_content_version,
+                "origin_content_version": self.origin_content_version,
+                "creation_date": self.creation_date,
+                "publishing_tools_version": self.publishing_tools_version,
+                "attribute": self.attribute,
+                "attribute2": self.attribute2,
+                "attribute3": self.attribute3,
+                "content_badge_type": self.content_badge_type,
+                "download_data_size": self.download_data_size,
+                "mass_size": self.mass_size,
+                "flexible_memory_size": self.flexible_memory_size,
+                "age_levels": self.age_levels,
+                "game_intents": self.game_intents,
+                "deeplink_uri": self.deeplink_uri,
+                "version_file_uri": self.version_file_uri
+            })
+        if hasattr(self, 'ps5_game_info'):
+            info.update(self.ps5_game_info)  # Aggiungi le informazioni di PS5GameInfo
+        return info
 
     def _find_entry_table_offset(self, fp):
         # Cerca l'offset corretto della tabella di ingresso
@@ -262,9 +398,9 @@ class Package:
     def _initialize_ps5_fields(self):
         self.application_category_type = None
         self.application_drm_type = None
-        self.title_id = None
-        self.title_name = None
-        self.content_version = None
+        self.title_id = "Unknown"  # Imposta un valore predefinito
+        self.title_name = "Unknown"  # Imposta un valore predefinito
+        self.content_version = "Unknown"
         self.required_system_software_version = None
         self.sdk_version = None
         self.publishing_tools_version = None
@@ -276,7 +412,7 @@ class Package:
         self.pfs_offset = self.pfs_size = None
         self.sc_offset = self.sc_size = None
         self.si_offset = self.si_size = None
-        self.master_version = None  # Aggiungi questa riga
+        self.master_version = None
 
     def _parse_param_json(self, fp):
         param_json = next((file for file in self._files.values() if file.get("name", "").lower() == "param.json"), None)
@@ -611,29 +747,63 @@ class Package:
 
         log_file_path = os.path.join(out_path, "dump_log.txt")
         with open(log_file_path, 'w') as log_file:
+            eboot_extracted = False
             for file_id, file_info in self.files.items():
-                out = os.path.join(out_path, file_info.get("name", f"file_{file_id}"))
+                file_name = file_info.get("name", f"file_{file_id}")
+                
+                # Gestione speciale per i file con nomi non validi
+                safe_file_name = self.sanitize_filename(file_name)
+                
+                if safe_file_name == "eboot.bin" or safe_file_name.startswith("sce_sys/"):
+                    full_path = os.path.join(out_path, safe_file_name)
+                    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                    out = full_path
+                    if safe_file_name == "eboot.bin":
+                        eboot_extracted = True
+                else:
+                    out = os.path.join(out_path, safe_file_name)
 
                 try:
+                    file_content = self.read_file(file_id)
+                    if len(file_content) == 0:
+                        log_message = f"WARNING: Skipping empty file: {safe_file_name}\n"
+                        log_file.write(log_message)
+                        logging.warning(log_message.strip())
+                        continue
+                    
+                    with open(out, 'wb') as f:
+                        f.write(file_content)
+                    
                     if os.path.isfile(out):
-                        raise FileExistsError(f"File with matching name already exists: {out}")
+                        Logger.log_warning(f"File already exists, overwriting: {out}")
                     
                     self.extract(file_id, out)
                     
                     if self.verify_file_integrity(file_id, out):
-                        log_message = f"OK: File extracted successfully: {file_info.get('name', f'file_{file_id}')}\n"
+                        log_message = f"OK: File extracted successfully: {safe_file_name}\n"
                     else:
-                        log_message = f"ERROR: Integrity not verified for file: {file_info.get('name', f'file_{file_id}')}\n"
+                        log_message = f"ERROR: Integrity not verified for file: {safe_file_name}\n"
                     
                     log_file.write(log_message)
                     logging.info(log_message.strip())
                 except Exception as e:
-                    log_message = f"ERROR: Unable to extract file {file_info.get('name', f'file_{file_id}')}: {str(e)}\n"
+                    log_message = f"ERROR: Unable to extract file {safe_file_name}: {str(e)}\n"
                     log_file.write(log_message)
                     logging.error(log_message.strip())
 
+            if not eboot_extracted:
+                log_message = "WARNING: eboot.bin was not found or could not be extracted\n"
+                log_file.write(log_message)
+                logging.warning(log_message.strip())
+
         logging.info(f"Dump completed. Log saved in: {log_file_path}")
         return f"Dump completed. Log saved in: {log_file_path}"
+
+    def sanitize_filename(self, filename):
+        # Rimuovi caratteri non validi e limita la lunghezza
+        valid_chars = "-_.() abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        sanitized = ''.join(c for c in filename if c in valid_chars)
+        return sanitized[:255]  # Limita a 255 caratteri
 
     def verify_file_integrity(self, file_id, extracted_path):
         try:
@@ -642,8 +812,13 @@ class Package:
             
             original_data = self.read_file(file_id)
             
-            return len(extracted_data) == len(original_data) and extracted_data == original_data
-        except IOError:
+            if len(extracted_data) != len(original_data):
+                Logger.log_warning(f"Size mismatch for file ID {file_id}: extracted {len(extracted_data)} bytes, original {len(original_data)} bytes")
+                return False
+            
+            return extracted_data == original_data
+        except IOError as e:
+            Logger.log_error(f"IO Error during integrity check for file ID {file_id}: {str(e)}")
             return False
 
     def read_file(self, file_id):
@@ -654,15 +829,6 @@ class Package:
         with open(self.original_file, 'rb') as f:
             f.seek(file_info['offset'])
             data = f.read(file_info['size'])
-        
-        # Verifica se l'immagine è troncata
-        try:
-            Image.open(io.BytesIO(data)).verify()
-        except Exception:
-            # Se l'immagine è troncata, prova a leggere più dati
-            with open(self.original_file, 'rb') as f:
-                f.seek(file_info['offset'])
-                data = f.read(file_info['size'] + 1024)  # Leggi 1KB in più
         
         return data
 
@@ -813,64 +979,6 @@ class Package:
 
     def list_files(self):
         return list(self._files.keys())
-
-    def reverse_dump(self, input_dir: str, progress_callback=None):
-        """
-        Reconstructs the PKG with modified files from the input directory.
-        """
-        if not self.files:
-            logging.error("No files found in the package.")
-            return "Error: No files found in the package."
-
-        log_file_path = os.path.join(input_dir, "reverse_dump_log.txt")
-        
-        # Create a backup copy of the original PKG file
-        backup_file = f"{self.original_file}.bak"
-        shutil.copy2(self.original_file, backup_file)
-        logging.info(f"Backup created: {backup_file}")
-
-        with open(log_file_path, 'w') as log_file, open(self.original_file, 'r+b') as pkg_file:
-            # Preserve the original header
-            pkg_file.seek(0)
-            header = pkg_file.read(self.pkg_table_offset)
-
-            # Create a new temporary file for the reconstructed PKG
-            temp_pkg_file = f"{self.original_file}.temp"
-            with open(temp_pkg_file, 'wb') as new_pkg:
-                new_pkg.write(header)
-
-                # Update the file table and rewrite the contents
-                new_offset = self.pkg_table_offset
-                for file_id, file_info in self.files.items():
-                    input_file_path = os.path.join(input_dir, file_info.get("name", f"file_{file_id}"))
-                    
-                    if os.path.exists(input_file_path):
-                        with open(input_file_path, 'rb') as input_file:
-                            file_content = input_file.read()
-                    else:
-                        pkg_file.seek(file_info['offset'])
-                        file_content = pkg_file.read(file_info['size'])
-
-                    # Update the offset in file_info
-                    file_info['offset'] = new_offset
-                    file_info['size'] = len(file_content)
-
-                    # Write the file content
-                    new_pkg.write(file_content)
-                    new_offset += len(file_content)
-
-                    if progress_callback:
-                        progress_callback({"status": f"Processed: {file_info.get('name', f'file_{file_id}')}"})
-
-                # Rewrite the updated file table
-                self._write_file_table(new_pkg)
-
-            # Replace the original file with the new one
-            os.remove(self.original_file)
-            os.rename(temp_pkg_file, self.original_file)
-
-        logging.info(f"Reverse dump completed. Log saved in: {log_file_path}")
-        return f"Reverse dump completed. Log saved in: {log_file_path}"
 
     def _write_file_table(self, file):
         file.seek(self.pkg_table_offset)
