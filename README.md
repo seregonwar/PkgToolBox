@@ -55,14 +55,6 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
     pip install -r requirements.txt
     ```
 
-3. Ensure `orbis-pub-cmd.exe` is located in the `OrbisLibrary` directory:
-    ```sh
-    PS4-PKG-Tool-Box/
-    ├── OrbisLibrary/
-    │   └── orbis-pub-cmd.exe
-    └── ...
-    ```
-
 ## Usage
 1. Run the application:
     ```sh
