@@ -74,21 +74,35 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
     - **Delete**: Delete files from the PKG.
     - **Trophy Management**: Load, read, and manage trophy files.
 
-## Road Map
-- [x] Addition of an advanced directory file explorer to navigate internally to PKG files.
-- [x] Advanced reading of information.
-- [x] Improvement in the analysis of values in hex format.
-- [x] Improvements and bug fixes.
-- [x] PS5 pkg support.
-- [x] Full .trp (PS4) and .ucp (PS5) trophy file support.
-- [ ] Full support for PS3 PKGs files
-- [ ] Full support for PS5 PKGs files.
-- [ ] Fpkg updates.
-- [ ] Advanced PKG file splitting.
-- [ ] Implementation of the inject section for loading DLC directly into PKG packages.
-- [x] Increased program stability and improved error handling.
-- [ ] Implementation of the project on other platforms (e.g., Linux, macOS, etc.).
-- [ ] Implementation of PKGToolBox directly on PS4 and PS5 systems.
+## Roadmap
+
+### Completed
+- **PKG File Navigation**
+  - [x] Addition of an advanced directory file explorer to navigate internally within PKG files.
+  - [x] Advanced reading of information.
+  - [x] Improvement in the analysis of values in hex format.
+  - [x] PS5 PKG file support.
+- **Trophy Support**
+  - [x] Full support for `.trp` trophy files (PS4).
+  - [x] Full support for `.ucp` trophy files (PS5).
+- **Stability**
+  - [x] Increased program stability.
+  - [x] Improved error handling.
+- **General Improvements**
+  - [x] Various improvements and bug fixes.
+### In Progress / Planned
+- **PKG Support**
+  - [ ] Full support for PS3 PKG files.
+  - [ ] Full support for PS5 PKG files.
+  - [ ] Advanced PKG file splitting.
+  - [ ] Fpkg updates.
+  - [ ] Implementation of PKGToolBox directly on PS4 and PS5 systems.
+- **DLC Injection**
+  - [ ] Implementation of the inject section for loading DLC directly into PKG packages.
+- **Multi-platform Compatibility**
+  - [ ] Implementation of the project on other platforms (e.g., Linux, macOS, etc.).
+- **File Decryption**
+  - [ ] Decryption of `.ESFM` files.
 
 ## GUI
 
