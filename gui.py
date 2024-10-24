@@ -7,6 +7,8 @@ import binascii
 import subprocess
 import io
 import json
+import requests
+import struct  
 from PIL import Image, UnidentifiedImageError
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem,
@@ -17,12 +19,12 @@ from PyQt5.QtGui import QFont, QPixmap, QPalette, QColor, QRegExpValidator, QIco
 from PyQt5.QtCore import Qt, QRegExp, QSize, QTimer, QUrl
 from kiwisolver import *
 
-from package import Package
+from packages import PackagePS4, PackagePS5, PackagePS3
 from file_operations import extract_file, inject_file, modify_file_header
 import concurrent.futures
 # Import utilities
 from Utilities import Logger, SettingsManager, TRPReader  
-from Utilities.Trophy import Archiver, TRPCreator, TRPReader  
+from Utilities.Trophy import Archiver, TRPCreator, TRPReader, ESMFDecrypter
 from repack import Repack
 
 from PS4_Passcode_Bruteforcer import PS4PasscodeBruteforcer
@@ -128,13 +130,15 @@ class PS4PKGTool(QMainWindow):
         self.file_browser_tab = QWidget() 
         self.wallpaper_tab = QWidget() 
         self.ps5_game_info_tab = QWidget()
-        
+        self.esmf_decrypter_tab = QWidget()
+
         self.tab_widget.addTab(self.info_tab, "Info")
         self.tab_widget.addTab(self.extract_tab, "Extract")
         self.tab_widget.addTab(self.dump_tab, "Dump")
         self.tab_widget.addTab(self.inject_tab, "Inject")
         self.tab_widget.addTab(self.modify_tab, "Modify")
         self.tab_widget.addTab(self.trophy_tab, "Trophy")
+        self.tab_widget.addTab(self.esmf_decrypter_tab, "ESMF Decrypter")
         self.tab_widget.addTab(self.trp_create_tab, "Create TRP")  
         self.tab_widget.addTab(self.file_browser_tab, "File Browser")  
         self.tab_widget.addTab(self.wallpaper_tab, "Wallpaper")  
@@ -158,7 +162,8 @@ class PS4PKGTool(QMainWindow):
         self.setup_file_browser_tab()
         self.setup_wallpaper_tab()
         self.setup_ps5_game_info_tab()
-
+        self.setup_esmf_decrypter_tab()
+        
         main_layout.addWidget(right_widget, 2)
 
         # Add night mode toggle button
@@ -1333,23 +1338,6 @@ class PS4PKGTool(QMainWindow):
         else:
             QMessageBox.warning(self, "Warning", "No wallpaper selected.")
 
-    def browse_pkg(self, entry_widget=None):
-        filename, _ = QFileDialog.getOpenFileName(self, "Select PKG file", "", "PKG files (*.pkg)")
-        if filename:
-            self.current_pkg = os.path.dirname(filename)
-            self.update_pkg_entries(filename)  
-            self.file_path = filename
-            try:
-                self.package = Package(self.file_path)
-                self.update_info(self.package.get_info())
-                self.load_wallpapers()
-                self.load_pkg_icon()
-                self.load_files()  # Aggiungi questa riga per caricare i file nel browser
-                Logger.log_information(f"PKG file loaded successfully: {filename}")
-            except Exception as e:
-                Logger.log_error(f"Error loading PKG file: {e}")
-                QMessageBox.critical(self, "Error", f"Error loading PKG file: {e}")
-
     def update_info(self, info):
         if info:
             self.tree.clear()
@@ -1359,6 +1347,16 @@ class PS4PKGTool(QMainWindow):
                 item.setText(1, str(value))
                 if key in self.key_descriptions:
                     item.setText(2, self.key_descriptions[key])
+            
+            # Controlla se c'è un IROTag non valido e mostra un messaggio
+            if hasattr(self.package, 'invalid_irotag') and self.package.invalid_irotag:
+                QMessageBox.warning(self, "Warning", "Il file PKG contiene un IROTag non valido. Le informazioni sono state caricate comunque.")
+            
+            # Aggiungi logica per gestire i pacchetti PS3
+            if isinstance(self.package, PackagePS3):
+                Logger.log_information("PS3 PKG file loaded.")
+                # Aggiungi ulteriori informazioni specifiche del PS3 se necessario
+            
             Logger.log_information("PKG information updated successfully.")
         else:
             QMessageBox.information(self, "Information", "No information found in the PKG file.")
@@ -1484,15 +1482,29 @@ class PS4PKGTool(QMainWindow):
             self.update_pkg_entries(filename)  
             self.file_path = filename
             try:
-                self.package = Package(self.file_path)
+                # Determina il tipo di pacchetto e crea l'istanza appropriata
+                with open(filename, "rb") as fp:
+                    magic = struct.unpack(">I", fp.read(4))[0]
+                    if magic == PackagePS4.MAGIC_PS4:
+                        self.package = PackagePS4(self.file_path)
+                    elif magic == PackagePS5.MAGIC_PS5:
+                        self.package = PackagePS5(self.file_path)
+                    elif magic == PackagePS3.MAGIC_PS3:
+                        self.package = PackagePS3(self.file_path)
+                    else:
+                        raise ValueError(f"Formato PKG sconosciuto: {magic:08X}")
+
                 self.update_info(self.package.get_info())
                 self.load_wallpapers()
                 self.load_pkg_icon()
-                self.load_files()  # Aggiungi questa riga per caricare i file nel browser
+                self.load_files()
                 Logger.log_information(f"PKG file loaded successfully: {filename}")
-            except Exception as e:
+            except ValueError as e:
                 Logger.log_error(f"Error loading PKG file: {e}")
                 QMessageBox.critical(self, "Error", f"Error loading PKG file: {e}")
+            except Exception as e:
+                Logger.log_error(f"Unexpected error loading PKG file: {e}")
+                QMessageBox.critical(self, "Error", f"Unexpected error loading PKG file: {e}")
 
     def search_hex(self):
         search_term = self.search_entry.text()
@@ -1874,8 +1886,8 @@ class PS4PKGTool(QMainWindow):
                         pil_image = Image.open(io.BytesIO(image_data))
                         Logger.log_information(f"Image loaded with PIL: format={pil_image.format}, size={pil_image.size}, mode={pil_image.mode}")
                         
-                        # Converti l'immagine in RGB se è in modalità RGBA
-                        if pil_image.mode == 'RGBA':
+                        # Convert the image to RGB if it is in a different mode
+                        if pil_image.mode not in ['RGB', 'RGBA']:
                             pil_image = pil_image.convert('RGB')
                         
                         qimage = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGB888)
@@ -1927,7 +1939,11 @@ class PS4PKGTool(QMainWindow):
         
     def load_pkg(self, pkg_path):
         try:
-            self.package = Package(pkg_path)
+            if pkg_path.endswith(".pkg"):
+                self.package = PackagePS4(pkg_path)
+            else:
+                raise ValueError("Formato PKG sconosciuto")
+                
             self.file_path = pkg_path
             self.update_info(self.package.get_info())
             self.load_wallpapers()
@@ -1935,6 +1951,147 @@ class PS4PKGTool(QMainWindow):
         except Exception as e:
             Logger.log_error(f"Error loading PKG file: {str(e)}")
             QMessageBox.critical(self, "Error", f"Error loading PKG file: {str(e)}")
+    def setup_esmf_decrypter_tab(self):
+        layout = QVBoxLayout(self.esmf_decrypter_tab)
+        
+        file_layout = QHBoxLayout()
+        self.esmf_file_entry = QLineEdit()
+        self.esmf_file_entry.setPlaceholderText("Select ESFM file")
+        file_layout.addWidget(self.esmf_file_entry)
+        browse_button = QPushButton("Browse")
+        browse_button.clicked.connect(self.browse_esmf_file)
+        file_layout.addWidget(browse_button)
+        layout.addLayout(file_layout)
+
+        self.cusa_label = QLabel("CUSA: Not loaded")
+        layout.addWidget(self.cusa_label)
+
+        output_layout = QHBoxLayout()
+        self.esmf_output_entry = QLineEdit()
+        self.esmf_output_entry.setPlaceholderText("Select output folder")
+        output_layout.addWidget(self.esmf_output_entry)
+        output_browse_button = QPushButton("Browse")
+        output_browse_button.clicked.connect(self.browse_esmf_output)
+        output_layout.addWidget(output_browse_button)
+        layout.addLayout(output_layout)
+
+        decrypt_button = QPushButton("Decrypt ESFM")
+        decrypt_button.clicked.connect(self.decrypt_esmf)
+        layout.addWidget(decrypt_button)
+
+        self.esmf_log = QTextEdit()
+        self.esmf_log.setReadOnly(True)
+        layout.addWidget(self.esmf_log)
+
+    def browse_esmf_file(self):
+        filename, _ = QFileDialog.getOpenFileName(self, "Select ESFM file", "", "ESFM files (*.ESFM)")
+        if filename:
+            self.esmf_file_entry.setText(filename)
+            self.load_cusa_from_path(filename)
+
+    def load_cusa_from_path(self, file_path):
+        if self.package:
+            content_id = self.package.content_id
+            if content_id:
+                cusa = self.extract_cusa_from_content_id(content_id)
+                if cusa:
+                    self.cusa_label.setText(f"CUSA: {cusa}")
+                    self.cusa = cusa
+                    self.esmf_log.append(f"CUSA extracted from content_id: {cusa}")
+                else:
+                    self.esmf_log.append("CUSA not found in content_id. Trying to extract from file name...")
+                    cusa = self.extract_cusa_from_filename(file_path)
+                    if cusa:
+                        self.cusa_label.setText(f"CUSA: {cusa}")
+                        self.cusa = cusa
+                        self.esmf_log.append(f"CUSA extracted from filename: {cusa}")
+                    else:
+                        self.esmf_log.append("Unable to extract CUSA from filename.")
+            else:
+                self.esmf_log.append("No content_id found in package. Trying to extract CUSA from file name...")
+                cusa = self.extract_cusa_from_filename(file_path)
+                if cusa:
+                    self.cusa_label.setText(f"CUSA: {cusa}")
+                    self.cusa = cusa
+                    self.esmf_log.append(f"CUSA extracted from filename: {cusa}")
+                else:
+                    self.esmf_log.append("Unable to extract CUSA from filename.")
+        else:
+            self.esmf_log.append("No package loaded. Trying to extract CUSA from file name...")
+            cusa = self.extract_cusa_from_filename(file_path)
+            if cusa:
+                self.cusa_label.setText(f"CUSA: {cusa}")
+                self.cusa = cusa
+                self.esmf_log.append(f"CUSA extracted from filename: {cusa}")
+            else:
+                self.esmf_log.append("Unable to extract CUSA from filename.")
+
+    def extract_cusa_from_content_id(self, content_id):
+        match = re.search(r'(CUSA\d{5})', content_id)
+        return match.group(1) if match else None
+
+    def extract_cusa_from_filename(self, file_path):
+        file_name = os.path.basename(file_path)
+        match = re.search(r'(CUSA\d{5})', file_name)
+        return match.group(1) if match else None
+
+    def browse_esmf_output(self):
+        directory = QFileDialog.getExistingDirectory(self, "Select output folder")
+        if directory:
+            self.esmf_output_entry.setText(directory)
+
+    def decrypt_esmf(self):
+        esmf_file = self.esmf_file_entry.text()
+        output_folder = self.esmf_output_entry.text()
+
+        if not esmf_file or not output_folder or not hasattr(self, 'cusa'):
+            QMessageBox.warning(self, "Warning", "Please select ESFM file, output folder, and ensure CUSA is loaded.")
+            return
+
+        try:
+            np_com_id = self.get_np_com_id_from_api(self.cusa)
+            if not np_com_id:
+                QMessageBox.warning(self, "Warning", "Failed to retrieve NP Communication ID from API.")
+                return
+
+            decrypter = ESMFDecrypter()
+            result = decrypter.decrypt_esmf(esmf_file, np_com_id, output_folder)
+            if result:
+                self.esmf_log.append(f"Decryption successful. Output file: {result}")
+                QMessageBox.information(self, "Success", f"ESFM file decrypted successfully.\nOutput file: {result}")
+            else:
+                self.esmf_log.append("Decryption failed.")
+                QMessageBox.critical(self, "Error", "Decryption failed. Check the log for details.")
+        except Exception as e:
+            self.esmf_log.append(f"Error during decryption: {str(e)}")
+            QMessageBox.critical(self, "Error", f"An error occurred during decryption: {str(e)}")
+
+    def get_np_com_id_from_api(self, cusa):
+        base_url = "https://m.np.playstation.com/api/trophy/v1/apps/CUSA{}/trophyTitles"
+        url = base_url.format(cusa[4:])  # Rimuove "CUSA" dal codice
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        }
+
+        try:
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                if 'trophyTitles' in data and len(data['trophyTitles']) > 0:
+                    np_com_id = data['trophyTitles'][0].get('npCommunicationId')
+                    if np_com_id:
+                        self.esmf_log.append(f"NP Communication ID retrieved: {np_com_id}")
+                        return np_com_id
+                    else:
+                        self.esmf_log.append("NP Communication ID not found in API response")
+                else:
+                    self.esmf_log.append("No trophy titles found in API response")
+            else:
+                self.esmf_log.append(f"API request failed with status code: {response.status_code}")
+        except Exception as e:
+            self.esmf_log.append(f"Error during API request: {str(e)}")
+
+        return None
 
     def load_pkg_icon(self):
         try:
@@ -1949,8 +2106,8 @@ class PS4PKGTool(QMainWindow):
                         pil_image = Image.open(io.BytesIO(icon_data))
                         Logger.log_information(f"Icon loaded with PIL: format={pil_image.format}, size={pil_image.size}, mode={pil_image.mode}")
                         
-                        # Convert the image to RGB if it is in RGBA mode
-                        if pil_image.mode == 'RGBA':
+                        # Convert the image to RGB if it is in a different mode
+                        if pil_image.mode not in ['RGB', 'RGBA']:
                             pil_image = pil_image.convert('RGB')
                         
                         qimage = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGB888)
@@ -1966,6 +2123,7 @@ class PS4PKGTool(QMainWindow):
                             raise Exception("Failed to create valid QPixmap for icon")
                     except Exception as e:
                         Logger.log_error(f"Error processing icon image from package: {str(e)}")
+                        QMessageBox.warning(self, "Error", f"Error processing icon image: {str(e)}")
                 else:
                     Logger.log_warning("Failed to read icon file data from package")
             else:

@@ -1,13 +1,13 @@
 import os
 import sys
 import time
-import signal
 import random
 import string
 import shutil
 import subprocess
 from pathlib import Path
-from package import Package
+from packages import PackagePS4, PackagePS5, PackagePS3
+import struct
 
 class PS4PasscodeBruteforcer:
     def __init__(self):
@@ -51,7 +51,17 @@ class PS4PasscodeBruteforcer:
         self.ensure_output_directory(output_directory)
 
         try:
-            self.package = Package(input_file)
+            # Determina il tipo di pacchetto e crea l'istanza appropriata
+            with open(input_file, "rb") as fp:
+                magic = struct.unpack(">I", fp.read(4))[0]
+                if magic == PackagePS4.MAGIC_PS4:
+                    self.package = PackagePS4(input_file)
+                elif magic == PackagePS5.MAGIC_PS5:
+                    self.package = PackagePS5(input_file)
+                elif magic == PackagePS3.MAGIC_PS3:
+                    self.package = PackagePS3(input_file)
+                else:
+                    return f"[-] Unknown PKG format: {magic:08X}"
         except FileNotFoundError:
             return f"[-] Package file not found: {input_file}"
 
@@ -92,3 +102,15 @@ class PS4PasscodeBruteforcer:
     def get_package(self):
         return self.package
 
+    def some_method(self, pkg_path):
+        # Determina il tipo di pacchetto e crea l'istanza appropriata
+        with open(pkg_path, "rb") as fp:
+            magic = struct.unpack(">I", fp.read(4))[0]
+            if magic == PackagePS4.MAGIC_PS4:
+                package = PackagePS4(pkg_path)
+            elif magic == PackagePS5.MAGIC_PS5:
+                package = PackagePS5(pkg_path)
+            elif magic == PackagePS3.MAGIC_PS3:
+                package = PackagePS3(pkg_path)
+            else:
+                raise ValueError(f"Formato PKG sconosciuto: {magic:08X}")

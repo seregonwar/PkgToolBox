@@ -1,14 +1,13 @@
+import struct
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import logging
-import sys
-import os
 import ctypes
 import argparse
 from Utilities.Trophy import Archiver, TrophyFile, TRPCreator, TRPReader
-from package import Package
+from packages import PackagePS4, PackagePS5, PackagePS3  # Importa i nuovi moduli
 from gui import start_gui
 import io
 from contextlib import redirect_stdout
@@ -102,9 +101,6 @@ class PKGDirectorySettings:
         logging.info("PKG Directory Settings window displayed.")
 
 def extract_necessary_files(package, temp_dir):
-    """
-    Extract necessary files (like icon0.png) from the package and save them in a temporary directory.
-    """
     necessary_files = ['icon0.png', 'pic0.png', 'pic1.png']
     extracted_files = {}
 
@@ -114,8 +110,10 @@ def extract_necessary_files(package, temp_dir):
             with open(file_path, 'wb') as f:
                 package.extract_file(file_name, f)
             extracted_files[file_name] = file_path
+        except FileNotFoundError:
+            logging.warning(f"File {file_name} not found in the package.")
         except Exception as e:
-            logging.warning(f"File {file_name} not found in the package: {e}")
+            logging.error(f"Error extracting {file_name}: {e}")
     
     return extracted_files
 
@@ -132,15 +130,21 @@ def execute_command(cmd, pkg, file, out, update_callback_info):
         raise ValueError("--out is required for the extract and dump commands")
 
     try:
-        target = Package(args.pkg)
-    except FileNotFoundError as e:
-        logging.error(f"Error loading PKG file: {e}")
-        raise ValueError(f"Error loading PKG file: {e}")
+        # Determina il tipo di pacchetto e crea l'istanza appropriata
+        with open(pkg, "rb") as fp:
+            magic = struct.unpack(">I", fp.read(4))[0]
+            if magic == PackagePS4.MAGIC_PS4:
+                target = PackagePS4(pkg)
+            elif magic == PackagePS5.MAGIC_PS5:
+                target = PackagePS5(pkg)
+            elif magic == PackagePS3.MAGIC_PS3:
+                target = PackagePS3(pkg)
+            else:
+                raise ValueError(f"Formato PKG sconosciuto: {magic:08X}")
 
-    temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PS4PKGToolTemp")
-    extracted_files = extract_necessary_files(target, temp_dir)
+        temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PS4PKGToolTemp")
+        extracted_files = extract_necessary_files(target, temp_dir)
 
-    try:
         if args.cmd == "info":
             # Capture the output of the info() function
             f = io.StringIO()
