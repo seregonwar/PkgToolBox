@@ -82,14 +82,15 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
     - **Delete**: Delete files from the PKG.
     - **Trophy Management**: Load, read, and manage trophy files.
 
-## Next Steps
+## Road Map
 - [x] Addition of an advanced directory file explorer to navigate internally to PKG files.
 - [x] Advanced reading of information.
 - [x] Improvement in the analysis of values in hex format.
 - [x] Improvements and bug fixes.
 - [x] PS5 pkg support.
 - [x] Full .trp (PS4) and .ucp (PS5) trophy file support.
-- [ ] Full support for PS5 PKG files.
+- [ ] Full support for PS3 PKGs files
+- [ ] Full support for PS5 PKGs files.
 - [ ] Fpkg updates.
 - [ ] Advanced PKG file splitting.
 - [ ] Implementation of the inject section for loading DLC directly into PKG packages.
