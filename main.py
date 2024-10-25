@@ -7,7 +7,8 @@ import logging
 import ctypes
 import argparse
 from Utilities.Trophy import Archiver, TrophyFile, TRPCreator, TRPReader
-from packages import PackagePS4, PackagePS5, PackagePS3  # Importa i nuovi moduli
+from packages import PackagePS4, PackagePS5, PackagePS3 
+from packages.AesLibraryPs3 import __init__
 from gui import start_gui
 import io
 from contextlib import redirect_stdout
