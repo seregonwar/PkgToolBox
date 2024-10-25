@@ -97,11 +97,22 @@ class PS4PKGTool(QMainWindow):
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
 
+        # Crea un layout orizzontale per l'immagine e il content ID
+        image_content_layout = QHBoxLayout()
+
         self.image_label = QLabel("No icon available")
         self.image_label.setFixedSize(300, 300)
         self.image_label.setAlignment(Qt.AlignCenter)
         self.image_label.setStyleSheet("background-color: white; border: 1px solid white; border-radius: 10px;")
-        left_layout.addWidget(self.image_label)
+        image_content_layout.addWidget(self.image_label)
+
+        # Aggiungi un QLabel per il content ID
+        self.content_id_label = QLabel()
+        self.content_id_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.content_id_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #2c3e50; margin-left: 10px;")
+        image_content_layout.addWidget(self.content_id_label)
+
+        left_layout.addLayout(image_content_layout)
 
         pkg_layout = QHBoxLayout()
         self.pkg_entry.setPlaceholderText("Select PKG file")
@@ -1348,10 +1359,6 @@ class PS4PKGTool(QMainWindow):
                 if key in self.key_descriptions:
                     item.setText(2, self.key_descriptions[key])
             
-            # Controlla se c'è un IROTag non valido e mostra un messaggio
-            if hasattr(self.package, 'invalid_irotag') and self.package.invalid_irotag:
-                QMessageBox.warning(self, "Warning", "Il file PKG contiene un IROTag non valido. Le informazioni sono state caricate comunque.")
-            
             # Aggiungi logica per gestire i pacchetti PS3
             if isinstance(self.package, PackagePS3):
                 Logger.log_information("PS3 PKG file loaded.")
@@ -2098,6 +2105,9 @@ class PS4PKGTool(QMainWindow):
             Logger.log_information("Attempting to load PKG icon...")
             icon_file = next((f for f in self.package.files.values() if isinstance(f, dict) and f.get('name', '').lower() == 'icon0.png'), None)
             
+            # Recupera il content ID dal pacchetto
+            content_id = self.package.content_id if hasattr(self.package, 'content_id') else None
+            
             if icon_file:
                 Logger.log_information(f"Icon file found in package: {icon_file}")
                 icon_data = self.package.read_file(icon_file['id'])
@@ -2144,7 +2154,13 @@ class PS4PKGTool(QMainWindow):
                     Logger.log_warning("Failed to create QPixmap from extracted icon")
             else:
                 Logger.log_warning(f"Extracted icon not found: {extracted_icon_path}")
-            
+                       # Aggiorna il content ID
+            if content_id:
+                # Estrai solo la parte visibile nell'immagine (BREW00031)
+                visible_part = content_id.split('-')[1] if '-' in content_id else content_id
+                self.content_id_label.setText(f"Content ID: {visible_part}")
+            else:
+                self.content_id_label.setText("Content ID: N/A") 
             # If the icon could not be loaded from the package or extracted, use a default icon
             default_icon_path = os.path.join(os.path.dirname(__file__), "default_icon.png")
             if os.path.exists(default_icon_path):
@@ -2164,6 +2180,7 @@ class PS4PKGTool(QMainWindow):
         except Exception as e:
             Logger.log_error(f"Unexpected error loading PKG icon: {str(e)}")
             self.image_label.setText("Error loading icon")
+            self.content_id_label.setText("Content ID: Error")
 
 def start_gui(run_command_callback, temp_directory):
     app = QApplication(sys.argv)
