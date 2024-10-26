@@ -3,7 +3,7 @@ import struct
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA1
 from .key_vault import *
-from .aes import AES_ctx, AES_set_key, AES_cbc_encrypt, AES_cbc_decrypt, AES_CMAC
+from .aes import AES_ctx, AES_decrypt, AES_set_key, AES_cbc_encrypt, AES_cbc_decrypt, AES_CMAC
 
 # Costanti
 KIRK_CMD_DECRYPT_PRIVATE = 1
@@ -21,7 +21,7 @@ KIRK_MODE_CMD1 = 1
 KIRK_MODE_CMD2 = 2
 KIRK_MODE_CMD3 = 3
 KIRK_MODE_ENCRYPT_CBC = 4
-KIRK_MODE_DECRYPT_CBC = 5
+KIRK_MODE_DECRYPT_CBC = 1  # Assicuriamoci che questo valore sia corretto
 
 # Variabili globali
 g_fuse90 = 0
@@ -37,7 +37,7 @@ def kirk_init2(rnd_seed, seed_size, fuseid_90, fuseid_94):
     global g_fuse90, g_fuse94, is_kirk_initialized, PRNG_DATA, aes_kirk1
     
     temp = bytearray(0x104)
-    key = bytes([0x07, 0xAB, 0xEF, 0xF8, 0x96, 0x8C, 0xF3, 0xD6, 0x14, 0xE0, 0xEB, 0xB2, 0x9D, 0x8B, 0x4E, 0x74])
+    key = bytes([0x07, 0xAB, 0xEF, 0xF8, 0x96, 0x8C, 0xF3, 0xD6, 0x14, 0xE0, 0xEB, 0x9D, 0x8B, 0x4E, 0x74])
     curtime = int(time.time())
 
     if seed_size > 0:
@@ -87,29 +87,70 @@ def kirk_4_7_get_key(key_type):
         0x63: kirk7_key63,
         0x64: kirk7_key64
     }
-    return key_map.get(key_type, None)
+    key = key_map.get(key_type)
+    if key is None:
+        print(f"Warning: Unknown key type {key_type}")
+    else:
+        print(f"Debug: Using key for type {key_type}: {key.hex()}")
+    return key
 
 def kirk_CMD7(dst, src, size):
+    if len(src) < 16:
+        print(f"Error: Input data too short. Expected at least 16 bytes, got {len(src)} bytes.")
+        return -1
+
     header = src[:16]
-    mode, unk_4, unk_8, keyseed, data_size = struct.unpack("<IIIII", header)
+    print(f"Debug: Header bytes: {header.hex()}")
+    
+    try:
+        mode, unk_4, unk_8, keyseed = struct.unpack("<IIII", header)  # Cambiato da ">IIII" a "<IIII"
+        data_size = size - 16
+    except struct.error as e:
+        print(f"Error unpacking header: {e}")
+        return -1
+    
+    print(f"Debug: kirk_CMD7 - mode: {mode}, unk_4: {unk_4}, unk_8: {unk_8}, keyseed: {keyseed}, data_size: {data_size}, size: {size}")
     
     if mode != KIRK_MODE_DECRYPT_CBC:
+        print(f"Error: Invalid mode {mode}, expected {KIRK_MODE_DECRYPT_CBC}")
         return -1
     
     key = kirk_4_7_get_key(keyseed)
     if key is None:
+        print(f"Error: Invalid keyseed {keyseed}")
         return -1
+    
+    print(f"Debug: Key for keyseed {keyseed}: {key.hex()}")
     
     aes_ctx = AES_ctx()
-    AES_set_key(aes_ctx, key, 128)
-    
-    # Assicuriamoci che ci siano abbastanza dati da decrittare
-    if len(src) < 16 + size:
-        print(f"Error: Not enough data to decrypt. Expected {16 + size} bytes, got {len(src)} bytes.")
+    result = AES_set_key(aes_ctx, key, 128)
+    if result != 0:
+        print(f"Error: AES_set_key failed with code {result}")
         return -1
     
-    AES_cbc_decrypt(aes_ctx, src[16:16+size], dst, size)
-    return 0
+    if len(src) < 16 + data_size:
+        print(f"Error: Not enough data to decrypt. Expected {16 + data_size} bytes, got {len(src)} bytes.")
+        return -1
+    
+    if data_size == 0:
+        print("Warning: data_size is 0, nothing to decrypt")
+        return 0
+    
+    try:
+        decrypted = bytearray(data_size)
+        iv = src[:16]  # Usa i primi 16 byte come IV
+        AES_cbc_decrypt(aes_ctx, src[16:16+data_size], decrypted, data_size, iv)
+        
+        if all(byte == 0 for byte in decrypted):
+            print("Warning: Decrypted data is all zeros. This might indicate a problem with the decryption process.")
+        
+        dst[:data_size] = decrypted
+        print(f"Debug: Decrypted {data_size} bytes successfully")
+        print(f"Debug: First 16 bytes of decrypted data: {decrypted[:16].hex()}")
+        return data_size
+    except Exception as e:
+        print(f"Error during AES decryption: {e}")
+        return -1
 
 def kirk_CMD11(outbuff, inbuff, size):
     header = inbuff[:4]

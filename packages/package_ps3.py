@@ -1,11 +1,31 @@
+import logging
 import struct
 import os
 from .package_base import PackageBase
 from .utils import Logger
 from .enums import DRMType, ContentType, PackageType, PackageFlag
-from .AesLibraryPs3.aes import AES_ctx, AES_set_key, AES_encrypt, AES_KEY_LEN_128, AES_cbc_decrypt
-from .AesLibraryPs3.kirk_engine import kirk_init, kirk_CMD7
-from .AesLibraryPs3.amctrl import decrypt_pgd
+from . import AES_LIBRARY_AVAILABLE
+
+if AES_LIBRARY_AVAILABLE:
+    from .AesLibraryPs3.aes import AES_ctx, AES_set_key, AES_encrypt, AES_KEY_LEN_128, AES_cbc_decrypt
+    from .AesLibraryPs3.kirk_engine import kirk_init, kirk_CMD7
+    try:
+        from .AesLibraryPs3.kirk_engine import decrypt_pgd
+    except ImportError:
+        from .AesLibraryPs3.amctrl import decrypt_pgd
+    from Crypto.Cipher import AES 
+else:
+
+    def kirk_init():
+        raise NotImplementedError("AesLibraryPs3 non è disponibile")
+    
+    def kirk_CMD7(*args):
+        raise NotImplementedError("AesLibraryPs3 non è disponibile")
+    
+    def decrypt_pgd(*args):
+        raise NotImplementedError("AesLibraryPs3 non è disponibile")
+    
+    AES = None  
 
 class PackagePS3(PackageBase):
     MAGIC_PS3 = 0x7f504b47  # ?PKG per PS3
@@ -65,6 +85,7 @@ class PackagePS3(PackageBase):
 
             Logger.log_information("Header PS3 PKG caricato con successo.")
             Logger.log_information(f"Metadata offset: 0x{self.pkg_metadata_offset:X}, count: {self.pkg_metadata_count}, size: {self.pkg_metadata_size}")
+            Logger.log_information(f"Total size: {self.total_size}, Data offset: 0x{self.data_offset:X}, Data size: {self.data_size}")
             
             self._decrypt_and_load_metadata(fp)
             self._decrypt_and_load_files(fp)
@@ -78,13 +99,16 @@ class PackagePS3(PackageBase):
             fp.seek(self.pkg_metadata_offset)
             encrypted_metadata = fp.read(self.pkg_metadata_size)
             print(f"Debug: Encrypted metadata size: {len(encrypted_metadata)}")
+            print(f"Debug: First 16 bytes of encrypted metadata: {encrypted_metadata[:16].hex()}")
+            
             decrypted_metadata = self._decrypt_data(encrypted_metadata)
             print(f"Debug: Decrypted metadata size: {len(decrypted_metadata)}")
+            print(f"Debug: First 32 bytes of decrypted metadata: {decrypted_metadata[:32].hex()}")
             
             self.metadata = {}
             offset = 0
             for _ in range(self.pkg_metadata_count):
-                if offset + 16 > len(decrypted_metadata):
+                if offset + 12 > len(decrypted_metadata):
                     break
                 key, value_type, size = struct.unpack(">III", decrypted_metadata[offset:offset+12])
                 offset += 12
@@ -92,24 +116,14 @@ class PackagePS3(PackageBase):
                 if offset + size > len(decrypted_metadata):
                     break
 
-                if value_type == 0:  # Integer
-                    if size != 4:
-                        Logger.log_warning(f"Dimensione inaspettata per il metadata intero: {size}")
-                        continue
-                    value = struct.unpack(">I", decrypted_metadata[offset:offset+4])[0]
-                    offset += 4
-                elif value_type == 2:  # String
-                    value = self._safe_decode(decrypted_metadata[offset:offset+size])
-                    offset += size
-                else:
-                    value = decrypted_metadata[offset:offset+size]
-                    offset += size
+                value = decrypted_metadata[offset:offset+size]
+                offset += size
 
                 self.metadata[key] = value
                 self._process_metadata(key, value)
-                Logger.log_information(f"Metadata: key=0x{key:X}, value_type={value_type}, size={size}, value={self._safe_format(value)}")
+                print(f"Debug: Metadata - key=0x{key:X}, value_type={value_type}, size={size}, value={self._safe_format(value)}")
 
-            Logger.log_information(f"Caricati {len(self.metadata)} elementi di metadata.")
+            print(f"Debug: Processed {len(self.metadata)} metadata entries")
 
         except Exception as e:
             Logger.log_error(f"Errore durante il caricamento dei metadata: {str(e)}")
@@ -120,18 +134,38 @@ class PackagePS3(PackageBase):
             Logger.log_information(f"Inizio caricamento file. Data offset: 0x{self.data_offset:X}, Item count: {self.item_count}")
             fp.seek(self.data_offset)
             encrypted_file_entries = fp.read(32 * self.item_count)
+            print(f"Debug: Encrypted file entries size: {len(encrypted_file_entries)}")
+            print(f"Debug: First 32 bytes of encrypted file entries: {encrypted_file_entries[:32].hex()}")
+            
             decrypted_file_entries = self._decrypt_data(encrypted_file_entries)
+            print(f"Debug: Decrypted file entries size: {len(decrypted_file_entries)}")
+            print(f"Debug: First 32 bytes of decrypted file entries: {decrypted_file_entries[:32].hex()}")
             
             self.files = {}
             for i in range(self.item_count):
                 entry = decrypted_file_entries[i*32:(i+1)*32]
+                if len(entry) < 32:
+                    Logger.log_warning(f"Entry del file {i+1} troppo corta. Saltata.")
+                    continue
+                
                 file_name_offset, file_name_size, file_offset, file_size, flags = struct.unpack(">IIQQI", entry[:28])
                 
-                Logger.log_information(f"File {i+1}: name_offset=0x{file_name_offset:X}, name_size={file_name_size}, offset=0x{file_offset:X}, size={file_size}")
+                print(f"Debug: File {i+1} - name_offset=0x{file_name_offset:X}, name_size={file_name_size}, offset=0x{file_offset:X}, size={file_size}, flags=0x{flags:X}")
                 
-                fp.seek(self.data_offset + file_name_offset)
-                encrypted_file_name = fp.read(file_name_size)
-                file_name = self._decrypt_data(encrypted_file_name)[:file_name_size].decode('utf-8', errors='ignore')
+                if file_name_offset > self.total_size or file_offset > self.total_size:
+                    Logger.log_warning(f"File {i+1}: Offset non valido. Saltato.")
+                    continue
+                
+                if file_size > self.total_size:
+                    Logger.log_warning(f"File {i+1}: Dimensione file sospetta. Potrebbe essere corrotto.")
+                
+                try:
+                    fp.seek(self.data_offset + file_name_offset)
+                    encrypted_file_name = fp.read(file_name_size)
+                    file_name = self._decrypt_data(encrypted_file_name)[:file_name_size].decode('utf-8', errors='ignore')
+                except Exception as e:
+                    Logger.log_warning(f"Errore durante la decrittazione del nome del file {i+1}: {str(e)}")
+                    file_name = f"unknown_file_{i}"
 
                 self.files[file_name] = {
                     "offset": file_offset,
@@ -147,9 +181,38 @@ class PackagePS3(PackageBase):
 
     def _decrypt_data(self, data):
         try:
+            if len(data) < 16:
+                raise ValueError(f"Input data too short. Expected at least 16 bytes, got {len(data)} bytes.")
+            
+            print(f"Debug: Attempting to decrypt {len(data)} bytes of data")
+            print(f"Debug: First 16 bytes of encrypted data: {data[:16].hex()}")
+            
+            # Prova prima con AES diretto
+            if AES is not None:
+                aes_key = self.PS3_AES_KEY
+                cipher = AES.new(aes_key, AES.MODE_CBC, iv=data[:16])
+                decrypted = cipher.decrypt(data[16:])
+                print(f"Debug: AES decryption result - First 16 bytes: {decrypted[:16].hex()}")
+                
+                if not all(byte == 0 for byte in decrypted):
+                    return decrypted
+            
+            # Se AES diretto non funziona o produce tutti zeri, prova con kirk_CMD7
             decrypted = bytearray(len(data))
-            kirk_CMD7(decrypted, data, len(data))
-            return bytes(decrypted)
+            decrypted_size = kirk_CMD7(decrypted, data, len(data))
+            
+            if decrypted_size < 0:
+                raise ValueError(f"kirk_CMD7 failed with error code: {decrypted_size}")
+            if decrypted_size == 0:
+                raise ValueError("No data was decrypted")
+            
+            print(f"Debug: Decrypted data size: {decrypted_size}")
+            print(f"Debug: First 16 bytes of decrypted data: {decrypted[:16].hex()}")
+            
+            if all(byte == 0 for byte in decrypted[:decrypted_size]):
+                print("Warning: Decrypted data is all zeros. This might indicate a problem with the decryption process.")
+            
+            return bytes(decrypted[:decrypted_size])
         except Exception as e:
             Logger.log_error(f"Errore durante la decrittazione dei dati: {str(e)}")
             raise
@@ -254,4 +317,31 @@ class PackagePS3(PackageBase):
             return f"'{value}'"
         else:
             return str(value)
+
+    def dump(self, output_dir):
+        """
+        Esegue il dump del contenuto del pacchetto PS3 nella directory specificata.
+        """
+        os.makedirs(output_dir, exist_ok=True)
+        
+        for file_name, file_info in self.files.items():
+            file_path = os.path.join(output_dir, file_name)
+            
+            # Crea le directory necessarie
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            try:
+                with open(self.original_file, 'rb') as pkg_file:
+                    pkg_file.seek(file_info['offset'])
+                    file_data = pkg_file.read(file_info['size'])
+                
+                with open(file_path, 'wb') as out_file:
+                    out_file.write(file_data)
+                
+                Logger.log_information(f"File estratto: {file_name}")
+            except Exception as e:
+                Logger.log_error(f"Errore durante l'estrazione del file {file_name}: {str(e)}")
+        
+        Logger.log_information(f"Dump completato. File estratti in: {output_dir}")
+        return f"Dump completato. File estratti in: {output_dir}"
 

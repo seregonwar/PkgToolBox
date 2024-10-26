@@ -8,7 +8,11 @@ import ctypes
 import argparse
 from Utilities.Trophy import Archiver, TrophyFile, TRPCreator, TRPReader
 from packages import PackagePS4, PackagePS5, PackagePS3 
-from packages.AesLibraryPs3 import __init__
+from packages import (
+    AES_ctx, AES_set_key, AES_encrypt, AES_KEY_LEN_128, AES_cbc_decrypt,
+    PGD_HEADER, MAC_KEY, sceDrmBBMacInit, sceDrmBBMacUpdate, bbmac_getkey,
+    kirk_init, decrypt_pgd
+)
 from gui import start_gui
 import io
 from contextlib import redirect_stdout
@@ -192,10 +196,9 @@ def execute_command(cmd, pkg, file, out, update_callback_info):
             return f"Modified {modified_size} bytes"
         elif args.cmd == "dump":
             try:
-                # Use a new function for safe dumping
-                safe_dump(target, args.out, update_callback_info)
+                result = target.dump(args.out, update_callback_info)
                 logging.info(f"Executed command: {cmd} on PKG: {pkg}, Output: {out}")
-                return "Dump completed successfully"
+                return result
             except Exception as e:
                 logging.error(f"Error during dump: {e}")
                 raise ValueError(f"Error during dump: {e}")
@@ -326,3 +329,6 @@ def verify_file_integrity(package, file_info, extracted_path):
         return False
     
     return True
+
+if AES_ctx is None:
+    logging.warning("I moduli AesLibraryPs3 non sono stati importati. Alcune funzionalità potrebbero essere limitate.")

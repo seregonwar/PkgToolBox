@@ -3,6 +3,8 @@ from .package_base import PackageBase
 from .enums import DRMType, ContentType, IROTag
 from utils import Logger
 import os
+import shutil
+
 class PackagePS4(PackageBase):
     MAGIC_PS4 = 0x7f434E54  # ?CNT for PS4
 
@@ -158,3 +160,31 @@ class PackagePS4(PackageBase):
                 "Main Table Hash": self.digests[3] if len(self.digests) > 3 else "N/A",
             })
         return info
+
+    def dump(self, output_dir):
+        """
+        Esegue il dump di tutti i file del pacchetto nella directory specificata.
+        """
+        os.makedirs(output_dir, exist_ok=True)
+        
+        for file_id, file_info in self.files.items():
+            file_name = file_info.get('name', f'file_{file_id}')
+            output_path = os.path.join(output_dir, file_name)
+            
+            # Crea le directory necessarie
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            
+            try:
+                with open(self.original_file, 'rb') as pkg_file:
+                    pkg_file.seek(file_info['offset'])
+                    file_data = pkg_file.read(file_info['size'])
+                
+                with open(output_path, 'wb') as out_file:
+                    out_file.write(file_data)
+                
+                Logger.log_information(f"File estratto: {file_name}")
+            except Exception as e:
+                Logger.log_error(f"Errore durante l'estrazione del file {file_name}: {str(e)}")
+        
+        Logger.log_information(f"Dump completato. File estratti in: {output_dir}")
+        return f"Dump completato. File estratti in: {output_dir}"
