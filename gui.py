@@ -655,7 +655,31 @@ class PS4PKGTool(QMainWindow):
             "Main Entry 2 Hash": "Hash of the second main entry",
             "Digest Table Hash": "Hash of the digest table",
             "Main Table Hash": "Hash of the main table",
-            "DESTINATION_COUNTRY": "Region or country code for which the package is intended"
+            "DESTINATION_COUNTRY": "Region or country code for which the package is intended",
+            "pkg_revision": "Revisione del formato PKG",
+            "pkg_metadata_offset": "Offset dei metadata nel PKG",
+            "pkg_metadata_count": "Numero di entry nei metadata",
+            "pkg_metadata_size": "Dimensione totale dei metadata",
+            "item_count": "Numero totale di file nel PKG",
+            "data_offset": "Offset dei dati nel PKG",
+            "data_size": "Dimensione totale dei dati",
+            "digest": "Hash di verifica del PKG",
+            "pkg_data_riv": "Vettore di inizializzazione per la decrittazione",
+            "pkg_header_digest": "Hash dell'header del PKG",
+            "drm_type": "Tipo di protezione DRM",
+            "content_type": "Tipo di contenuto del PKG",
+            "package_type": "Tipo di pacchetto",
+            "package_flag": "Flag del pacchetto",
+            "package_size": "Dimensione totale del pacchetto",
+            "make_package_npdrm_revision": "Revisione NPDRM",
+            "package_version": "Versione del pacchetto",
+            "title_id": "ID del titolo",
+            "qa_digest": "Hash di verifica QA",
+            "system_version": "Versione minima del sistema richiesta",
+            "app_version": "Versione dell'applicazione",
+            "install_directory": "Directory di installazione",
+            "is_encrypted": "Stato della crittografia",
+            "valid_files": "Numero di file validi nel PKG"
         }
 
     def create_file_selection_layout(self, entry_widget, browse_function):
@@ -963,7 +987,7 @@ class PS4PKGTool(QMainWindow):
         layout.addLayout(self.create_file_selection_layout(self.file_browser_entry, lambda: self.browse_file_browser(self.file_browser_entry)))
 
         self.file_browser_tree = QTreeWidget()
-        self.file_browser_tree.setHeaderLabels(["Name", "Size"])
+        self.file_browser_tree.setHeaderLabels(["Name", "Size", "Type"])
         self.file_browser_tree.setStyleSheet("""
             QTreeWidget {
                 background-color: white;
@@ -988,12 +1012,32 @@ class PS4PKGTool(QMainWindow):
         self.file_browser_log.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
         layout.addWidget(self.file_browser_log)
 
-        run_button = QPushButton("Execute File Browser")
+        run_button = QPushButton("Esegui File Browser")
         run_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
         run_button.clicked.connect(lambda: self.run_command("file_browser"))
         layout.addWidget(run_button)
         
         layout.addStretch(1)
+        
+        self.load_file_system()
+
+    def load_file_system(self):
+        root_path = QFileDialog.getExistingDirectory(self, "Seleziona Directory")
+        if root_path:
+            self.populate_file_tree(root_path)
+
+    def populate_file_tree(self, path, parent_item=None):
+        for root, dirs, files in os.walk(path):
+            if parent_item is None:
+                parent_item = self.file_browser_tree.invisibleRootItem()
+            for dir_name in dirs:
+                dir_item = QTreeWidgetItem(parent_item, [dir_name, "", "Directory"])
+                self.populate_file_tree(os.path.join(root, dir_name), dir_item)
+            for file_name in files:
+                file_path = os.path.join(root, file_name)
+                file_size = os.path.getsize(file_path)
+                file_item = QTreeWidgetItem(parent_item, [file_name, str(file_size), "File"])
+            break
 
     def setup_wallpaper_tab(self):
         layout = QVBoxLayout(self.wallpaper_tab)
@@ -1291,7 +1335,7 @@ class PS4PKGTool(QMainWindow):
         layout = QVBoxLayout(self.wallpaper_tab)
         
         self.wallpaper_tree = QTreeWidget()
-        self.wallpaper_tree.setHeaderLabels(["File Name", "Size"])
+        self.wallpaper_tree.setHeaderLabels(["Name", "Size"])
         self.wallpaper_tree.setColumnWidth(0, 200)
         self.wallpaper_tree.setColumnWidth(1, 100)
         self.wallpaper_tree.setStyleSheet("""
@@ -1352,39 +1396,60 @@ class PS4PKGTool(QMainWindow):
             file_name = item.text(0)
             Logger.log_information(f"Attempting to display wallpaper: {file_name}")
             
-            file_info = next((f for f in self.package.files.values() if f.get("name") == file_name), None)
+            if not self.package:
+                Logger.log_warning("No package loaded")
+                return
+
+            # Per PS3, cerca prima nella directory temporanea
+            if isinstance(self.package, PackagePS3):
+                file_path = os.path.join(self.package.temp_dir, file_name)
+                if os.path.exists(file_path):
+                    try:
+                        with Image.open(file_path) as pil_image:
+                            if pil_image.mode != 'RGB':
+                                pil_image = pil_image.convert('RGB')
+                            pil_image.thumbnail((300, 300), Image.Resampling.LANCZOS)
+                            qimage = QImage(pil_image.tobytes(), 
+                                          pil_image.width, 
+                                          pil_image.height, 
+                                          3 * pil_image.width,
+                                          QImage.Format_RGB888)
+                            pixmap = QPixmap.fromImage(qimage)
+                            if not pixmap.isNull():
+                                self.wallpaper_viewer.setPixmap(pixmap)
+                                self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
+                                Logger.log_information(f"PS3 wallpaper displayed successfully: {file_name}")
+                                return
+                    except Exception as e:
+                        Logger.log_error(f"Error loading PS3 wallpaper: {str(e)}")
+            
+            # Per PS4/PS5
+            file_info = next((f for f in self.package.files.values() if f.get('name') == file_name), None)
             if file_info:
                 try:
-                    image_data = self.package.read_file(file_info["id"])
-                    Logger.log_information(f"Image data read, size: {len(image_data)} bytes")
+                    image_data = self.package.read_file(file_info['id'])
+                    pil_image = Image.open(io.BytesIO(image_data))
                     
-                    try:
-                        pil_image = Image.open(io.BytesIO(image_data))
-                        Logger.log_information(f"Image loaded with PIL: format={pil_image.format}, size={pil_image.size}, mode={pil_image.mode}")
-                        
-                        # Converti l'immagine in RGB se è in modalità RGBA
-                        if pil_image.mode == 'RGBA':
-                            pil_image = pil_image.convert('RGB')
-                        
-                        qimage = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGB888)
-                        pixmap = QPixmap.fromImage(qimage)
-                        
-                        if not pixmap.isNull():
-                            scaled_pixmap = pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                            self.wallpaper_viewer.setPixmap(scaled_pixmap)
-                            self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
-                            Logger.log_information(f"Wallpaper displayed successfully: {file_name}")
-                        else:
-                            raise Exception("Failed to create valid QPixmap")
-                    except Exception as e:
-                        Logger.log_error(f"Error processing image: {str(e)}")
-                        QMessageBox.warning(self, "Error", f"Error processing image: {str(e)}")
+                    if pil_image.mode != 'RGB':
+                        pil_image = pil_image.convert('RGB')
+                    
+                    pil_image.thumbnail((300, 300), Image.Resampling.LANCZOS)
+                    qimage = QImage(pil_image.tobytes(), 
+                                  pil_image.width, 
+                                  pil_image.height, 
+                                  3 * pil_image.width,
+                                  QImage.Format_RGB888)
+                    
+                    pixmap = QPixmap.fromImage(qimage)
+                    if not pixmap.isNull():
+                        self.wallpaper_viewer.setPixmap(pixmap)
+                        self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
+                        Logger.log_information(f"Wallpaper displayed successfully: {file_name}")
+                        return
                 except Exception as e:
-                    Logger.log_error(f"Error during image loading: {str(e)}")
-                    QMessageBox.warning(self, "Error", f"Unable to load image: {str(e)}")
-            else:
-                Logger.log_warning(f"File not found in package: {file_name}")
-                QMessageBox.warning(self, "File not found", f"The file {file_name} does not exist in the package.")
+                    Logger.log_error(f"Error processing wallpaper: {str(e)}")
+                    QMessageBox.warning(self, "Error", f"Error processing wallpaper: {str(e)}")
+
         except Exception as e:
             Logger.log_error(f"Unexpected error in display_selected_wallpaper: {str(e)}")
             QMessageBox.critical(self, "Error", f"An unexpected error occurred: {str(e)}")
@@ -1503,16 +1568,69 @@ class PS4PKGTool(QMainWindow):
     def load_files(self):
         if self.package:
             self.file_tree.clear()
+            
+            # Crea un dizionario per organizzare i file in directory
+            file_structure = {}
+            
             for file_id, file_info in self.package.files.items():
-                item = QTreeWidgetItem(self.file_tree)
-                item.setText(0, file_info.get("name", f"file_{file_id}"))
-                item.setText(1, str(file_info['size']))
-                item.setText(2, self.get_file_type(os.path.splitext(file_info.get("name", ""))[1]))
-                item.setData(0, Qt.UserRole, file_info)
-            self.file_tree.sortItems(0, Qt.AscendingOrder)
+                # Ignora i file senza nome
+                if not file_info.get("name"):
+                    continue
+                    
+                file_path = file_info["name"]
+                path_parts = file_path.split('/')
+                
+                # Ignora i file con percorsi vuoti
+                if not any(path_parts):
+                    continue
+                    
+                current_dict = file_structure
+                
+                # Crea la struttura delle directory
+                for part in path_parts[:-1]:
+                    if part:  # Ignora parti vuote del percorso
+                        current_dict = current_dict.setdefault(part, {})
+                
+                # Aggiungi il file alla struttura
+                if path_parts[-1]:  # Ignora nomi file vuoti
+                    current_dict[path_parts[-1]] = file_info
+
+            # Funzione ricorsiva per popolare il QTreeWidget
+            def add_items(parent_item, structure):
+                for name, content in sorted(structure.items()):
+                    if isinstance(content, dict):
+                        if any(isinstance(v, dict) for v in content.values()):
+                            # È una directory
+                            folder_item = QTreeWidgetItem(parent_item)
+                            folder_item.setText(0, name)
+                            folder_item.setText(2, "Directory")
+                            add_items(folder_item, content)
+                        else:
+                            # È un file
+                            file_item = QTreeWidgetItem(parent_item)
+                            file_item.setText(0, name)
+                            if 'size' in content:
+                                file_item.setText(1, self.format_size(content['size']))
+                            file_item.setText(2, self.get_file_type(os.path.splitext(name)[1]))
+                            file_item.setData(0, Qt.UserRole, content)
+
+            # Popola il QTreeWidget
+            add_items(self.file_tree.invisibleRootItem(), file_structure)
+            
+            # Espandi tutte le cartelle
+            self.file_tree.expandAll()
+            
             Logger.log_information(f"Loaded {len(self.package.files)} files into the file browser")
         else:
             Logger.log_warning("No PKG file loaded. Unable to populate file browser.")
+
+    def format_size(self, size):
+        """Formatta la dimensione del file in un formato leggibile"""
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024:
+                return f"{size:.2f} {unit}"
+            size /= 1024
+        return f"{size:.2f} TB"
 
     def replace_hex(self):
         if not self.offset_entry.text():
@@ -1796,20 +1914,6 @@ class PS4PKGTool(QMainWindow):
             QMessageBox.warning(self, "Warning", "No file selected.")
         return None
 
-    def load_files(self):
-        if self.package:
-            self.file_tree.clear()
-            for file_id, file_info in self.package.files.items():
-                item = QTreeWidgetItem(self.file_tree)
-                item.setText(0, file_info.get("name", f"file_{file_id}"))
-                item.setText(1, str(file_info['size']))
-                item.setText(2, self.get_file_type(os.path.splitext(file_info.get("name", ""))[1]))
-                item.setData(0, Qt.UserRole, file_info)
-            self.file_tree.sortItems(0, Qt.AscendingOrder)
-            Logger.log_information(f"Loaded {len(self.package.files)} files into the file browser")
-        else:
-            Logger.log_warning("No PKG file loaded. Unable to populate file browser.")
-
     def on_item_double_clicked(self, item, column):
         file_info = item.data(0, Qt.UserRole)
         if file_info:
@@ -2030,39 +2134,60 @@ class PS4PKGTool(QMainWindow):
             file_name = item.text(0)
             Logger.log_information(f"Attempting to display wallpaper: {file_name}")
             
-            file_info = next((f for f in self.package.files.values() if f.get("name") == file_name), None)
+            if not self.package:
+                Logger.log_warning("No package loaded")
+                return
+
+            # Per PS3, cerca prima nella directory temporanea
+            if isinstance(self.package, PackagePS3):
+                file_path = os.path.join(self.package.temp_dir, file_name)
+                if os.path.exists(file_path):
+                    try:
+                        with Image.open(file_path) as pil_image:
+                            if pil_image.mode != 'RGB':
+                                pil_image = pil_image.convert('RGB')
+                            pil_image.thumbnail((300, 300), Image.Resampling.LANCZOS)
+                            qimage = QImage(pil_image.tobytes(), 
+                                          pil_image.width, 
+                                          pil_image.height, 
+                                          3 * pil_image.width,
+                                          QImage.Format_RGB888)
+                            pixmap = QPixmap.fromImage(qimage)
+                            if not pixmap.isNull():
+                                self.wallpaper_viewer.setPixmap(pixmap)
+                                self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
+                                Logger.log_information(f"PS3 wallpaper displayed successfully: {file_name}")
+                                return
+                    except Exception as e:
+                        Logger.log_error(f"Error loading PS3 wallpaper: {str(e)}")
+            
+            # Per PS4/PS5
+            file_info = next((f for f in self.package.files.values() if f.get('name') == file_name), None)
             if file_info:
                 try:
-                    image_data = self.package.read_file(file_info["id"])
-                    Logger.log_information(f"Image data read, size: {len(image_data)} bytes")
+                    image_data = self.package.read_file(file_info['id'])
+                    pil_image = Image.open(io.BytesIO(image_data))
                     
-                    try:
-                        pil_image = Image.open(io.BytesIO(image_data))
-                        Logger.log_information(f"Image loaded with PIL: format={pil_image.format}, size={pil_image.size}, mode={pil_image.mode}")
-                        
-                        # Convert the image to RGB if it is in a different mode
-                        if pil_image.mode not in ['RGB', 'RGBA']:
-                            pil_image = pil_image.convert('RGB')
-                        
-                        qimage = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGB888)
-                        pixmap = QPixmap.fromImage(qimage)
-                        
-                        if not pixmap.isNull():
-                            scaled_pixmap = pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                            self.wallpaper_viewer.setPixmap(scaled_pixmap)
-                            self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
-                            Logger.log_information(f"Wallpaper displayed successfully: {file_name}")
-                        else:
-                            raise Exception("Failed to create valid QPixmap")
-                    except Exception as e:
-                        Logger.log_error(f"Error processing image: {str(e)}")
-                        QMessageBox.warning(self, "Error", f"Error processing image: {str(e)}")
+                    if pil_image.mode != 'RGB':
+                        pil_image = pil_image.convert('RGB')
+                    
+                    pil_image.thumbnail((300, 300), Image.Resampling.LANCZOS)
+                    qimage = QImage(pil_image.tobytes(), 
+                                  pil_image.width, 
+                                  pil_image.height, 
+                                  3 * pil_image.width,
+                                  QImage.Format_RGB888)
+                    
+                    pixmap = QPixmap.fromImage(qimage)
+                    if not pixmap.isNull():
+                        self.wallpaper_viewer.setPixmap(pixmap)
+                        self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
+                        Logger.log_information(f"Wallpaper displayed successfully: {file_name}")
+                        return
                 except Exception as e:
-                    Logger.log_error(f"Error during image loading: {str(e)}")
-                    QMessageBox.warning(self, "Error", f"Unable to load image: {str(e)}")
-            else:
-                Logger.log_warning(f"File not found in package: {file_name}")
-                QMessageBox.warning(self, "File not found", f"The file {file_name} does not exist in the package.")
+                    Logger.log_error(f"Error processing wallpaper: {str(e)}")
+                    QMessageBox.warning(self, "Error", f"Error processing wallpaper: {str(e)}")
+
         except Exception as e:
             Logger.log_error(f"Unexpected error in display_selected_wallpaper: {str(e)}")
             QMessageBox.critical(self, "Error", f"An unexpected error occurred: {str(e)}")
@@ -2293,85 +2418,72 @@ class PS4PKGTool(QMainWindow):
     def load_pkg_icon(self):
         try:
             Logger.log_information("Attempting to load PKG icon...")
-            icon_file = next((f for f in self.package.files.values() if isinstance(f, dict) and f.get('name', '').lower() == 'icon0.png'), None)
             
-            # Recupera e visualizza il content ID completo
+            # Recupera e visualizza il content ID
             content_id = self.get_content_id()
             if content_id:
-                # Mostra il content ID completo senza splitting
                 self.content_id_label.setText(f"Content ID: {content_id}")
                 Logger.log_information(f"Content ID displayed: {content_id}")
             else:
                 self.content_id_label.setText("Content ID: N/A")
                 Logger.log_warning("No content ID found")
 
+            # Per PS3, cerca prima nella directory temporanea
+            if isinstance(self.package, PackagePS3):
+                icon_path = os.path.join(self.package.temp_dir, 'ICON0.PNG')
+                if os.path.exists(icon_path):
+                    try:
+                        with Image.open(icon_path) as pil_image:
+                            if pil_image.mode != 'RGB':
+                                pil_image = pil_image.convert('RGB')
+                            pil_image.thumbnail((300, 300), Image.Resampling.LANCZOS)
+                            qimage = QImage(pil_image.tobytes(), 
+                                          pil_image.width, 
+                                          pil_image.height, 
+                                          3 * pil_image.width,
+                                          QImage.Format_RGB888)
+                            pixmap = QPixmap.fromImage(qimage)
+                            if not pixmap.isNull():
+                                self.image_label.setPixmap(pixmap)
+                                self.image_label.setAlignment(Qt.AlignCenter)
+                                Logger.log_information("PS3 PKG icon loaded and displayed successfully")
+                                return
+                    except Exception as e:
+                        Logger.log_error(f"Error loading PS3 icon: {str(e)}")
+            
+            # Per PS4/PS5
+            icon_file = next((f for f in self.package.files.values() 
+                             if isinstance(f, dict) and f.get('name', '').lower() in ['icon0.png', 'ICON0.PNG']), None)
+            
             if icon_file:
                 Logger.log_information(f"Icon file found in package: {icon_file}")
-                icon_data = self.package.read_file(icon_file['id'])
-                if icon_data:
-                    try:
-                        pil_image = Image.open(io.BytesIO(icon_data))
-                        Logger.log_information(f"Icon loaded with PIL: format={pil_image.format}, size={pil_image.size}, mode={pil_image.mode}")
-                        
-                        # Convert the image to RGB if it is in a different mode
-                        if pil_image.mode not in ['RGB', 'RGBA']:
-                            pil_image = pil_image.convert('RGB')
-                        
-                        qimage = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGB888)
-                        pixmap = QPixmap.fromImage(qimage)
-                        
-                        if not pixmap.isNull():
-                            scaled_pixmap = pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                            self.image_label.setPixmap(scaled_pixmap)
-                            self.image_label.setAlignment(Qt.AlignCenter)
-                            Logger.log_information("PKG icon loaded and displayed successfully.")
-                            return
-                        else:
-                            raise Exception("Failed to create valid QPixmap for icon")
-                    except Exception as e:
-                        Logger.log_error(f"Error processing icon image from package: {str(e)}")
-                        QMessageBox.warning(self, "Error", f"Error processing icon image: {str(e)}")
-                else:
-                    Logger.log_warning("Failed to read icon file data from package")
-            else:
-                Logger.log_warning("No icon0.png found in the package.")
-            
-            # Se l'icona non è stata caricata dal pacchetto, cerca l'icona estratta
-            extracted_icon_path = os.path.join(os.path.dirname(self.package.original_file), "icon0.png")
-            if os.path.exists(extracted_icon_path):
-                Logger.log_information(f"Using extracted icon: {extracted_icon_path}")
-                pixmap = QPixmap(extracted_icon_path)
-                if not pixmap.isNull():
-                    scaled_pixmap = pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                    self.image_label.setPixmap(scaled_pixmap)
-                    self.image_label.setAlignment(Qt.AlignCenter)
-                    Logger.log_information("Extracted PKG icon loaded and displayed successfully.")
-                    return
-                else:
-                    Logger.log_warning("Failed to create QPixmap from extracted icon")
-            else:
-                Logger.log_warning(f"Extracted icon not found: {extracted_icon_path}")
-
-                # Se l'icona non può essere caricata dal pacchetto o estratta, usa un'icona predefinita
-                default_icon_path = os.path.join(os.path.dirname(__file__), "default_icon.png")
-                if os.path.exists(default_icon_path):
-                    Logger.log_information(f"Using default icon: {default_icon_path}")
-                    pixmap = QPixmap(default_icon_path)
+                try:
+                    icon_data = self.package.read_file(icon_file['id'])
+                    pil_image = Image.open(io.BytesIO(icon_data))
+                    Logger.log_information(f"Icon loaded with PIL: format={pil_image.format}, size={pil_image.size}, mode={pil_image.mode}")
+                    
+                    if pil_image.mode != 'RGB':
+                        pil_image = pil_image.convert('RGB')
+                    
+                    pil_image.thumbnail((300, 300), Image.Resampling.LANCZOS)
+                    qimage = QImage(pil_image.tobytes(), 
+                                  pil_image.width, 
+                                  pil_image.height, 
+                                  3 * pil_image.width,
+                                  QImage.Format_RGB888)
+                    
+                    pixmap = QPixmap.fromImage(qimage)
                     if not pixmap.isNull():
-                        scaled_pixmap = pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                        self.image_label.setPixmap(scaled_pixmap)
+                        self.image_label.setPixmap(pixmap)
                         self.image_label.setAlignment(Qt.AlignCenter)
-                        Logger.log_information("Default icon loaded and displayed successfully.")
-                    else:
-                        Logger.log_warning("Failed to create QPixmap from default icon")
-                else:
-                    Logger.log_error(f"Default icon not found: {default_icon_path}")
-                    self.image_label.setText("No icon available")
-        
+                        Logger.log_information("PKG icon loaded and displayed successfully.")
+                        return
+                except Exception as e:
+                    Logger.log_error(f"Error processing icon image: {str(e)}")
+
         except Exception as e:
             Logger.log_error(f"Unexpected error loading PKG icon: {str(e)}")
             self.image_label.setText("Error loading icon")
-            self.content_id_label.setText("Content ID: Error")
 
     def get_content_id(self):
         """Recupera il content ID in base al tipo di pacchetto"""

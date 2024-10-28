@@ -1,347 +1,669 @@
-import logging
-import struct
 import os
+import struct
+import binascii
+from Crypto.Cipher import AES
+import logging
+from PIL import Image
+import io
 from .package_base import PackageBase
-from .utils import Logger
-from .enums import DRMType, ContentType, PackageType, PackageFlag
-from . import AES_LIBRARY_AVAILABLE
-
-if AES_LIBRARY_AVAILABLE:
-    from .AesLibraryPs3.aes import AES_ctx, AES_set_key, AES_encrypt, AES_KEY_LEN_128, AES_cbc_decrypt
-    from .AesLibraryPs3.kirk_engine import kirk_init, kirk_CMD7
-    try:
-        from .AesLibraryPs3.kirk_engine import decrypt_pgd
-    except ImportError:
-        from .AesLibraryPs3.amctrl import decrypt_pgd
-    from Crypto.Cipher import AES 
-else:
-
-    def kirk_init():
-        raise NotImplementedError("AesLibraryPs3 non è disponibile")
-    
-    def kirk_CMD7(*args):
-        raise NotImplementedError("AesLibraryPs3 non è disponibile")
-    
-    def decrypt_pgd(*args):
-        raise NotImplementedError("AesLibraryPs3 non è disponibile")
-    
-    AES = None  
+import shutil
 
 class PackagePS3(PackageBase):
     MAGIC_PS3 = 0x7f504b47  # ?PKG per PS3
-    PS3_AES_KEY = b'\x2E\x7B\x71\xD7\xC9\xC9\xA1\x4E\xA3\x22\x1F\x18\x88\x28\xB8\xF8'
-
-    def __init__(self, file: str):
-        super().__init__(file)
-        self.is_ps3 = False
-        self.pkg_revision = None
-        self.pkg_type = None
-        self.pkg_metadata_offset = None
-        self.pkg_metadata_count = None
-        self.pkg_metadata_size = None
-        self.item_count = None
-        self.total_size = None
-        self.data_offset = None
-        self.data_size = None
-        self.content_id = None
-        self.digest = None
-        self.pkg_data_riv = None
-        self.pkg_header_digest = None
-        self.is_encrypted = True  # Assumiamo che sia crittografato di default
-        self.public_key = None
-        self.xor_key = None
-
+    
+    def __init__(self, pkg_path):
         try:
-            result = kirk_init()  # Inizializza il motore KIRK
-            if result != 0:
-                raise ValueError(f"Errore nell'inizializzazione di KIRK: {result}")
-            
-            with open(file, "rb") as fp:
-                magic = struct.unpack(">I", fp.read(4))[0]
-                if magic == self.MAGIC_PS3:
-                    self.is_ps3 = True
-                    self._load_ps3_pkg(fp)
-                else:
-                    raise ValueError(f"Formato PKG sconosciuto: {magic:08X}")
-        except Exception as e:
-            Logger.log_error(f"Errore durante l'inizializzazione: {str(e)}")
-            raise
-
-    def _load_ps3_pkg(self, fp):
-        try:
-            header_format = ">4sHHIIIIQQQ48s16s16s64s"
-            fp.seek(0)
-            data = fp.read(struct.calcsize(header_format))
-            
-            (magic, self.pkg_revision, self.pkg_type, self.pkg_metadata_offset, self.pkg_metadata_count,
-             self.pkg_metadata_size, self.item_count, self.total_size, self.data_offset, self.data_size,
-             content_id_and_padding, self.digest, self.pkg_data_riv, self.pkg_header_digest) = struct.unpack(header_format, data)
-
-            self.content_id = self._safe_decode(content_id_and_padding[:0x30])
-            self.digest = self.digest.hex()
-            self.pkg_data_riv = bytes.fromhex(self.pkg_data_riv.hex())
-            self.pkg_header_digest = self.pkg_header_digest.hex()
-            self.public_key = data[0x70:0x80]
-
-            Logger.log_information("Header PS3 PKG caricato con successo.")
-            Logger.log_information(f"Metadata offset: 0x{self.pkg_metadata_offset:X}, count: {self.pkg_metadata_count}, size: {self.pkg_metadata_size}")
-            Logger.log_information(f"Total size: {self.total_size}, Data offset: 0x{self.data_offset:X}, Data size: {self.data_size}")
-            
-            self._decrypt_and_load_metadata(fp)
-            self._decrypt_and_load_files(fp)
-
-        except Exception as e:
-            Logger.log_error(f"Errore durante il caricamento del file PS3 PKG: {str(e)}")
-            raise ValueError(f"Errore durante il caricamento del file PS3 PKG: {str(e)}")
-
-    def _decrypt_and_load_metadata(self, fp):
-        try:
-            fp.seek(self.pkg_metadata_offset)
-            encrypted_metadata = fp.read(self.pkg_metadata_size)
-            print(f"Debug: Encrypted metadata size: {len(encrypted_metadata)}")
-            print(f"Debug: First 16 bytes of encrypted metadata: {encrypted_metadata[:16].hex()}")
-            
-            decrypted_metadata = self._decrypt_data(encrypted_metadata)
-            print(f"Debug: Decrypted metadata size: {len(decrypted_metadata)}")
-            print(f"Debug: First 32 bytes of decrypted metadata: {decrypted_metadata[:32].hex()}")
-            
-            self.metadata = {}
-            offset = 0
-            for _ in range(self.pkg_metadata_count):
-                if offset + 12 > len(decrypted_metadata):
-                    break
-                key, value_type, size = struct.unpack(">III", decrypted_metadata[offset:offset+12])
-                offset += 12
-                
-                if offset + size > len(decrypted_metadata):
-                    break
-
-                value = decrypted_metadata[offset:offset+size]
-                offset += size
-
-                self.metadata[key] = value
-                self._process_metadata(key, value)
-                print(f"Debug: Metadata - key=0x{key:X}, value_type={value_type}, size={size}, value={self._safe_format(value)}")
-
-            print(f"Debug: Processed {len(self.metadata)} metadata entries")
-
-        except Exception as e:
-            Logger.log_error(f"Errore durante il caricamento dei metadata: {str(e)}")
-            raise ValueError(f"Errore durante il caricamento dei metadata: {str(e)}")
-
-    def _decrypt_and_load_files(self, fp):
-        try:
-            Logger.log_information(f"Inizio caricamento file. Data offset: 0x{self.data_offset:X}, Item count: {self.item_count}")
-            fp.seek(self.data_offset)
-            encrypted_file_entries = fp.read(32 * self.item_count)
-            print(f"Debug: Encrypted file entries size: {len(encrypted_file_entries)}")
-            print(f"Debug: First 32 bytes of encrypted file entries: {encrypted_file_entries[:32].hex()}")
-            
-            decrypted_file_entries = self._decrypt_data(encrypted_file_entries)
-            print(f"Debug: Decrypted file entries size: {len(decrypted_file_entries)}")
-            print(f"Debug: First 32 bytes of decrypted file entries: {decrypted_file_entries[:32].hex()}")
-            
+            super().__init__(pkg_path)
+            self.original_file = pkg_path
             self.files = {}
-            for i in range(self.item_count):
-                entry = decrypted_file_entries[i*32:(i+1)*32]
-                if len(entry) < 32:
-                    Logger.log_warning(f"Entry del file {i+1} troppo corta. Saltata.")
-                    continue
-                
-                file_name_offset, file_name_size, file_offset, file_size, flags = struct.unpack(">IIQQI", entry[:28])
-                
-                print(f"Debug: File {i+1} - name_offset=0x{file_name_offset:X}, name_size={file_name_size}, offset=0x{file_offset:X}, size={file_size}, flags=0x{flags:X}")
-                
-                if file_name_offset > self.total_size or file_offset > self.total_size:
-                    Logger.log_warning(f"File {i+1}: Offset non valido. Saltato.")
-                    continue
-                
-                if file_size > self.total_size:
-                    Logger.log_warning(f"File {i+1}: Dimensione file sospetta. Potrebbe essere corrotto.")
-                
-                try:
-                    fp.seek(self.data_offset + file_name_offset)
-                    encrypted_file_name = fp.read(file_name_size)
-                    file_name = self._decrypt_data(encrypted_file_name)[:file_name_size].decode('utf-8', errors='ignore')
-                except Exception as e:
-                    Logger.log_warning(f"Errore durante la decrittazione del nome del file {i+1}: {str(e)}")
-                    file_name = f"unknown_file_{i}"
-
-                self.files[file_name] = {
-                    "offset": file_offset,
-                    "size": file_size,
-                    "flags": flags
-                }
-
-            Logger.log_information(f"Caricati {len(self.files)} file.")
-
+            self.content_id = None
+            self.pkg_type = None
+            self.pkg_info = {}
+            
+            # Chiavi AES per PS3/PSP
+            self.psp_aes_key = bytes([0x07, 0xF2, 0xC6, 0x82, 0x90, 0xB5, 0x0D, 0x2C, 0x33, 0x81, 0x8D, 0x70, 0x9B, 0x60, 0xE6, 0x2B])
+            self.ps3_aes_key = bytes([0x2E, 0x7B, 0x71, 0xD7, 0xC9, 0xC9, 0xA1, 0x4E, 0xA3, 0x22, 0x1F, 0x18, 0x88, 0x28, 0xB8, 0xF8])
+            self.aes_key = bytes(16)
+            self.pkg_file_key = bytes(16)
+            self.ui_encrypted_file_start_offset = 0
+            
+            self.temp_dir = os.path.join(os.path.dirname(pkg_path), "._temp_output")
+            os.makedirs(self.temp_dir, exist_ok=True)
+            
+            self.load_pkg_info()
+            self.decrypt_and_extract()
+            
         except Exception as e:
-            Logger.log_error(f"Errore durante il caricamento dei file: {str(e)}")
-            raise ValueError(f"Errore durante il caricamento dei file: {str(e)}")
-
-    def _decrypt_data(self, data):
-        try:
-            if len(data) < 16:
-                raise ValueError(f"Input data too short. Expected at least 16 bytes, got {len(data)} bytes.")
-            
-            print(f"Debug: Attempting to decrypt {len(data)} bytes of data")
-            print(f"Debug: First 16 bytes of encrypted data: {data[:16].hex()}")
-            
-            # Prova prima con AES diretto
-            if AES is not None:
-                aes_key = self.PS3_AES_KEY
-                cipher = AES.new(aes_key, AES.MODE_CBC, iv=data[:16])
-                decrypted = cipher.decrypt(data[16:])
-                print(f"Debug: AES decryption result - First 16 bytes: {decrypted[:16].hex()}")
-                
-                if not all(byte == 0 for byte in decrypted):
-                    return decrypted
-            
-            # Se AES diretto non funziona o produce tutti zeri, prova con kirk_CMD7
-            decrypted = bytearray(len(data))
-            decrypted_size = kirk_CMD7(decrypted, data, len(data))
-            
-            if decrypted_size < 0:
-                raise ValueError(f"kirk_CMD7 failed with error code: {decrypted_size}")
-            if decrypted_size == 0:
-                raise ValueError("No data was decrypted")
-            
-            print(f"Debug: Decrypted data size: {decrypted_size}")
-            print(f"Debug: First 16 bytes of decrypted data: {decrypted[:16].hex()}")
-            
-            if all(byte == 0 for byte in decrypted[:decrypted_size]):
-                print("Warning: Decrypted data is all zeros. This might indicate a problem with the decryption process.")
-            
-            return bytes(decrypted[:decrypted_size])
-        except Exception as e:
-            Logger.log_error(f"Errore durante la decrittazione dei dati: {str(e)}")
+            logging.error(f"Error initializing PackagePS3: {str(e)}")
             raise
 
-    def _process_metadata(self, key, value):
+    def decrypt_and_extract(self):
+        """Decripta il PKG ed estrae i file necessari"""
         try:
-            if key == 0x1:
-                self.drm_type = self._safe_get_enum(DRMType, value)
-            elif key == 0x2:
-                self.content_type = self._safe_get_enum(ContentType, value)
-            elif key == 0x3:
-                self.package_type = self._safe_get_enum(PackageType, value & 0xFFFF)
-                self.package_flag = self._safe_get_enum(PackageFlag, (value >> 16) & 0xFFFF)
-            elif key == 0x4:
-                self.package_size = value
-            elif key == 0x5:
-                self.make_package_npdrm_revision = value >> 16
-                self.package_version = value & 0xFFFF
-            elif key == 0x6:
-                self.title_id = self._safe_decode(value)
-            elif key == 0x7:
-                self.qa_digest = value.hex() if isinstance(value, bytes) else str(value)
-            elif key == 0x8:
-                if isinstance(value, int):
-                    self.system_version = f"{(value >> 24) & 0xFF}.{(value >> 16) & 0xFF:02d}"
-                    self.app_version = f"{(value >> 8) & 0xFF}.{value & 0xFF:02d}"
-                else:
-                    Logger.log_warning(f"Valore inaspettato per il metadata 0x8: {value}")
-            elif key == 0xA:
-                self.install_directory = self._safe_decode(value[8:]) if isinstance(value, bytes) and len(value) > 8 else str(value)
+            # Decripta il PKG
+            decrypted_pkg = self.decrypt_pkg_file(self.original_file)
+            if not decrypted_pkg:
+                raise ValueError("Failed to decrypt PKG")
+
+            # Estrai i file
+            self.extract_files(decrypted_pkg, self.temp_dir)
+
+            # Carica EBOOT.BIN se presente
+            eboot_path = os.path.join(self.temp_dir, 'USRDIR', 'EBOOT.BIN')
+            if os.path.exists(eboot_path):
+                with open(eboot_path, 'rb') as f:
+                    self.eboot_data = f.read()
+                    self.parse_eboot_info()
+                logging.info("EBOOT.BIN loaded successfully")
+
+            # Carica ICON0.PNG se presente
+            icon_path = os.path.join(self.temp_dir, 'ICON0.PNG')
+            if os.path.exists(icon_path):
+                try:
+                    with Image.open(icon_path) as img:
+                        self.icon_data = img
+                    logging.info("ICON0.PNG loaded successfully")
+                except Exception as e:
+                    logging.error(f"Error loading ICON0.PNG: {str(e)}")
+
         except Exception as e:
-            Logger.log_warning(f"Errore durante l'elaborazione del metadata con chiave 0x{key:X}: {str(e)}")
+            logging.error(f"Error in decrypt_and_extract: {str(e)}")
+            raise
 
-    def extract_file(self, file_name, output_path):
-        if file_name not in self.files:
-            raise ValueError(f"Il file {file_name} non esiste nel pacchetto.")
+    def parse_eboot_info(self):
+        """Estrae informazioni da EBOOT.BIN"""
+        try:
+            if hasattr(self, 'eboot_data'):
+                # Cerca il TITLE_ID
+                title_id_offset = self.eboot_data.find(b'TITLE_ID')
+                if title_id_offset != -1:
+                    self.title_id = self.eboot_data[title_id_offset+9:title_id_offset+18].decode('utf-8')
+                
+                # Cerca la APP_VER
+                app_ver_offset = self.eboot_data.find(b'APP_VER')
+                if app_ver_offset != -1:
+                    self.app_version = self.eboot_data[app_ver_offset+8:app_ver_offset+16].decode('utf-8')
+                
+                # Aggiungi altre informazioni che vuoi estrarre...
+                
+        except Exception as e:
+            logging.error(f"Error parsing EBOOT.BIN: {str(e)}")
 
-        file_info = self.files[file_name]
-        with open(self.original_file, "rb") as pkg, open(output_path, "wb") as out:
-            pkg.seek(file_info["offset"])
-            encrypted_data = pkg.read(file_info["size"])
-            decrypted_data = self._decrypt_data(encrypted_data)
-            
-            # Se il file è un PGD, decrittalo ulteriormente
-            if file_name.endswith('.pgd'):
-                decrypted_data = decrypt_pgd(decrypted_data, len(decrypted_data), 0, None)
-            
-            out.write(decrypted_data)
+    def decrypt_pkg_file(self, pkg_file_name):
+        try:
+            moltiplicator = 65536
+            encrypted_data = bytearray(16 * moltiplicator)
+            decrypted_data = bytearray(16 * moltiplicator)
 
-        Logger.log_information(f"File {file_name} estratto con successo in {output_path}")
+            with open(pkg_file_name, "rb") as pkg_read_stream:
+                # Verifica magic number e tipo
+                pkg_magic = pkg_read_stream.read(4)
+                if pkg_magic != b'\x7F\x50\x4B\x47':
+                    raise ValueError("Invalid PKG file")
+
+                pkg_read_stream.seek(0x04)
+                pkg_finalized = pkg_read_stream.read(1)[0]
+                if pkg_finalized != 0x80:
+                    raise ValueError("Debug PKG not supported")
+
+                pkg_read_stream.seek(0x07)
+                pkg_type = pkg_read_stream.read(1)[0]
+                self.aes_key = self.ps3_aes_key if pkg_type == 0x01 else self.psp_aes_key
+
+                # Leggi offset e dimensione file criptato
+                pkg_read_stream.seek(0x24)
+                self.ui_encrypted_file_start_offset = struct.unpack(">I", pkg_read_stream.read(4))[0]
+                pkg_read_stream.seek(0x2C)
+                ui_encrypted_file_length = struct.unpack(">I", pkg_read_stream.read(4))[0]
+
+                # Leggi chiave file
+                pkg_read_stream.seek(0x70)
+                self.pkg_file_key = pkg_read_stream.read(16)
+                inc_pkg_file_key = bytearray(self.pkg_file_key)
+
+                # Decripta
+                cipher = AES.new(self.aes_key, AES.MODE_ECB)
+                decrypted_file = os.path.join(self.temp_dir, "pkg.dec")
+
+                with open(decrypted_file, "wb") as out_file:
+                    pkg_read_stream.seek(self.ui_encrypted_file_start_offset)
+                    
+                    remaining = ui_encrypted_file_length
+                    while remaining > 0:
+                        chunk_size = min(remaining, 16 * moltiplicator)
+                        encrypted_chunk = pkg_read_stream.read(chunk_size)
+                        
+                        # Genera chiave XOR
+                        key_chunk = bytearray(chunk_size)
+                        for i in range(0, chunk_size, 16):
+                            key_chunk[i:i+16] = inc_pkg_file_key
+                            self.increment_array(inc_pkg_file_key, 15)
+                            
+                        # Cripta chiave e XOR con dati
+                        xor_key = cipher.encrypt(bytes(key_chunk))
+                        decrypted_chunk = bytes(a ^ b for a, b in zip(encrypted_chunk, xor_key[:len(encrypted_chunk)]))
+                        
+                        out_file.write(decrypted_chunk)
+                        remaining -= chunk_size
+
+                return decrypted_file
+
+        except Exception as e:
+            logging.error(f"Error decrypting PKG: {str(e)}")
+            return None
 
     def get_info(self):
+        """Restituisce le informazioni del pacchetto in un formato leggibile"""
+        info = super().get_info()
+        info.update({
+            "pkg_revision": f"0x{self.pkg_revision:04X}",
+            "pkg_type": f"0x{self.pkg_type:04X}",
+            "pkg_metadata_offset": f"0x{self.pkg_metadata_offset:X}",
+            "pkg_metadata_count": self.pkg_metadata_count,
+            "pkg_metadata_size": self.pkg_metadata_size,
+            "item_count": self.item_count,
+            "total_size": self.total_size,
+            "data_offset": f"0x{self.data_offset:X}",
+            "data_size": self.data_size,
+            "content_id": self.content_id,
+            "digest": self.digest,
+            "pkg_data_riv": self.pkg_data_riv,
+            "pkg_header_digest": self.pkg_header_digest,
+            "drm_type": getattr(self, 'drm_type', 'Unknown'),
+            "content_type": getattr(self, 'content_type', 'Unknown'),
+            "package_type": getattr(self, 'package_type', 'Unknown'),
+            "package_flag": getattr(self, 'package_flag', 'Unknown'),
+            "package_size": getattr(self, 'package_size', 'Unknown'),
+            "make_package_npdrm_revision": getattr(self, 'make_package_npdrm_revision', 'Unknown'),
+            "package_version": getattr(self, 'package_version', 'Unknown'),
+            "title_id": getattr(self, 'title_id', 'Unknown'),
+            "qa_digest": getattr(self, 'qa_digest', 'Unknown'),
+            "system_version": getattr(self, 'system_version', 'Unknown'),
+            "app_version": getattr(self, 'app_version', 'Unknown'),
+            "install_directory": getattr(self, 'install_directory', 'Unknown'),
+            "is_encrypted": self.is_encrypted,
+            "valid_files": len(self.files),
+        })
+        
+        # Aggiungi info da EBOOT se disponibili
+        if hasattr(self, 'eboot_data'):
+            info.update({
+                "eboot_title_id": getattr(self, 'title_id', 'Unknown'),
+                "eboot_app_version": getattr(self, 'app_version', 'Unknown'),
+                # Aggiungi altre info estratte da EBOOT...
+            })
+            
+        return info
+
+    def load_pkg_info(self):
         try:
-            info = super().get_info()
-            if self.is_ps3:
-                info.update({
-                    "pkg_revision": f"0x{self.pkg_revision:04X}",
-                    "pkg_type": f"0x{self.pkg_type:04X}",
-                    "pkg_metadata_offset": f"0x{self.pkg_metadata_offset:X}",
-                    "pkg_metadata_count": self.pkg_metadata_count,
-                    "pkg_metadata_size": self.pkg_metadata_size,
-                    "item_count": self.item_count,
-                    "total_size": self.total_size,
-                    "data_offset": f"0x{self.data_offset:X}",
-                    "data_size": self.data_size,
-                    "content_id": self.content_id,
-                    "digest": self.digest,
-                    "pkg_data_riv": self.pkg_data_riv,
-                    "pkg_header_digest": self.pkg_header_digest,
-                    "drm_type": getattr(self, 'drm_type', 'Sconosciuto'),
-                    "content_type": getattr(self, 'content_type', 'Sconosciuto'),
-                    "package_type": getattr(self, 'package_type', 'Sconosciuto'),
-                    "package_flag": getattr(self, 'package_flag', 'Sconosciuto'),
-                    "package_size": getattr(self, 'package_size', 'Sconosciuto'),
-                    "make_package_npdrm_revision": getattr(self, 'make_package_npdrm_revision', 'Sconosciuto'),
-                    "package_version": getattr(self, 'package_version', 'Sconosciuto'),
-                    "title_id": getattr(self, 'title_id', 'Sconosciuto'),
-                    "qa_digest": getattr(self, 'qa_digest', 'Sconosciuto'),
-                    "system_version": getattr(self, 'system_version', 'Sconosciuto'),
-                    "app_version": getattr(self, 'app_version', 'Sconosciuto'),
-                    "install_directory": getattr(self, 'install_directory', 'Sconosciuto'),
-                    "is_encrypted": self.is_encrypted,
-                    "valid_files": len(self.files),
-                })
-            return info
+            with open(self.original_file, "rb") as pkg:
+                # Verifica magic number
+                magic = pkg.read(4)
+                if magic != b'\x7F\x50\x4B\x47':
+                    logging.error(f"Invalid magic number: {magic.hex()}")
+                    raise ValueError("Invalid PKG file format")
+
+                # Leggi header PKG
+                pkg.seek(0x04)
+                self.pkg_revision = struct.unpack('>H', pkg.read(2))[0]
+                pkg.seek(0x07)
+                self.pkg_type = pkg.read(1)[0]
+                
+                # Leggi metadata
+                pkg.seek(0x0C)
+                self.pkg_metadata_offset = struct.unpack('>I', pkg.read(4))[0]
+                self.pkg_metadata_count = struct.unpack('>I', pkg.read(4))[0]
+                self.pkg_metadata_size = struct.unpack('>I', pkg.read(4))[0]
+                
+                # Leggi informazioni sui file
+                pkg.seek(0x18)
+                self.item_count = struct.unpack('>I', pkg.read(4))[0]
+                self.total_size = struct.unpack('>Q', pkg.read(8))[0]
+                self.data_offset = struct.unpack('>I', pkg.read(4))[0]
+                self.data_size = struct.unpack('>Q', pkg.read(8))[0]
+                
+                # Leggi content ID (0x30)
+                pkg.seek(0x30)
+                content_id_bytes = pkg.read(0x30)
+                try:
+                    self.content_id = content_id_bytes.decode('utf-8').rstrip('\0')
+                    if not self.content_id:
+                        raise ValueError("Empty content ID")
+                except (UnicodeDecodeError, ValueError):
+                    try:
+                        self.content_id = content_id_bytes.decode('ascii', errors='ignore').rstrip('\0')
+                    except:
+                        self.content_id = content_id_bytes.hex()[:32]
+                
+                # Leggi digest e altre informazioni di sicurezza (0x60)
+                pkg.seek(0x60)
+                self.digest = pkg.read(0x10).hex()
+                self.pkg_data_riv = pkg.read(0x10).hex()
+                self.pkg_header_digest = pkg.read(0x40).hex()
+                
+                # Leggi informazioni DRM e contenuto (0xB0)
+                pkg.seek(0xB0)
+                self.drm_type = struct.unpack('>I', pkg.read(4))[0]
+                self.content_type = struct.unpack('>I', pkg.read(4))[0]
+                self.package_type = struct.unpack('>H', pkg.read(2))[0]
+                self.package_flag = struct.unpack('>H', pkg.read(2))[0]
+                
+                # Informazioni aggiuntive
+                self.package_size = os.path.getsize(self.original_file)
+                pkg.seek(0xBC)
+                self.make_package_npdrm_revision = struct.unpack('>H', pkg.read(2))[0]
+                self.package_version = struct.unpack('>H', pkg.read(2))[0]
+                
+                # Leggi title ID e altre informazioni (0xC4)
+                pkg.seek(0xC4)
+                title_id_bytes = pkg.read(0x9)
+                try:
+                    self.title_id = title_id_bytes.decode('utf-8').rstrip('\0')
+                except:
+                    self.title_id = title_id_bytes.hex()[:16]
+                
+                self.qa_digest = pkg.read(0x10).hex()
+                
+                # System version e app version (0xE4)
+                pkg.seek(0xE4)
+                self.system_version = struct.unpack('>I', pkg.read(4))[0]
+                self.app_version = struct.unpack('>I', pkg.read(4))[0]
+                
+                # Install directory (0xF0)
+                pkg.seek(0xF0)
+                install_dir_bytes = pkg.read(0x20)
+                try:
+                    self.install_directory = install_dir_bytes.decode('utf-8').rstrip('\0')
+                except:
+                    self.install_directory = install_dir_bytes.hex()[:32]
+                
+                # Stato crittografia
+                self.is_encrypted = True  # PS3 PKG sono sempre criptati
+
+                logging.info("PKG info loaded successfully")
+                logging.info(f"Content ID: {self.content_id}")
+                logging.info(f"Title ID: {self.title_id}")
+
         except Exception as e:
-            Logger.log_error(f"Errore durante la generazione delle informazioni: {str(e)}")
-            return {"error": str(e)}
+            logging.error(f"Error loading PKG info: {str(e)}")
+            raise
 
-    def _safe_get_enum(self, enum_class, value):
+    def load_file_entries(self, pkg):
         try:
-            return enum_class(value).name
-        except ValueError:
-            return f"Sconosciuto (0x{value:X})"
+            if not self.pkg_metadata_offset or not self.pkg_metadata_count:
+                raise ValueError("Invalid metadata information")
+                
+            pkg.seek(self.pkg_metadata_offset)
+            
+            for i in range(self.pkg_metadata_count):
+                try:
+                    entry_data = pkg.read(0x20)
+                    if len(entry_data) < 0x20:
+                        logging.error(f"Incomplete entry data at index {i}")
+                        break
+                        
+                    name_offset, name_size, data_offset, data_size = struct.unpack('>IIII', entry_data[:16])
+                    
+                    # Verifica valori validi
+                    file_size = os.path.getsize(self.original_file)
+                    if (name_offset > file_size or 
+                        data_offset > file_size or 
+                        name_size > 1024 or  # Nome file ragionevolmente lungo
+                        data_size > file_size):
+                        logging.warning(f"Invalid entry values at index {i}")
+                        continue
+                    
+                    # Leggi il nome del file
+                    current_pos = pkg.tell()
+                    pkg.seek(name_offset)
+                    name_bytes = pkg.read(name_size)
+                    pkg.seek(current_pos)
+                    
+                    # Gestione nome file
+                    try:
+                        name = name_bytes.decode('utf-8').rstrip('\0')
+                    except UnicodeDecodeError:
+                        try:
+                            name = name_bytes.decode('latin-1').rstrip('\0')
+                        except:
+                            name = f"file_{i:04d}_{binascii.hexlify(name_bytes[:4]).decode()}"
+                            logging.warning(f"Could not decode filename at index {i}")
 
-    def _safe_format(self, value):
-        if isinstance(value, bytes):
-            return f"0x{value.hex()}"
-        elif isinstance(value, int):
-            return f"0x{value:X}"
-        elif isinstance(value, str):
-            return f"'{value}'"
+                    self.files[name] = {
+                        'id': i,
+                        'name': name,
+                        'offset': data_offset,
+                        'size': data_size
+                    }
+                    
+                except Exception as e:
+                    logging.error(f"Error processing entry {i}: {str(e)}")
+                    continue
+
+            logging.info(f"Loaded {len(self.files)} file entries")
+
+        except Exception as e:
+            logging.error(f"Error loading file entries: {str(e)}")
+            raise
+
+    def extract_file(self, file_id, output_stream):
+        try:
+            file_info = next((f for f in self.files.values() if f['id'] == file_id), None)
+            if not file_info:
+                raise ValueError(f"File ID {file_id} not found")
+
+            with open(self.original_file, 'rb') as pkg:
+                pkg.seek(file_info['offset'])
+                data = pkg.read(file_info['size'])
+                
+                # Decripta se necessario
+                if self.pkg_type == 0x01:  # PS3
+                    cipher = AES.new(self.ps3_aes_key, AES.MODE_ECB)
+                    data = self.decrypt_data(data, cipher)
+                elif self.pkg_type == 0x02:  # PSP
+                    cipher = AES.new(self.psp_aes_key, AES.MODE_ECB)
+                    data = self.decrypt_data(data, cipher)
+
+                output_stream.write(data)
+
+        except Exception as e:
+            logging.error(f"Error extracting file: {str(e)}")
+            raise
+
+    def read_file(self, file_id):
+        """Legge un file dal PKG o dalla directory temporanea"""
+        try:
+            file_info = next((f for f in self.files.values() if f['id'] == file_id), None)
+            if not file_info:
+                raise ValueError(f"File ID {file_id} not found")
+
+            # Se il file è già stato estratto, leggi direttamente dal filesystem
+            if 'path' in file_info and os.path.exists(file_info['path']):
+                with open(file_info['path'], 'rb') as f:
+                    return f.read()
+
+            # Altrimenti leggi e decripta dal PKG
+            with open(self.original_file, 'rb') as pkg:
+                pkg.seek(file_info['offset'])
+                data = pkg.read(file_info['size'])
+                
+                # Decripta se necessario
+                if self.pkg_type == 0x01:  # PS3
+                    cipher = AES.new(self.ps3_aes_key, AES.MODE_ECB)
+                    data = self.decrypt_data(file_info['size'], 
+                                          file_info['offset'],
+                                          self.ui_encrypted_file_start_offset,
+                                          self.ps3_aes_key,
+                                          pkg)
+                elif self.pkg_type == 0x02:  # PSP
+                    cipher = AES.new(self.psp_aes_key, AES.MODE_ECB)
+                    data = self.decrypt_data(file_info['size'], 
+                                          file_info['offset'],
+                                          self.ui_encrypted_file_start_offset,
+                                          self.psp_aes_key,
+                                          pkg)
+
+                return data
+
+        except Exception as e:
+            logging.error(f"Error reading file: {str(e)}")
+            raise
+
+    def get_file_data(self, file_info):
+        """Ottiene i dati di un file dal PKG o dalla directory temporanea"""
+        try:
+            # Se il file è già stato estratto, leggi direttamente dal filesystem
+            if 'path' in file_info and os.path.exists(file_info['path']):
+                with open(file_info['path'], 'rb') as f:
+                    return f.read()
+
+            # Altrimenti leggi dal PKG
+            return self.read_file(file_info['id'])
+
+        except Exception as e:
+            logging.error(f"Error getting file data: {str(e)}")
+            raise
+
+    def decrypt_data(self, data_size, data_relative_offset, pkg_encrypted_file_start_offset, aes_key, encr_pkg_read_stream):
+        """Decripta i dati del PKG PS3"""
+        # Calcola la dimensione corretta
+        size = data_size
+        if size % 16 > 0:
+            size = ((data_size // 16) + 1) * 16
+
+        encrypted_data = bytearray(size)
+        decrypted_data = bytearray(size)
+        pkg_file_key_consec = bytearray(size)
+        inc_pkg_file_key = bytearray(self.pkg_file_key)
+
+        # Posizionamento corretto
+        encr_pkg_read_stream.seek(data_relative_offset + pkg_encrypted_file_start_offset)
+        encrypted_data = encr_pkg_read_stream.read(size)
+
+        # Incrementa la chiave per la posizione relativa
+        for _ in range(data_relative_offset // 16):
+            self.increment_array(inc_pkg_file_key, 15)
+
+        # Genera la chiave consecutiva
+        for pos in range(0, size, 16):
+            pkg_file_key_consec[pos:pos + 16] = inc_pkg_file_key
+            self.increment_array(inc_pkg_file_key, 15)
+
+        # Cripta la chiave consecutiva
+        cipher = AES.new(aes_key, AES.MODE_ECB)
+        pkg_xor_key_consec = cipher.encrypt(bytes(pkg_file_key_consec))
+
+        # XOR dei dati
+        for pos in range(size):
+            decrypted_data[pos] = encrypted_data[pos] ^ pkg_xor_key_consec[pos]
+
+        return decrypted_data[:data_size]  # Ritorna solo i dati effettivi, senza padding
+
+    def decrypt_pkg_data(self, data, cipher):
+        """Decripta dati generici con AES"""
+        if len(data) % 16 != 0:
+            padding = 16 - (len(data) % 16)
+            data += b'\0' * padding
+        return cipher.decrypt(data)
+
+    def increment_array(self, source_array, position):
+        """Incrementa l'array per la generazione della chiave"""
+        if source_array[position] == 0xFF:
+            if position != 0:
+                if self.increment_array(source_array, position - 1):
+                    source_array[position] = 0x00
+                    return True
+                else:
+                    return False
+            else:
+                return False
         else:
-            return str(value)
+            source_array[position] += 0x01
+            return True
+
+    def extract_files(self, decrypted_pkg_file_name, output_dir):
+        """Estrae i file dal PKG decriptato"""
+        try:
+            twenty_mb = 1024 * 1024 * 20
+            
+            with open(decrypted_pkg_file_name, "rb") as decr_pkg_read_stream:
+                # Leggi la tabella dei file
+                file_table = decr_pkg_read_stream.read(320000)
+                first_name_offset = struct.unpack(">I", file_table[:4])[0]
+                ui_file_nr = first_name_offset // 32
+                uifirst_file_offset = struct.unpack(">I", file_table[12:16])[0]
+
+                # Leggi la tabella dei file completa
+                decr_pkg_read_stream.seek(0)
+                file_table = decr_pkg_read_stream.read(uifirst_file_offset)
+
+                if ui_file_nr < 0:
+                    raise ValueError("Decryption error detected during file extraction")
+
+                # Reset del dizionario files
+                self.files.clear()
+
+                for ii in range(ui_file_nr):
+                    position_idx = ii * 32
+                    extracted_file_offset = struct.unpack(">I", file_table[position_idx + 12:position_idx + 16])[0]
+                    extracted_file_size = struct.unpack(">I", file_table[position_idx + 20:position_idx + 24])[0]
+                    extracted_file_name_offset = struct.unpack(">I", file_table[position_idx:position_idx + 4])[0]
+                    extracted_file_name_size = struct.unpack(">I", file_table[position_idx + 4:position_idx + 8])[0]
+                    content_type = file_table[position_idx + 24]
+                    file_type = file_table[position_idx + 27]
+
+                    name = file_table[extracted_file_name_offset:extracted_file_name_offset + extracted_file_name_size]
+                    
+                    # Gestione corretta dei nomi dei file
+                    if content_type == 0x90:
+                        # File/directory PSP
+                        extracted_file_name = self.byte_array_to_ascii(name, True)
+                    else:
+                        # File/directory PS3 - necessita decriptazione
+                        decrypted_name = self.decrypt_data(extracted_file_name_size, 
+                                                         extracted_file_name_offset,
+                                                         self.ui_encrypted_file_start_offset,
+                                                         self.ps3_aes_key,
+                                                         open(self.original_file, "rb"))
+                        extracted_file_name = self.byte_array_to_ascii(decrypted_name, True)
+
+                    # Determina se è un file o una directory
+                    is_file = not (file_type == 0x04 and extracted_file_size == 0x00)
+
+                    try:
+                        file_path = os.path.join(output_dir, extracted_file_name)
+                        if not is_file:
+                            os.makedirs(file_path, exist_ok=True)
+                            # Aggiungi la directory al dizionario files
+                            self.files[extracted_file_name] = {
+                                'id': ii,
+                                'name': extracted_file_name,
+                                'offset': extracted_file_offset,
+                                'size': 0,
+                                'is_directory': True,
+                                'content_type': content_type
+                            }
+                            continue
+
+                        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                        
+                        # Aggiungi il file al dizionario files
+                        self.files[extracted_file_name] = {
+                            'id': ii,
+                            'name': extracted_file_name,
+                            'offset': extracted_file_offset,
+                            'size': extracted_file_size,
+                            'is_directory': False,
+                            'content_type': content_type,
+                            'path': file_path  # Aggiungi il percorso completo
+                        }
+                        
+                        with open(file_path, "wb") as extracted_file_write_stream:
+                            if content_type == 0x90:
+                                # Copia diretta per file PSP
+                                decr_pkg_read_stream.seek(extracted_file_offset)
+                                remaining = extracted_file_size
+                                while remaining > 0:
+                                    chunk_size = min(twenty_mb, remaining)
+                                    chunk = decr_pkg_read_stream.read(chunk_size)
+                                    extracted_file_write_stream.write(chunk)
+                                    remaining -= chunk_size
+                            else:
+                                # Decripta per file PS3
+                                remaining = extracted_file_size
+                                offset = 0
+                                with open(self.original_file, "rb") as encr_pkg_read_stream:
+                                    while remaining > 0:
+                                        chunk_size = min(twenty_mb, remaining)
+                                        decrypted_chunk = self.decrypt_data(chunk_size,
+                                                                          extracted_file_offset + offset,
+                                                                          self.ui_encrypted_file_start_offset,
+                                                                          self.ps3_aes_key,
+                                                                          encr_pkg_read_stream)
+                                        extracted_file_write_stream.write(decrypted_chunk[:chunk_size])
+                                        remaining -= chunk_size
+                                        offset += chunk_size
+
+                    except Exception as ex:
+                        logging.error(f"Error processing {extracted_file_name}: {str(ex)}")
+                        continue
+
+                # Carica ICON0.PNG se presente
+                icon_path = os.path.join(output_dir, 'ICON0.PNG')
+                if os.path.exists(icon_path):
+                    self.icon_path = icon_path
+                    logging.info(f"Found ICON0.PNG at {icon_path}")
+
+                # Carica EBOOT.BIN se presente
+                eboot_path = os.path.join(output_dir, 'USRDIR', 'EBOOT.BIN')
+                if os.path.exists(eboot_path):
+                    self.eboot_path = eboot_path
+                    logging.info(f"Found EBOOT.BIN at {eboot_path}")
+
+                logging.info(f"Files extracted successfully. Total files: {len(self.files)}")
+                return True
+
+        except Exception as ex:
+            logging.error(f"Error during file extraction: {str(ex)}")
+            return False
+
+    def byte_array_to_ascii(self, byte_array, clean_end_of_string):
+        """Converte un array di bytes in una stringa ASCII"""
+        try:
+            hex_string = ''.join([f'{b:02X}' for b in byte_array])
+            ascii_string = ''
+            i = 0
+            while i < len(hex_string):
+                try:
+                    char_code = int(hex_string[i:i+2], 16)
+                    if clean_end_of_string and char_code == 0:
+                        break
+                    ascii_string += chr(char_code)
+                except:
+                    pass
+                i += 2
+            return ascii_string.rstrip('\0')
+        except:
+            return f"unnamed_file_{binascii.hexlify(byte_array[:4]).decode()}"
 
     def dump(self, output_dir):
-        """
-        Esegue il dump del contenuto del pacchetto PS3 nella directory specificata.
-        """
-        os.makedirs(output_dir, exist_ok=True)
-        
-        for file_name, file_info in self.files.items():
-            file_path = os.path.join(output_dir, file_name)
+        """Extract all files from the PKG to the specified directory"""
+        try:
+            os.makedirs(output_dir, exist_ok=True)
             
-            # Crea le directory necessarie
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            
-            try:
-                with open(self.original_file, 'rb') as pkg_file:
-                    pkg_file.seek(file_info['offset'])
-                    file_data = pkg_file.read(file_info['size'])
-                
-                with open(file_path, 'wb') as out_file:
-                    out_file.write(file_data)
-                
-                Logger.log_information(f"File estratto: {file_name}")
-            except Exception as e:
-                Logger.log_error(f"Errore durante l'estrazione del file {file_name}: {str(e)}")
-        
-        Logger.log_information(f"Dump completato. File estratti in: {output_dir}")
-        return f"Dump completato. File estratti in: {output_dir}"
+            # Decripta il PKG se necessario
+            decrypted_pkg = self.decrypt_pkg_file(self.original_file)
+            if not decrypted_pkg:
+                raise ValueError("Failed to decrypt PKG")
+
+            # Estrai i file
+            success = self.extract_files(decrypted_pkg, output_dir)
+            if not success:
+                raise ValueError("Failed to extract files")
+
+            # Copia i file dalla directory temporanea alla directory di output
+            if os.path.exists(self.temp_dir) and output_dir != self.temp_dir:
+                for root, dirs, files in os.walk(self.temp_dir):
+                    for file in files:
+                        src_path = os.path.join(root, file)
+                        rel_path = os.path.relpath(src_path, self.temp_dir)
+                        dst_path = os.path.join(output_dir, rel_path)
+                        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+                        shutil.copy2(src_path, dst_path)
+
+            # Verifica la presenza di ICON0.PNG e EBOOT.BIN
+            icon_path = os.path.join(output_dir, 'ICON0.PNG')
+            if os.path.exists(icon_path):
+                logging.info(f"ICON0.PNG extracted to: {icon_path}")
+
+            eboot_path = os.path.join(output_dir, 'USRDIR', 'EBOOT.BIN')
+            if os.path.exists(eboot_path):
+                logging.info(f"EBOOT.BIN extracted to: {eboot_path}")
+
+            return f"Package extracted successfully to: {output_dir}"
+
+        except Exception as e:
+            logging.error(f"Error during package dump: {str(e)}")
+            raise ValueError(f"Error during package dump: {str(e)}")
 

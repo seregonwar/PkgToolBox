@@ -144,14 +144,14 @@ class PackagePS4(PackageBase):
                 "pkg_padding": self.pkg_padding.hex() if isinstance(self.pkg_padding, bytes) else str(self.pkg_padding),
                 "pkg_drm_type": self.pkg_drm_type.name if isinstance(self.pkg_drm_type, DRMType) else str(self.pkg_drm_type),
                 "pkg_content_type": self.pkg_content_type.name if isinstance(self.pkg_content_type, ContentType) else str(self.pkg_content_type),
-                "pkg_content_flags": f"0x{self.pkg_content_flags:X}",
+                "pkg_content_flags": f"0x{self.pkg_content_flags:X}" if self.pkg_content_flags is not None else "None",
                 "pkg_promote_size": self.pkg_promote_size,
                 "pkg_version_date": self.pkg_version_date,
-                "pkg_version_hash": self.pkg_version_hash.hex() if isinstance(self.pkg_version_hash, bytes) else f"0x{self.pkg_version_hash:X}",
-                "pkg_0x088": f"0x{self.pkg_0x088:X}",
-                "pkg_0x08C": f"0x{self.pkg_0x08C:X}",
-                "pkg_0x090": f"0x{self.pkg_0x090:X}",
-                "pkg_0x094": f"0x{self.pkg_0x094:X}",
+                "pkg_version_hash": self.pkg_version_hash.hex() if isinstance(self.pkg_version_hash, bytes) else f"0x{self.pkg_version_hash:X}" if self.pkg_version_hash is not None else "None",
+                "pkg_0x088": f"0x{self.pkg_0x088:X}" if self.pkg_0x088 is not None else "None",
+                "pkg_0x08C": f"0x{self.pkg_0x08C:X}" if self.pkg_0x08C is not None else "None",
+                "pkg_0x090": f"0x{self.pkg_0x090:X}" if self.pkg_0x090 is not None else "None",
+                "pkg_0x094": f"0x{self.pkg_0x094:X}" if self.pkg_0x094 is not None else "None",
                 "pkg_iro_tag": self.pkg_iro_tag.name if isinstance(self.pkg_iro_tag, IROTag) else str(self.pkg_iro_tag),
                 "pkg_drm_type_version": self.pkg_drm_type_version,
                 "Main Entry 1 Hash": self.digests[0] if len(self.digests) > 0 else "N/A",
@@ -163,7 +163,7 @@ class PackagePS4(PackageBase):
 
     def dump(self, output_dir):
         """
-        Esegue il dump di tutti i file del pacchetto nella directory specificata.
+        Dumps all files in the package to the specified directory.
         """
         os.makedirs(output_dir, exist_ok=True)
         
@@ -182,9 +182,26 @@ class PackagePS4(PackageBase):
                 with open(output_path, 'wb') as out_file:
                     out_file.write(file_data)
                 
-                Logger.log_information(f"File estratto: {file_name}")
+                Logger.log_information(f"File extracted: {file_name}")
             except Exception as e:
-                Logger.log_error(f"Errore durante l'estrazione del file {file_name}: {str(e)}")
+                Logger.log_error(f"Error during extraction of file {file_name}: {str(e)}")
         
-        Logger.log_information(f"Dump completato. File estratti in: {output_dir}")
-        return f"Dump completato. File estratti in: {output_dir}"
+        Logger.log_information(f"Dump completed. Extracted files in: {output_dir}")
+        return f"Dump completed. Extracted files in: {output_dir}"
+
+    def get_file_data(self, file_id):
+        """
+        Gets the raw data for a file from the package.
+        """
+        if file_id not in self.files:
+            raise ValueError(f"File ID {file_id} not found in package")
+
+        file_info = self.files[file_id]
+        
+        try:
+            with open(self.original_file, 'rb') as pkg_file:
+                pkg_file.seek(file_info['offset'])
+                return pkg_file.read(file_info['size'])
+        except Exception as e:
+            Logger.log_error(f"Error reading file data: {str(e)}")
+            raise
