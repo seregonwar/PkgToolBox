@@ -14,9 +14,9 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
                              QLabel, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem,
                              QFileDialog, QMessageBox, QTabWidget, QScrollArea, QSizePolicy,
                              QTextEdit, QSpinBox, QFrame, QStatusBar, QToolBar, QAction, QMenu, QInputDialog, QHeaderView,
-                             QProgressDialog, QListWidget, QListWidgetItem, QDialog, QTableWidget, QTableWidgetItem)
+                             QProgressDialog, QListWidget, QListWidgetItem, QDialog, QTableWidget, QTableWidgetItem, QStackedLayout)
 from PyQt5.QtGui import QFont, QPixmap, QPalette, QColor, QRegExpValidator, QIcon, QBrush, QImage, QDesktopServices
-from PyQt5.QtCore import Qt, QRegExp, QSize, QTimer, QUrl
+from PyQt5.QtCore import Qt, QRegExp, QSize, QTimer, QUrl, QMimeData
 from kiwisolver import *
 
 from packages import PackagePS4, PackagePS5, PackagePS3
@@ -84,6 +84,107 @@ class PS4PKGTool(QMainWindow):
         self.night_mode = self.load_night_mode()
         self.set_style()
 
+        # Enable drag and drop
+        self.setAcceptDrops(True)
+        
+        # Add a label for drag and drop
+        self.drag_drop_label = QLabel("Drag PKG files here", self)
+        self.drag_drop_label.setAlignment(Qt.AlignCenter)
+        self.drag_drop_label.setStyleSheet("""
+            QLabel {
+                font-size: 16px;
+                color: #7f8c8d;
+                padding: 20px;
+                border: 2px dashed #bdc3c7;
+                border-radius: 10px;
+                background-color: rgba(236, 240, 241, 0.5);
+            }
+        """)
+        
+        # Add the label to the main layout
+        main_layout = self.centralWidget().layout()
+        main_layout.insertWidget(0, self.drag_drop_label)
+
+    def dragEnterEvent(self, event):
+        """Handles the event when a file is dragged over the window"""
+        if event.mimeData().hasUrls():
+            # Check if at least one file has .pkg extension
+            for url in event.mimeData().urls():
+                if url.toLocalFile().lower().endswith('.pkg'):
+                    event.acceptProposedAction()
+                    self.drag_drop_label.setStyleSheet("""
+                        QLabel {
+                            font-size: 16px;
+                            color: #2ecc71;
+                            padding: 20px;
+                            border: 2px dashed #27ae60;
+                            border-radius: 10px;
+                            background-color: rgba(46, 204, 113, 0.1);
+                        }
+                    """)
+                    return
+        event.ignore()
+
+    def dragLeaveEvent(self, event):
+        """Handles the event when the dragged file leaves the window"""
+        self.drag_drop_label.setStyleSheet("""
+            QLabel {
+                font-size: 16px;
+                color: #7f8c8d;
+                padding: 20px;
+                border: 2px dashed #bdc3c7;
+                border-radius: 10px;
+                background-color: rgba(236, 240, 241, 0.5);
+            }
+        """)
+        event.accept()
+
+    def dropEvent(self, event):
+        """Handles the event when the file is dropped in the window"""
+        files = [url.toLocalFile() for url in event.mimeData().urls() 
+                if url.toLocalFile().lower().endswith('.pkg')]
+        
+        if files:
+            # Chiudi il file precedente se esiste
+            if self.package:
+                try:
+                    self.package = None
+                    Logger.log_information("Previous package closed")
+                except Exception as e:
+                    Logger.log_error(f"Error closing previous package: {str(e)}")
+
+            # Carica il nuovo file
+            try:
+                self.load_pkg(files[0])
+                self.pkg_entry.setText(files[0])
+                self.update_pkg_entries(files[0])
+                
+                # Carica esplicitamente l'icona
+                self.load_pkg_icon()
+                
+                # Se ci sono più file, mostra un messaggio
+                if len(files) > 1:
+                    QMessageBox.information(self, "Multiple files", 
+                        "Multiple PKG files were dragged. Only the first file will be loaded.")
+                
+                self.drag_drop_label.setStyleSheet("""
+                    QLabel {
+                        font-size: 16px;
+                        color: #7f8c8d;
+                        padding: 20px;
+                        border: 2px dashed #bdc3c7;
+                        border-radius: 10px;
+                        background-color: rgba(236, 240, 241, 0.5);
+                    }
+                """)
+                
+                Logger.log_information(f"PKG file loaded via drag and drop: {files[0]}")
+            except Exception as e:
+                Logger.log_error(f"Error loading new package: {str(e)}")
+                QMessageBox.critical(self, "Error", f"Failed to load PKG file: {str(e)}")
+        
+        event.acceptProposedAction()
+
     def setup_ui(self):
         self.create_statusbar()
         
@@ -100,18 +201,48 @@ class PS4PKGTool(QMainWindow):
         # Crea un layout orizzontale per l'immagine e il content ID
         image_content_layout = QHBoxLayout()
 
-        self.image_label = QLabel("No icon available")
-        self.image_label.setFixedSize(300, 300)
-        self.image_label.setAlignment(Qt.AlignCenter)
-        self.image_label.setStyleSheet("background-color: white; border: 1px solid white; border-radius: 10px;")
-        image_content_layout.addWidget(self.image_label)
+        # Frame per l'immagine
+        image_frame = QFrame()
+        image_frame.setFixedSize(300, 300)
+        image_frame.setStyleSheet("background-color: white; border: 1px solid white; border-radius: 10px;")
+        
+        # Usa QStackedLayout invece di QVBoxLayout per sovrapporre perfettamente i widget
+        image_layout = QStackedLayout(image_frame)
+        image_layout.setStackingMode(QStackedLayout.StackAll)  # Permette la sovrapposizione
 
-        # Aggiungi un QLabel per il content ID
+        # Configura l'etichetta dell'immagine
+        self.image_label = QLabel("No icon available")
+        self.image_label.setAlignment(Qt.AlignCenter)
+        self.image_label.setFixedSize(300, 300)
+        
+        # Configura l'etichetta del drag and drop
+        self.drag_drop_label = QLabel("Drag PKG files here")
+        self.drag_drop_label.setAlignment(Qt.AlignCenter)
+        self.drag_drop_label.setFixedSize(300, 300)
+        self.drag_drop_label.setStyleSheet("""
+            QLabel {
+                font-size: 16px;
+                color: #7f8c8d;
+                border: 2px dashed #bdc3c7;
+                border-radius: 10px;
+                background-color: rgba(236, 240, 241, 0.7);
+            }
+        """)
+
+        # Aggiungi i widget al layout nell'ordine corretto
+        image_layout.addWidget(self.image_label)
+        image_layout.addWidget(self.drag_drop_label)
+        
+        # Aggiungi il frame al layout orizzontale
+        image_content_layout.addWidget(image_frame)
+
+        # Aggiungi l'etichetta per il content ID
         self.content_id_label = QLabel()
         self.content_id_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.content_id_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #2c3e50; margin-left: 10px;")
         image_content_layout.addWidget(self.content_id_label)
 
+        # Aggiungi il layout orizzontale al layout principale di sinistra
         left_layout.addLayout(image_content_layout)
 
         pkg_layout = QHBoxLayout()
@@ -1494,17 +1625,33 @@ class PS4PKGTool(QMainWindow):
                     magic = struct.unpack(">I", fp.read(4))[0]
                     if magic == PackagePS4.MAGIC_PS4:
                         self.package = PackagePS4(self.file_path)
+                        Logger.log_information("PS4 PKG detected")
                     elif magic == PackagePS5.MAGIC_PS5:
                         self.package = PackagePS5(self.file_path)
+                        Logger.log_information("PS5 PKG detected")
                     elif magic == PackagePS3.MAGIC_PS3:
                         self.package = PackagePS3(self.file_path)
+                        Logger.log_information("PS3 PKG detected")
                     else:
-                        raise ValueError(f"Formato PKG sconosciuto: {magic:08X}")
-
+                        raise ValueError(f"Unknown PKG format: {magic:08X}")
+                
                 self.update_info(self.package.get_info())
                 self.load_wallpapers()
                 self.load_pkg_icon()
                 self.load_files()
+
+                # Estrai il CUSA dal content ID
+                if hasattr(self.package, 'content_id'):
+                    cusa_match = re.search(r'(CUSA\d{5})', self.package.content_id)
+                    if cusa_match:
+                        self.cusa = cusa_match.group(1)
+                        Logger.log_information(f"CUSA extracted from content_id: {self.cusa}")
+                elif hasattr(self.package, 'pkg_content_id'):
+                    cusa_match = re.search(r'(CUSA\d{5})', self.package.pkg_content_id)
+                    if cusa_match:
+                        self.cusa = cusa_match.group(1)
+                        Logger.log_information(f"CUSA extracted from pkg_content_id: {self.cusa}")
+
                 Logger.log_information(f"PKG file loaded successfully: {filename}")
             except ValueError as e:
                 Logger.log_error(f"Error loading PKG file: {e}")
@@ -1946,18 +2093,61 @@ class PS4PKGTool(QMainWindow):
         
     def load_pkg(self, pkg_path):
         try:
-            if pkg_path.endswith(".pkg"):
-                self.package = PackagePS4(pkg_path)
-            else:
-                raise ValueError("Formato PKG sconosciuto")
+            # Chiudi il package precedente se esiste
+            if self.package:
+                self.package = None
+                Logger.log_information("Previous package closed")
+
+            # Determina il tipo di pacchetto e crea l'istanza appropriata
+            with open(pkg_path, "rb") as fp:
+                magic = struct.unpack(">I", fp.read(4))[0]
+                if magic == PackagePS4.MAGIC_PS4:
+                    self.package = PackagePS4(pkg_path)
+                    Logger.log_information("PS4 PKG detected")
+                    # Estrai il content ID per PS4
+                    if hasattr(self.package, 'pkg_content_id'):
+                        self.content_id = self.package.pkg_content_id
+                        Logger.log_information(f"Content ID found: {self.content_id}")
+                elif magic == PackagePS5.MAGIC_PS5:
+                    self.package = PackagePS5(pkg_path)
+                    Logger.log_information("PS5 PKG detected")
+                    # Estrai il content ID per PS5
+                    if hasattr(self.package, 'pkg_content_id'):
+                        self.content_id = self.package.pkg_content_id
+                        Logger.log_information(f"Content ID found: {self.content_id}")
+                elif magic == PackagePS3.MAGIC_PS3:
+                    self.package = PackagePS3(pkg_path)
+                    Logger.log_information("PS3 PKG detected")
+                    # Estrai il content ID per PS3
+                    if hasattr(self.package, 'content_id'):
+                        self.content_id = self.package.content_id
+                        Logger.log_information(f"Content ID found: {self.content_id}")
+                else:
+                    raise ValueError(f"Unknown PKG format: {magic:08X}")
                 
             self.file_path = pkg_path
             self.update_info(self.package.get_info())
             self.load_wallpapers()
+            self.load_pkg_icon()
+            self.load_files()
+
+            # Estrai il CUSA dal content ID
+            if hasattr(self.package, 'content_id'):
+                cusa_match = re.search(r'(CUSA\d{5})', self.package.content_id)
+                if cusa_match:
+                    self.cusa = cusa_match.group(1)
+                    Logger.log_information(f"CUSA extracted from content_id: {self.cusa}")
+            elif hasattr(self.package, 'pkg_content_id'):
+                cusa_match = re.search(r'(CUSA\d{5})', self.package.pkg_content_id)
+                if cusa_match:
+                    self.cusa = cusa_match.group(1)
+                    Logger.log_information(f"CUSA extracted from pkg_content_id: {self.cusa}")
+
             Logger.log_information(f"PKG file loaded successfully: {pkg_path}")
         except Exception as e:
             Logger.log_error(f"Error loading PKG file: {str(e)}")
             QMessageBox.critical(self, "Error", f"Error loading PKG file: {str(e)}")
+        
     def setup_esmf_decrypter_tab(self):
         layout = QVBoxLayout(self.esmf_decrypter_tab)
         
@@ -2105,9 +2295,16 @@ class PS4PKGTool(QMainWindow):
             Logger.log_information("Attempting to load PKG icon...")
             icon_file = next((f for f in self.package.files.values() if isinstance(f, dict) and f.get('name', '').lower() == 'icon0.png'), None)
             
-            # Recupera il content ID dal pacchetto
-            content_id = self.package.content_id if hasattr(self.package, 'content_id') else None
-            
+            # Recupera e visualizza il content ID completo
+            content_id = self.get_content_id()
+            if content_id:
+                # Mostra il content ID completo senza splitting
+                self.content_id_label.setText(f"Content ID: {content_id}")
+                Logger.log_information(f"Content ID displayed: {content_id}")
+            else:
+                self.content_id_label.setText("Content ID: N/A")
+                Logger.log_warning("No content ID found")
+
             if icon_file:
                 Logger.log_information(f"Icon file found in package: {icon_file}")
                 icon_data = self.package.read_file(icon_file['id'])
@@ -2139,7 +2336,7 @@ class PS4PKGTool(QMainWindow):
             else:
                 Logger.log_warning("No icon0.png found in the package.")
             
-            # If the icon could not be loaded from the package, search for the extracted icon
+            # Se l'icona non è stata caricata dal pacchetto, cerca l'icona estratta
             extracted_icon_path = os.path.join(os.path.dirname(self.package.original_file), "icon0.png")
             if os.path.exists(extracted_icon_path):
                 Logger.log_information(f"Using extracted icon: {extracted_icon_path}")
@@ -2154,33 +2351,51 @@ class PS4PKGTool(QMainWindow):
                     Logger.log_warning("Failed to create QPixmap from extracted icon")
             else:
                 Logger.log_warning(f"Extracted icon not found: {extracted_icon_path}")
-                       # Aggiorna il content ID
-            if content_id:
-                # Estrai solo la parte visibile nell'immagine (BREW00031)
-                visible_part = content_id.split('-')[1] if '-' in content_id else content_id
-                self.content_id_label.setText(f"Content ID: {visible_part}")
-            else:
-                self.content_id_label.setText("Content ID: N/A") 
-            # If the icon could not be loaded from the package or extracted, use a default icon
-            default_icon_path = os.path.join(os.path.dirname(__file__), "default_icon.png")
-            if os.path.exists(default_icon_path):
-                Logger.log_information(f"Using default icon: {default_icon_path}")
-                pixmap = QPixmap(default_icon_path)
-                if not pixmap.isNull():
-                    scaled_pixmap = pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                    self.image_label.setPixmap(scaled_pixmap)
-                    self.image_label.setAlignment(Qt.AlignCenter)
-                    Logger.log_information("Default icon loaded and displayed successfully.")
+
+                # Se l'icona non può essere caricata dal pacchetto o estratta, usa un'icona predefinita
+                default_icon_path = os.path.join(os.path.dirname(__file__), "default_icon.png")
+                if os.path.exists(default_icon_path):
+                    Logger.log_information(f"Using default icon: {default_icon_path}")
+                    pixmap = QPixmap(default_icon_path)
+                    if not pixmap.isNull():
+                        scaled_pixmap = pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                        self.image_label.setPixmap(scaled_pixmap)
+                        self.image_label.setAlignment(Qt.AlignCenter)
+                        Logger.log_information("Default icon loaded and displayed successfully.")
+                    else:
+                        Logger.log_warning("Failed to create QPixmap from default icon")
                 else:
-                    Logger.log_warning("Failed to create QPixmap from default icon")
-            else:
-                Logger.log_error(f"Default icon not found: {default_icon_path}")
-                self.image_label.setText("No icon available")
+                    Logger.log_error(f"Default icon not found: {default_icon_path}")
+                    self.image_label.setText("No icon available")
         
         except Exception as e:
             Logger.log_error(f"Unexpected error loading PKG icon: {str(e)}")
             self.image_label.setText("Error loading icon")
             self.content_id_label.setText("Content ID: Error")
+
+    def get_content_id(self):
+        """Recupera il content ID in base al tipo di pacchetto"""
+        try:
+            if not self.package:
+                return None
+            
+            if isinstance(self.package, PackagePS3):
+                return getattr(self.package, 'content_id', None)
+            elif isinstance(self.package, (PackagePS4, PackagePS5)):
+                return getattr(self.package, 'pkg_content_id', None)
+            
+            # Prova a recuperare da altri attributi comuni
+            for attr in ['content_id', 'pkg_content_id']:
+                if hasattr(self.package, attr):
+                    value = getattr(self.package, attr)
+                    if value:
+                        return value
+                        
+            return None
+            
+        except Exception as e:
+            Logger.log_error(f"Error getting content ID: {str(e)}")
+            return None
 
 def start_gui(run_command_callback, temp_directory):
     app = QApplication(sys.argv)
