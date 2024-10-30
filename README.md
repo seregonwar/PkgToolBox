@@ -104,4 +104,5 @@ PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract,
 
 ## GUI
 
-![image](https://github.com/user-attachments/assets/a31614ec-631f-4284-bdcc-144be87fbebe)
+![image](https://github.com/user-attachments/assets/ba7a84cf-bb8e-41a9-b57c-0d74e0eee3ef)
+
