@@ -32,7 +32,7 @@ class PackagePS5(PackageBase):
         self.sc_size = None
         self.si_offset = None
         self.si_size = None
-        self.title_name = None  # Aggiunto per risolvere l'errore
+        self.title_name = None  
 
         with open(file, "rb") as fp:
             magic = struct.unpack(">I", fp.read(4))[0]
@@ -218,7 +218,7 @@ class PackagePS5(PackageBase):
             Logger.log_information(f"SI: offset 0x{self.si_offset:X}, size 0x{self.si_size:X}")
 
         except Exception as e:
-            Logger.log_error(f"Errore durante la lettura dei digest e del layout: {str(e)}")
+            Logger.log_error(f"Error reading digests and layout: {str(e)}")
             raise
 
     def __load_ps5_files(self, fp):

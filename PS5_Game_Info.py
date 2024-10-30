@@ -188,6 +188,138 @@ class PS5GameInfo:
         else:
             return {"error": "Can't find eboot file. Please select correct path."}
 
+    def load_eboot(self, file_path):
+        """Load info from eboot.bin file"""
+        try:
+            # Leggi il file eboot.bin
+            with open(file_path, 'rb') as f:
+                data = f.read()
+            
+            # Estrai le informazioni dal file eboot.bin
+            # Questo è un esempio, dovrai adattarlo in base alla struttura reale del file
+            info = {
+                'Title': self.extract_string(data, 0x100, 64),
+                'Version': self.extract_string(data, 0x140, 8),
+                'Category': self.extract_string(data, 0x148, 16),
+                'Content ID': self.extract_string(data, 0x158, 36),
+                'System Version': f"{data[0x160]:d}.{data[0x161]:02d}"
+            }
+            
+            self.main_dict = info
+            return info
+            
+        except Exception as e:
+            raise Exception(f"Error loading eboot.bin: {str(e)}")
+
+    def load_param_json(self, file_path):
+        """Load info from param.json file"""
+        try:
+            import json
+            with open(file_path, 'r', encoding='utf-8') as f:
+                self.main_dict = json.load(f)
+            return self.main_dict
+            
+        except Exception as e:
+            raise Exception(f"Error loading param.json: {str(e)}")
+
+    def extract_string(self, data, offset, length):
+        """Extract null-terminated string from binary data"""
+        try:
+            string_bytes = data[offset:offset+length]
+            null_pos = string_bytes.find(b'\x00')
+            if null_pos != -1:
+                string_bytes = string_bytes[:null_pos]
+            return string_bytes.decode('utf-8', errors='ignore').strip()
+        except Exception:
+            return ""
+
+    def save_eboot(self, file_path, changes):
+        """Save changes to eboot.bin file"""
+        try:
+            # Leggi il file esistente
+            with open(file_path, 'rb') as f:
+                data = bytearray(f.read())
+            
+            # Applica le modifiche
+            for key, value in changes.items():
+                if key == "Title":
+                    self.write_string(data, 0x100, value, 64)
+                elif key == "Version":
+                    self.write_string(data, 0x140, value, 8)
+                elif key == "Category":
+                    self.write_string(data, 0x148, value, 16)
+                elif key == "Content ID":
+                    self.write_string(data, 0x158, value, 36)
+                elif key == "System Version":
+                    try:
+                        major, minor = map(int, value.split('.'))
+                        data[0x160] = major
+                        data[0x161] = minor
+                    except:
+                        pass
+            
+            # Salva il file modificato
+            with open(file_path, 'wb') as f:
+                f.write(data)
+                
+        except Exception as e:
+            raise Exception(f"Error saving eboot.bin: {str(e)}")
+
+    def save_param_json(self, file_path, changes):
+        """Save changes to param.json file"""
+        try:
+            # Leggi il file esistente
+            with open(file_path, 'r', encoding='utf-8') as f:
+                param_data = json.load(f)
+            
+            # Applica le modifiche
+            for key, value in changes.items():
+                if key == "Title Name" and "localizedParameters" in param_data:
+                    param_data["localizedParameters"]["en-US"]["titleName"] = value
+                elif key == "Content Version":
+                    param_data["contentVersion"] = value
+                elif key == "Title ID":
+                    param_data["titleId"] = value
+                elif key == "Content ID":
+                    param_data["contentId"] = value
+                elif key == "Required System Software Version":
+                    param_data["requiredSystemSoftwareVersion"] = f"0{value.replace('.', '')}"
+                elif key == "SDK Version":
+                    param_data["sdkVersion"] = f"0{value.replace('.', '')}"
+                else:
+                    # Gestisci altri parametri
+                    if "_" in key:
+                        # Gestisci parametri nidificati
+                        main_key, sub_key = key.split("_", 1)
+                        if main_key in param_data:
+                            if isinstance(param_data[main_key], dict):
+                                param_data[main_key][sub_key] = value
+                    else:
+                        # Parametri diretti
+                        param_data[key] = value
+            
+            # Salva il file modificato
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(param_data, f, indent=4, ensure_ascii=False)
+                
+        except Exception as e:
+            raise Exception(f"Error saving param.json: {str(e)}")
+
+    def write_string(self, data, offset, string, max_length):
+        """Write string to binary data with null termination"""
+        try:
+            # Converti la stringa in bytes
+            string_bytes = string.encode('utf-8')
+            # Tronca se necessario
+            if len(string_bytes) > max_length - 1:
+                string_bytes = string_bytes[:max_length-1]
+            # Aggiungi terminatore null
+            string_bytes += b'\x00' * (max_length - len(string_bytes))
+            # Scrivi nel buffer
+            data[offset:offset+max_length] = string_bytes
+        except Exception as e:
+            raise Exception(f"Error writing string: {str(e)}")
+
 def get_ps5_game_info(path):
     ps5_info = PS5GameInfo()
     return ps5_info.process(path)

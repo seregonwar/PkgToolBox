@@ -18,18 +18,18 @@ class Logger:
         try:
             logging.info(message)
         except Exception as e:
-            logging.error(f"Errore nel logging: {str(e)}")
+            logging.error(f"Error in logging: {str(e)}")
 
     @staticmethod
     def log_error(message):
         try:
             logging.error(message)
         except Exception as e:
-            logging.error(f"Errore nel logging: {str(e)}")
+            logging.error(f"Error in logging: {str(e)}")
 
     @staticmethod
     def log_warning(message):
         try:
             logging.warning(message)
         except Exception as e:
-            logging.error(f"Errore nel logging: {str(e)}")
+            logging.error(f"Error in logging: {str(e)}")

@@ -7,6 +7,9 @@ from PIL import Image
 import io
 from .package_base import PackageBase
 import shutil
+import subprocess
+import time
+import datetime
 
 class PackagePS3(PackageBase):
     MAGIC_PS3 = 0x7f504b47  # ?PKG per PS3
@@ -19,180 +22,213 @@ class PackagePS3(PackageBase):
             self.content_id = None
             self.pkg_type = None
             self.pkg_info = {}
+            self.extracted_files = {}
+            self.is_ready = False
+            self.extraction_complete = False
+            self._cleanup_lock = False
+            self._closed = False
             
-            # Chiavi AES per PS3/PSP
-            self.psp_aes_key = bytes([0x07, 0xF2, 0xC6, 0x82, 0x90, 0xB5, 0x0D, 0x2C, 0x33, 0x81, 0x8D, 0x70, 0x9B, 0x60, 0xE6, 0x2B])
-            self.ps3_aes_key = bytes([0x2E, 0x7B, 0x71, 0xD7, 0xC9, 0xC9, 0xA1, 0x4E, 0xA3, 0x22, 0x1F, 0x18, 0x88, 0x28, 0xB8, 0xF8])
-            self.aes_key = bytes(16)
-            self.pkg_file_key = bytes(16)
-            self.ui_encrypted_file_start_offset = 0
+            # Crea directory temporanea in AppData/Local con timestamp
+            appdata_local = os.getenv('LOCALAPPDATA')
+            base_temp_dir = os.path.join(appdata_local, "PkgToolBox", "temp_output")
+            os.makedirs(base_temp_dir, exist_ok=True)
             
-            self.temp_dir = os.path.join(os.path.dirname(pkg_path), "._temp_output")
+            # Crea una nuova directory con timestamp
+            timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+            self.temp_dir = os.path.join(base_temp_dir, f"pkg_{timestamp}")
+            
+            # Pulisci le vecchie directory temporanee
+            self._cleanup_old_temp_dirs(base_temp_dir)
+            
+            # Crea la nuova directory temporanea
             os.makedirs(self.temp_dir, exist_ok=True)
+            logging.info(f"Created new temporary directory: {self.temp_dir}")
             
+            # Carica le informazioni di base
             self.load_pkg_info()
-            self.decrypt_and_extract()
+            
+            # Avvia l'estrazione e attendi il completamento
+            self.extract_and_wait()
             
         except Exception as e:
             logging.error(f"Error initializing PackagePS3: {str(e)}")
             raise
 
-    def decrypt_and_extract(self):
-        """Decripta il PKG ed estrae i file necessari"""
+    def __del__(self):
+        """Cleanup solo quando l'oggetto viene effettivamente distrutto"""
+        self.close()
+
+    def close(self):
+        """Explicit cleanup method"""
+        if not self._closed:
+            try:
+                if (hasattr(self, 'extraction_complete') and self.extraction_complete and 
+                    not self._cleanup_lock and hasattr(self, 'temp_dir')):
+                    if os.path.exists(self.temp_dir):
+                        try:
+                            self._cleanup_lock = True
+                            # Salva i contenuti importanti prima della pulizia
+                            self._cache_important_files()
+                            # Non eliminiamo la directory qui, verrà eliminata quando creiamo una nuova
+                            logging.info("Package closed")
+                        finally:
+                            self._cleanup_lock = False
+                self._closed = True
+            except Exception as e:
+                logging.error(f"Error in close: {str(e)}")
+
+    def _cache_important_files(self):
+        """Cache important files before cleanup"""
         try:
-            # Decripta il PKG
-            decrypted_pkg = self.decrypt_pkg_file(self.original_file)
-            if not decrypted_pkg:
-                raise ValueError("Failed to decrypt PKG")
+            for file_info in self.files.values():
+                if not file_info.get('content'):  # Se il contenuto non è già in cache
+                    if file_info['size'] < 1024*1024 or file_info['name'].lower().endswith(('.png', '.jpg', '.jpeg')):
+                        try:
+                            with open(file_info['path'], 'rb') as f:
+                                file_info['content'] = f.read()
+                        except Exception as e:
+                            logging.error(f"Error caching file {file_info['name']}: {str(e)}")
+        except Exception as e:
+            logging.error(f"Error in _cache_important_files: {str(e)}")
 
-            # Estrai i file
-            self.extract_files(decrypted_pkg, self.temp_dir)
+    def decrypt_and_extract(self, progress=None):
+        """Decripta il PKG ed estrae i file usando Ps3DebugLib.exe"""
+        try:
+            ps3lib_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+                                      "packages", "ps3lib", "Ps3DebugLib.exe")
+            
+            if not os.path.exists(ps3lib_path):
+                logging.error(f"Ps3DebugLib.exe not found at: {ps3lib_path}")
+                raise FileNotFoundError(f"Ps3DebugLib.exe not found at: {ps3lib_path}")
 
-            # Carica EBOOT.BIN se presente
-            eboot_path = os.path.join(self.temp_dir, 'USRDIR', 'EBOOT.BIN')
-            if os.path.exists(eboot_path):
-                with open(eboot_path, 'rb') as f:
-                    self.eboot_data = f.read()
-                    self.parse_eboot_info()
-                logging.info("EBOOT.BIN loaded successfully")
+            # Crea directory di output nel temp_dir
+            self.output_dir = os.path.join(self.temp_dir, "pkg_files")
+            os.makedirs(self.output_dir, exist_ok=True)
 
-            # Carica ICON0.PNG se presente
-            icon_path = os.path.join(self.temp_dir, 'ICON0.PNG')
-            if os.path.exists(icon_path):
-                try:
-                    with Image.open(icon_path) as img:
-                        self.icon_data = img
-                    logging.info("ICON0.PNG loaded successfully")
-                except Exception as e:
-                    logging.error(f"Error loading ICON0.PNG: {str(e)}")
+            # Costruisci il comando
+            cmd = [ps3lib_path, "-o", self.output_dir, self.original_file]
+
+            try:
+                process = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                )
+                
+                # Monitora l'output
+                for line in process.stdout:
+                    line = line.strip()
+                    if "%" in line and progress:
+                        try:
+                            progress_str = line.split('%')[0].strip().split()[-1]
+                            current_progress = int(progress_str)
+                            progress.setValue(current_progress)
+                        except:
+                            pass
+
+                process.wait()
+                
+                if process.returncode != 0:
+                    error = process.stderr.read()
+                    raise RuntimeError(f"Ps3DebugLib.exe failed with error: {error}")
+
+                # Aggiorna la lista dei file
+                self.files = {}
+                for root, _, files in os.walk(self.output_dir):
+                    for file in sorted(files):
+                        file_path = os.path.join(root, file)
+                        relative_path = os.path.relpath(file_path, self.output_dir)
+                        file_size = os.path.getsize(file_path)
+                        
+                        # Leggi subito il contenuto per file piccoli o immagini
+                        if file_size < 1024*1024 or file.lower().endswith(('.png', '.jpg', '.jpeg')):
+                            with open(file_path, 'rb') as f:
+                                content = f.read()
+                        else:
+                            content = None
+                            
+                        self.files[relative_path] = {
+                            'id': len(self.files),
+                            'name': relative_path,
+                            'size': file_size,
+                            'path': file_path,
+                            'content': content
+                        }
+
+                if progress:
+                    progress.setValue(100)
+
+            except subprocess.SubprocessError as e:
+                logging.error(f"Error executing Ps3DebugLib.exe: {str(e)}")
+                raise RuntimeError(f"Error executing Ps3DebugLib.exe: {str(e)}")
 
         except Exception as e:
             logging.error(f"Error in decrypt_and_extract: {str(e)}")
             raise
 
-    def parse_eboot_info(self):
-        """Estrae informazioni da EBOOT.BIN"""
-        try:
-            if hasattr(self, 'eboot_data'):
-                # Cerca il TITLE_ID
-                title_id_offset = self.eboot_data.find(b'TITLE_ID')
-                if title_id_offset != -1:
-                    self.title_id = self.eboot_data[title_id_offset+9:title_id_offset+18].decode('utf-8')
-                
-                # Cerca la APP_VER
-                app_ver_offset = self.eboot_data.find(b'APP_VER')
-                if app_ver_offset != -1:
-                    self.app_version = self.eboot_data[app_ver_offset+8:app_ver_offset+16].decode('utf-8')
-                
-                # Aggiungi altre informazioni che vuoi estrarre...
-                
-        except Exception as e:
-            logging.error(f"Error parsing EBOOT.BIN: {str(e)}")
-
-    def decrypt_pkg_file(self, pkg_file_name):
-        try:
-            moltiplicator = 65536
-            encrypted_data = bytearray(16 * moltiplicator)
-            decrypted_data = bytearray(16 * moltiplicator)
-
-            with open(pkg_file_name, "rb") as pkg_read_stream:
-                # Verifica magic number e tipo
-                pkg_magic = pkg_read_stream.read(4)
-                if pkg_magic != b'\x7F\x50\x4B\x47':
-                    raise ValueError("Invalid PKG file")
-
-                pkg_read_stream.seek(0x04)
-                pkg_finalized = pkg_read_stream.read(1)[0]
-                if pkg_finalized != 0x80:
-                    raise ValueError("Debug PKG not supported")
-
-                pkg_read_stream.seek(0x07)
-                pkg_type = pkg_read_stream.read(1)[0]
-                self.aes_key = self.ps3_aes_key if pkg_type == 0x01 else self.psp_aes_key
-
-                # Leggi offset e dimensione file criptato
-                pkg_read_stream.seek(0x24)
-                self.ui_encrypted_file_start_offset = struct.unpack(">I", pkg_read_stream.read(4))[0]
-                pkg_read_stream.seek(0x2C)
-                ui_encrypted_file_length = struct.unpack(">I", pkg_read_stream.read(4))[0]
-
-                # Leggi chiave file
-                pkg_read_stream.seek(0x70)
-                self.pkg_file_key = pkg_read_stream.read(16)
-                inc_pkg_file_key = bytearray(self.pkg_file_key)
-
-                # Decripta
-                cipher = AES.new(self.aes_key, AES.MODE_ECB)
-                decrypted_file = os.path.join(self.temp_dir, "pkg.dec")
-
-                with open(decrypted_file, "wb") as out_file:
-                    pkg_read_stream.seek(self.ui_encrypted_file_start_offset)
-                    
-                    remaining = ui_encrypted_file_length
-                    while remaining > 0:
-                        chunk_size = min(remaining, 16 * moltiplicator)
-                        encrypted_chunk = pkg_read_stream.read(chunk_size)
-                        
-                        # Genera chiave XOR
-                        key_chunk = bytearray(chunk_size)
-                        for i in range(0, chunk_size, 16):
-                            key_chunk[i:i+16] = inc_pkg_file_key
-                            self.increment_array(inc_pkg_file_key, 15)
-                            
-                        # Cripta chiave e XOR con dati
-                        xor_key = cipher.encrypt(bytes(key_chunk))
-                        decrypted_chunk = bytes(a ^ b for a, b in zip(encrypted_chunk, xor_key[:len(encrypted_chunk)]))
-                        
-                        out_file.write(decrypted_chunk)
-                        remaining -= chunk_size
-
-                return decrypted_file
-
-        except Exception as e:
-            logging.error(f"Error decrypting PKG: {str(e)}")
-            return None
+    def _decrypt_retail_pkg(self, pkg_file_name):
+        """Mantiene la logica esistente per PKG retail"""
+   
 
     def get_info(self):
         """Restituisce le informazioni del pacchetto in un formato leggibile"""
-        info = super().get_info()
-        info.update({
-            "pkg_revision": f"0x{self.pkg_revision:04X}",
-            "pkg_type": f"0x{self.pkg_type:04X}",
-            "pkg_metadata_offset": f"0x{self.pkg_metadata_offset:X}",
-            "pkg_metadata_count": self.pkg_metadata_count,
-            "pkg_metadata_size": self.pkg_metadata_size,
-            "item_count": self.item_count,
-            "total_size": self.total_size,
-            "data_offset": f"0x{self.data_offset:X}",
-            "data_size": self.data_size,
-            "content_id": self.content_id,
-            "digest": self.digest,
-            "pkg_data_riv": self.pkg_data_riv,
-            "pkg_header_digest": self.pkg_header_digest,
-            "drm_type": getattr(self, 'drm_type', 'Unknown'),
-            "content_type": getattr(self, 'content_type', 'Unknown'),
-            "package_type": getattr(self, 'package_type', 'Unknown'),
-            "package_flag": getattr(self, 'package_flag', 'Unknown'),
-            "package_size": getattr(self, 'package_size', 'Unknown'),
-            "make_package_npdrm_revision": getattr(self, 'make_package_npdrm_revision', 'Unknown'),
-            "package_version": getattr(self, 'package_version', 'Unknown'),
-            "title_id": getattr(self, 'title_id', 'Unknown'),
-            "qa_digest": getattr(self, 'qa_digest', 'Unknown'),
-            "system_version": getattr(self, 'system_version', 'Unknown'),
-            "app_version": getattr(self, 'app_version', 'Unknown'),
-            "install_directory": getattr(self, 'install_directory', 'Unknown'),
-            "is_encrypted": self.is_encrypted,
-            "valid_files": len(self.files),
-        })
+        info = {}
         
-        # Aggiungi info da EBOOT se disponibili
-        if hasattr(self, 'eboot_data'):
+  
+        is_retail = self.pkg_type == 0x01
+        
+        if not is_retail:
             info.update({
-                "eboot_title_id": getattr(self, 'title_id', 'Unknown'),
-                "eboot_app_version": getattr(self, 'app_version', 'Unknown'),
-                # Aggiungi altre info estratte da EBOOT...
+                "Package Type": "Debug PKG",
+                "Content ID": self.content_id,
+                "Title ID": getattr(self, 'title_id', 'Unknown'),
+                "Total Size": f"{self.total_size:,} bytes ({self.total_size / (1024*1024*1024):.2f} GB)",
+                "File Count": len(self.files),
+                "Package Version": getattr(self, 'package_version', 'Unknown'),
+                "System Version": getattr(self, 'system_version', 'Unknown'),
+                "App Version": getattr(self, 'app_version', 'Unknown'),
+                "NPDRM Type": getattr(self, 'drm_type', 'Unknown'),
+                "Content Type": getattr(self, 'content_type', 'Unknown'),
+                "Package Flag": getattr(self, 'package_flag', 'Unknown'),
+                "Package Size": f"{self.package_size:,} bytes ({self.package_size / (1024*1024*1024):.2f} GB)",
+                "Data Offset": f"0x{getattr(self, 'data_offset', 0):X}",
+                "Data Size": f"{getattr(self, 'data_size', 0):,} bytes",
+                "Metadata Offset": f"0x{getattr(self, 'pkg_metadata_offset', 0):X}",
+                "Metadata Count": getattr(self, 'pkg_metadata_count', 0),
+                "Metadata Size": getattr(self, 'pkg_metadata_size', 0),
+                "Header Digest": getattr(self, 'pkg_header_digest', 'Unknown'),
+                "Data RIV": getattr(self, 'pkg_data_riv', 'Unknown'),
+                "Install Directory": getattr(self, 'install_directory', 'Unknown'),
+                "Is Debug": "Yes"
             })
-            
+        else:
+            info.update({
+                "Package Type": f"Retail PKG (0x{self.pkg_type:04X})",
+                "Package Revision": f"0x{self.pkg_revision:04X}",
+                "Content ID": self.content_id,
+                "Title ID": getattr(self, 'title_id', 'Unknown'),
+                "Total Size": f"{self.total_size:,} bytes ({self.total_size / (1024*1024*1024):.2f} GB)",
+                "File Count": len(self.files),
+                "Package Version": f"0x{getattr(self, 'package_version', 0):04X}",
+                "System Version": f"0x{getattr(self, 'system_version', 0):08X}",
+                "App Version": getattr(self, 'app_version', 'Unknown'),
+                "NPDRM Type": f"0x{getattr(self, 'drm_type', 0):08X}",
+                "Content Type": f"0x{getattr(self, 'content_type', 0):08X}",
+                "Package Flag": f"0x{getattr(self, 'package_flag', 0):04X}",
+                "Package Size": f"{self.package_size:,} bytes ({self.package_size / (1024*1024*1024):.2f} GB)",
+                "Data Offset": f"0x{getattr(self, 'data_offset', 0):X}",
+                "Data Size": f"{getattr(self, 'data_size', 0):,} bytes",
+                "Metadata Offset": f"0x{getattr(self, 'pkg_metadata_offset', 0):X}",
+                "Metadata Count": getattr(self, 'pkg_metadata_count', 0),
+                "Metadata Size": getattr(self, 'pkg_metadata_size', 0),
+                "Header Digest": getattr(self, 'pkg_header_digest', 'Unknown'),
+                "Data RIV": getattr(self, 'pkg_data_riv', 'Unknown'),
+                "Install Directory": getattr(self, 'install_directory', 'Unknown'),
+                "Is Debug": "No"
+            })
+                
         return info
 
     def load_pkg_info(self):
@@ -372,39 +408,32 @@ class PackagePS3(PackageBase):
             raise
 
     def read_file(self, file_id):
-        """Legge un file dal PKG o dalla directory temporanea"""
+        """Legge un file dal PKG"""
         try:
+            if not self.extraction_complete:
+                raise RuntimeError("Package extraction not completed yet")
+
+            if self._cleanup_lock:
+                raise RuntimeError("Package is being extracted")
+
             file_info = next((f for f in self.files.values() if f['id'] == file_id), None)
             if not file_info:
                 raise ValueError(f"File ID {file_id} not found")
 
-            # Se il file è già stato estratto, leggi direttamente dal filesystem
+            # Se il contenuto è già in cache, restituiscilo
+            if 'content' in file_info and file_info['content'] is not None:
+                return file_info['content']
+            
+            # Altrimenti leggi il file da disco
             if 'path' in file_info and os.path.exists(file_info['path']):
                 with open(file_info['path'], 'rb') as f:
-                    return f.read()
+                    content = f.read()
+                    # Cache il contenuto per file piccoli o immagini
+                    if file_info['size'] < 1024*1024 or file_info['name'].lower().endswith(('.png', '.jpg', '.jpeg')):
+                        file_info['content'] = content
+                    return content
 
-            # Altrimenti leggi e decripta dal PKG
-            with open(self.original_file, 'rb') as pkg:
-                pkg.seek(file_info['offset'])
-                data = pkg.read(file_info['size'])
-                
-                # Decripta se necessario
-                if self.pkg_type == 0x01:  # PS3
-                    cipher = AES.new(self.ps3_aes_key, AES.MODE_ECB)
-                    data = self.decrypt_data(file_info['size'], 
-                                          file_info['offset'],
-                                          self.ui_encrypted_file_start_offset,
-                                          self.ps3_aes_key,
-                                          pkg)
-                elif self.pkg_type == 0x02:  # PSP
-                    cipher = AES.new(self.psp_aes_key, AES.MODE_ECB)
-                    data = self.decrypt_data(file_info['size'], 
-                                          file_info['offset'],
-                                          self.ui_encrypted_file_start_offset,
-                                          self.psp_aes_key,
-                                          pkg)
-
-                return data
+            raise FileNotFoundError(f"File content not found for ID {file_id}")
 
         except Exception as e:
             logging.error(f"Error reading file: {str(e)}")
@@ -632,38 +661,135 @@ class PackagePS3(PackageBase):
         try:
             os.makedirs(output_dir, exist_ok=True)
             
-            # Decripta il PKG se necessario
-            decrypted_pkg = self.decrypt_pkg_file(self.original_file)
-            if not decrypted_pkg:
-                raise ValueError("Failed to decrypt PKG")
+            ps3lib_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+                                      "packages", "ps3lib", "Ps3DebugLib.exe")
+            
+            if not os.path.exists(ps3lib_path):
+                logging.error(f"Ps3DebugLib.exe not found at: {ps3lib_path}")
+                raise FileNotFoundError(f"Ps3DebugLib.exe not found at: {ps3lib_path}")
 
-            # Estrai i file
-            success = self.extract_files(decrypted_pkg, output_dir)
-            if not success:
-                raise ValueError("Failed to extract files")
+            # Costruisci il comando
+            cmd = [ps3lib_path, "-o", output_dir, self.original_file]
 
-            # Copia i file dalla directory temporanea alla directory di output
-            if os.path.exists(self.temp_dir) and output_dir != self.temp_dir:
-                for root, dirs, files in os.walk(self.temp_dir):
-                    for file in files:
-                        src_path = os.path.join(root, file)
-                        rel_path = os.path.relpath(src_path, self.temp_dir)
-                        dst_path = os.path.join(output_dir, rel_path)
-                        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-                        shutil.copy2(src_path, dst_path)
+            # Crea una progress bar usando QProgressDialog
+            from PyQt5.QtWidgets import QProgressDialog
+            from PyQt5.QtCore import Qt
+            progress = QProgressDialog("Extracting PKG...", None, 0, 100)
+            progress.setWindowModality(Qt.WindowModal)
+            progress.setWindowTitle("Extracting")
+            progress.setMinimumDuration(0)
+            progress.setValue(0)
+            progress.show()
 
-            # Verifica la presenza di ICON0.PNG e EBOOT.BIN
-            icon_path = os.path.join(output_dir, 'ICON0.PNG')
-            if os.path.exists(icon_path):
-                logging.info(f"ICON0.PNG extracted to: {icon_path}")
+            try:
+                process = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                )
+                
+                # Monitora l'output
+                for line in process.stdout:
+                    line = line.strip()
+                    
+                    if "%" in line:
+                        try:
+                            progress_str = line.split('%')[0].strip().split()[-1]
+                            current_progress = int(progress_str)
+                            progress.setValue(current_progress)
+                        except:
+                            pass
+                
+                # Attendi il completamento
+                process.wait()
+                
+                if process.returncode != 0:
+                    error = process.stderr.read()
+                    raise RuntimeError(f"Ps3DebugLib.exe failed with error: {error}")
 
-            eboot_path = os.path.join(output_dir, 'USRDIR', 'EBOOT.BIN')
-            if os.path.exists(eboot_path):
-                logging.info(f"EBOOT.BIN extracted to: {eboot_path}")
+                # Aggiorna la lista dei file
+                self.files = {}
+                for root, _, files in os.walk(output_dir):
+                    for file in sorted(files):
+                        file_path = os.path.join(root, file)
+                        relative_path = os.path.relpath(file_path, output_dir)
+                        
+                        file_size = os.path.getsize(file_path)
+                        self.files[relative_path] = {
+                            'id': len(self.files),
+                            'name': relative_path,
+                            'size': file_size,
+                            'path': file_path
+                        }
 
-            return f"Package extracted successfully to: {output_dir}"
+                progress.setValue(100)
+                return f"Package extracted successfully to: {output_dir}"
+
+            except subprocess.SubprocessError as e:
+                logging.error(f"Error executing Ps3DebugLib.exe: {str(e)}")
+                raise RuntimeError(f"Error executing Ps3DebugLib.exe: {str(e)}")
+            finally:
+                progress.close()
 
         except Exception as e:
             logging.error(f"Error during package dump: {str(e)}")
             raise ValueError(f"Error during package dump: {str(e)}")
 
+    def extract_and_wait(self):
+        """Estrae i file e attendi il completamento"""
+        try:
+            # Crea una progress bar usando QProgressDialog
+            from PyQt5.QtWidgets import QProgressDialog
+            from PyQt5.QtCore import Qt
+            progress = QProgressDialog("Extracting PKG...", None, 0, 100)
+            progress.setWindowModality(Qt.WindowModal)
+            progress.setWindowTitle("Extracting")
+            progress.setMinimumDuration(0)
+            progress.setValue(0)
+            progress.show()
+
+            try:
+                # Blocca il cleanup durante l'estrazione
+                self._cleanup_lock = True
+                
+                # Esegui l'estrazione
+                self.decrypt_and_extract(progress)
+                
+                # Attendi un momento per assicurarsi che tutti i file siano scritti
+                time.sleep(0.5)
+                
+                # Imposta i flag quando l'estrazione è completata
+                self.is_ready = True
+                self.extraction_complete = True
+                logging.info("PS3 PKG file loaded.")
+                
+            except Exception as e:
+                logging.error(f"Error during extraction: {str(e)}")
+                raise
+            finally:
+                progress.close()
+                self._cleanup_lock = False  # Sblocca il cleanup
+
+        except Exception as e:
+            logging.error(f"Error in extract_and_wait: {str(e)}")
+            raise
+
+    def _cleanup_old_temp_dirs(self, base_dir):
+        """Pulisce le vecchie directory temporanee"""
+        try:
+            # Mantieni solo le ultime 2 directory
+            dirs = [os.path.join(base_dir, d) for d in os.listdir(base_dir) 
+                   if os.path.isdir(os.path.join(base_dir, d))]
+            dirs.sort(key=lambda x: os.path.getctime(x), reverse=True)
+            
+            # Rimuovi tutte le directory eccetto le ultime 2
+            for old_dir in dirs[2:]:
+                try:
+                    shutil.rmtree(old_dir)
+                    logging.info(f"Cleaned old temporary directory: {old_dir}")
+                except Exception as e:
+                    logging.error(f"Error cleaning old directory {old_dir}: {str(e)}")
+        except Exception as e:
+            logging.error(f"Error during cleanup of old directories: {str(e)}")

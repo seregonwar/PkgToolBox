@@ -16,7 +16,7 @@ class SettingsManager:
             with open(file_path, 'w') as f:
                 json.dump(settings.__dict__, f, indent=4)
         except Exception as ex:
-            MessageBoxHelper.show_error(f"Errore nel salvare le impostazioni: {ex}", True)
+            MessageBoxHelper.show_error(f"Error in saving settings: {ex}", True)
 
     @staticmethod
     def load_settings(file_path):
@@ -26,5 +26,5 @@ class SettingsManager:
                     settings = json.load(f)
                     SettingsManager.app_settings.__dict__.update(settings)
         except Exception as ex:
-            MessageBoxHelper.show_error(f"Errore nel caricare le impostazioni: {ex}", True)
+            MessageBoxHelper.show_error(f"Error in loading settings: {ex}", True)
         return SettingsManager.app_settings

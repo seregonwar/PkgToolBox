@@ -51,7 +51,7 @@ class PS4PasscodeBruteforcer:
         self.ensure_output_directory(output_directory)
 
         try:
-            # Determina il tipo di pacchetto e crea l'istanza appropriata
+            # Determine package type and create appropriate instance
             with open(input_file, "rb") as fp:
                 magic = struct.unpack(">I", fp.read(4))[0]
                 if magic == PackagePS4.MAGIC_PS4:
@@ -103,7 +103,7 @@ class PS4PasscodeBruteforcer:
         return self.package
 
     def some_method(self, pkg_path):
-        # Determina il tipo di pacchetto e crea l'istanza appropriata
+        # Determine package type and create appropriate instance
         with open(pkg_path, "rb") as fp:
             magic = struct.unpack(">I", fp.read(4))[0]
             if magic == PackagePS4.MAGIC_PS4:

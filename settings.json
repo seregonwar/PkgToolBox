@@ -1,1 +1,14 @@
-{"night_mode": false}
+{
+    "theme": "Dark",
+    "night_mode": true,
+    "font_family": "Arial",
+    "font_size": 12,
+    "auto_expand": true,
+    "show_hidden": false,
+    "confirm_exit": true,
+    "output_path": "",
+    "temp_path": "",
+    "bg_color": "#ffffff",
+    "text_color": "#000000",
+    "accent_color": "#3498db"
+}
