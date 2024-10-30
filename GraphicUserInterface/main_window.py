@@ -3,7 +3,7 @@ import sys
 import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                             QHBoxLayout, QLabel, QLineEdit, QPushButton, QTabWidget,
-                            QMessageBox, QToolBar, QAction, QTreeWidget, QTextEdit, QTableWidget, QFileDialog, QGroupBox, QGridLayout, QSpinBox, QTreeWidgetItem, QDialog, QProgressBar, QShortcut, QActionGroup)
+                            QMessageBox, QToolBar, QAction, QTreeWidget, QTextEdit, QTableWidget, QFileDialog, QGroupBox, QGridLayout, QSpinBox, QTreeWidgetItem, QDialog, QProgressBar, QShortcut, QActionGroup, QComboBox, QCheckBox)
 from PyQt5.QtCore import Qt, QSize, QUrl
 from PyQt5.QtGui import QFont, QDesktopServices
 from PyQt5.QtWidgets import QStyle
@@ -22,6 +22,9 @@ import json
 from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtGui import QKeySequence
 import traceback
+from Utilities import Logger, SettingsManager, TRPReader  
+from .locales.translator import Translator
+from GraphicUserInterface.utils.update_checker import UpdateChecker, UpdateDialog
 
 class MainWindow(QMainWindow):
     COLORS = {
@@ -55,20 +58,63 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.temp_directory = temp_directory
         self.package = None
-        self.night_mode = False
         
-        self.set_style()
+        # Initialize settings manager
+        self.settings = SettingsManager()
         
+        # Initialize translator
+        self.translator = Translator()
+        
+        # Load settings
+        config_file = os.path.join(os.path.expanduser("~"), ".pkgtoolbox", "config.json")
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                settings_dict = json.load(f)
+        else:
+            settings_dict = {
+                "theme": "Light",
+                "night_mode": False,
+                "font_family": "Arial",
+                "font_size": 12,
+                "bg_color": "#ffffff",
+                "text_color": "#000000",
+                "accent_color": "#3498db"
+            }
+        
+        # Apply settings
+        self.night_mode = settings_dict.get("night_mode", False)
+        self.font = QFont(
+            settings_dict.get("font_family", "Arial"),
+            settings_dict.get("font_size", 12)
+        )
+        QApplication.setFont(self.font)
+        
+        # Apply theme
+        theme_colors = {
+            'bg_color': settings_dict.get("bg_color", "#ffffff"),
+            'text_color': settings_dict.get("text_color", "#000000"),
+            'accent_color': settings_dict.get("accent_color", "#3498db")
+        }
+        StyleManager.apply_theme(self, theme_colors)
+        
+        # Setup UI
         self.setup_ui()
         self.setup_settings_button()
-        self.load_settings()
         
         # Enable drag and drop
         self.setAcceptDrops(True)
-
+        
         self.setup_shortcuts()
-
         self.setup_drag_drop()
+        
+        # Initialize update checker
+        self.update_checker = UpdateChecker(self)
+        self.update_checker.update_available.connect(self.show_update_dialog)
+        self.update_checker.error_occurred.connect(self.handle_update_error)
+        
+        # Check for updates
+        if not self.should_skip_updates():
+            self.update_checker.start()
 
     def set_style(self):
         """Set application style based on theme"""
@@ -292,7 +338,7 @@ class MainWindow(QMainWindow):
 
     def setup_ui(self):
         """Setup the main UI"""
-        self.setWindowTitle("PKG Tool Box v1.5.2")
+        self.setWindowTitle("PKG Tool Box v1.5.3(dev version)")
         self.setGeometry(100, 100, 1200, 800)
         
         # Central widget
@@ -491,59 +537,62 @@ class MainWindow(QMainWindow):
         # Aggiungi menu bar
         menubar = self.menuBar()
         
-        # File menu
-        file_menu = menubar.addMenu('File')
+        # Store menu references
+        self.file_menu = menubar.addMenu('File')
+        self.tools_menu = menubar.addMenu('Tools')
+        self.view_menu = menubar.addMenu('View')
+        self.help_menu = menubar.addMenu('Help')
+        self.links_menu = menubar.addMenu('Links')
         
-        open_action = QAction('Open PKG', self)
-        open_action.setShortcut('Ctrl+O')
-        open_action.triggered.connect(self.browse_pkg)
-        file_menu.addAction(open_action)
+        # File menu actions
+        self.open_action = QAction('Open PKG', self)
+        self.open_action.setShortcut('Ctrl+O')
+        self.open_action.triggered.connect(self.browse_pkg)
+        self.file_menu.addAction(self.open_action)
         
-        file_menu.addSeparator()
+        self.file_menu.addSeparator()
         
-        exit_action = QAction('Exit', self)
-        exit_action.setShortcut('Ctrl+Q')
-        exit_action.triggered.connect(self.close)
-        file_menu.addAction(exit_action)
+        self.exit_action = QAction('Exit', self)
+        self.exit_action.setShortcut('Ctrl+Q')
+        self.exit_action.triggered.connect(self.close)
+        self.file_menu.addAction(self.exit_action)
         
-        # Tools menu
-        tools_menu = menubar.addMenu('Tools')
-        
+        # Tools menu actions
         extract_action = QAction('Extract PKG', self)
         extract_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.extract_tab))
-        tools_menu.addAction(extract_action)
+        self.tools_menu.addAction(extract_action)
         
         dump_action = QAction('Dump PKG', self)
         dump_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.dump_tab))
-        tools_menu.addAction(dump_action)
+        self.tools_menu.addAction(dump_action)
         
         inject_action = QAction('Inject File', self)
         inject_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.inject_tab))
-        tools_menu.addAction(inject_action)
+        self.tools_menu.addAction(inject_action)
         
         modify_action = QAction('Modify PKG', self)
         modify_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.modify_tab))
-        tools_menu.addAction(modify_action)
+        self.tools_menu.addAction(modify_action)
         
-        tools_menu.addSeparator()
+        self.tools_menu.addSeparator()
         
         trophy_action = QAction('Trophy Tools', self)
         trophy_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.trophy_tab))
-        tools_menu.addAction(trophy_action)
+        self.tools_menu.addAction(trophy_action)
         
         esmf_action = QAction('ESMF Decrypter', self)
         esmf_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.esmf_decrypter_tab))
-        tools_menu.addAction(esmf_action)
+        self.tools_menu.addAction(esmf_action)
         
         trp_action = QAction('Create TRP', self)
         trp_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.trp_create_tab))
-        tools_menu.addAction(trp_action)
+        self.tools_menu.addAction(trp_action)
         
-        tools_menu.addSeparator()
+        self.tools_menu.addSeparator()
         
         bruteforce_action = QAction('Passcode Bruteforcer', self)
         bruteforce_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.bruteforce_tab))
-        tools_menu.addAction(bruteforce_action)
+        self.tools_menu.addAction(bruteforce_action)
         
         # View menu
         view_menu = menubar.addMenu('View')
@@ -617,17 +666,29 @@ class MainWindow(QMainWindow):
         """Add settings button to toolbar"""
         settings_toolbar = QToolBar()
         settings_toolbar.setIconSize(QSize(24, 24))
+        
+        # Crea un'icona personalizzata che si adatta al tema
+        settings_icon = self.style().standardIcon(QStyle.SP_FileDialogDetailedView)
+        settings_button = QAction(settings_icon, "", self)
+        settings_button.setToolTip("Settings")
+        settings_button.triggered.connect(self.show_settings_dialog)
+        
+        # Applica lo stile che si adatta al tema
         settings_toolbar.setStyleSheet("""
             QToolBar {
                 spacing: 10px;
                 border: none;
                 background: transparent;
             }
+            QToolButton {
+                border: none;
+                border-radius: 4px;
+                padding: 4px;
+            }
+            QToolButton:hover {
+                background-color: rgba(52, 152, 219, 0.2);
+            }
         """)
-        
-        settings_button = QAction(self.style().standardIcon(QStyle.SP_FileDialogDetailedView), "", self)
-        settings_button.setToolTip("Settings")
-        settings_button.triggered.connect(self.show_settings_dialog)
         
         settings_toolbar.addAction(settings_button)
         self.addToolBar(Qt.TopToolBarArea, settings_toolbar)
@@ -709,7 +770,7 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     Logger.log_error(f"Error closing previous package: {str(e)}")
 
-            # Determine package type
+            # Determine package type and load it
             with open(pkg_path, "rb") as fp:
                 magic = struct.unpack(">I", fp.read(4))[0]
                 if magic == PackagePS4.MAGIC_PS4:
@@ -726,8 +787,6 @@ class MainWindow(QMainWindow):
             
             # Update UI
             self.pkg_entry.setText(pkg_path)
-            
-            # Load PKG icon and content ID
             self.load_pkg_icon()
             
             # Update file browser and wallpaper viewer
@@ -740,17 +799,8 @@ class MainWindow(QMainWindow):
             info_dict = self.package.get_info()
             self.update_info(info_dict)
             
-            # Extract CUSA from content ID
-            if hasattr(self.package, 'content_id'):
-                cusa_match = re.search(r'(CUSA\d{5})', self.package.content_id)
-                if cusa_match:
-                    self.cusa = cusa_match.group(1)
-                    Logger.log_information(f"CUSA extracted from content_id: {self.cusa}")
-            elif hasattr(self.package, 'pkg_content_id'):
-                cusa_match = re.search(r'(CUSA\d{5})', self.package.pkg_content_id)
-                if cusa_match:
-                    self.cusa = cusa_match.group(1)
-                    Logger.log_information(f"CUSA extracted from pkg_content_id: {self.cusa}")
+            # Cerca e carica automaticamente i file dei trofei
+            self.load_trophy_files()
             
             Logger.log_information(f"PKG file loaded successfully: {pkg_path}")
             
@@ -767,6 +817,62 @@ class MainWindow(QMainWindow):
                 self.file_browser.clear()
             if hasattr(self, 'wallpaper_viewer'):
                 self.wallpaper_viewer.clear_viewer()
+
+    def load_trophy_files(self):
+        """Cerca e carica automaticamente i file dei trofei"""
+        try:
+            if not self.package:
+                return
+                
+            # Cerca file .trp o .ucp
+            trophy_files = [
+                f for f in self.package.files.values()
+                if isinstance(f.get("name"), str) and 
+                (f["name"].lower().endswith('.trp') or f["name"].lower().endswith('.ucp'))
+            ]
+            
+            if trophy_files:
+                # Estrai il primo file dei trofei trovato in una directory temporanea
+                temp_dir = os.path.join(self.temp_directory, "trophies")
+                os.makedirs(temp_dir, exist_ok=True)
+                
+                trophy_file = trophy_files[0]
+                temp_path = os.path.join(temp_dir, os.path.basename(trophy_file["name"]))
+                
+                # Estrai il file
+                with open(temp_path, "wb") as f:
+                    data = self.package.read_file(trophy_file["id"])
+                    f.write(data)
+                
+                # Carica il file nella sezione trofei
+                self.trophy_entry.setText(temp_path)
+                trophy_reader = TRPReader(temp_path)
+                
+                # Mostra le informazioni nel text edit
+                info_text = f"""
+                Title: {trophy_reader._title if trophy_reader._title else 'N/A'}
+                NP Communication ID: {trophy_reader._npcommid if trophy_reader._npcommid else 'N/A'}
+                Number of Trophies: {len(trophy_reader._trophyList) if trophy_reader._trophyList else 0}
+                """
+                self.trophy_info.setText(info_text)
+                
+                # Carica i trofei nella tree view
+                self.trophy_tree.clear()
+                for trophy in trophy_reader._trophyList:
+                    item = QTreeWidgetItem(self.trophy_tree)
+                    item.setText(0, trophy.name)
+                    item.setText(1, self.get_trophy_type(trophy))
+                    item.setText(2, self.get_trophy_grade(trophy))
+                    item.setText(3, "No")  # Hidden di default
+                    item.setData(0, Qt.UserRole, trophy)
+                
+                # Passa alla tab dei trofei
+                self.tab_widget.setCurrentWidget(self.trophy_tab)
+                
+                Logger.log_information(f"Trophy file loaded: {trophy_file['name']}")
+                
+        except Exception as e:
+            Logger.log_error(f"Error loading trophy files: {str(e)}")
 
     def load_pkg_icon(self):
         """Load and display PKG icon"""
@@ -932,32 +1038,143 @@ class MainWindow(QMainWindow):
         """Setup the trophy tab"""
         layout = QVBoxLayout(self.trophy_tab)
         
-        # Trophy file selection
+        # File selection with better styling
+        file_group = QGroupBox("Trophy File")
         file_layout = QHBoxLayout()
+        
         self.trophy_entry = QLineEdit()
-        self.trophy_entry.setPlaceholderText("Select trophy file")
+        self.trophy_entry.setPlaceholderText("Select trophy file (.trp)")
+        self.trophy_entry.setStyleSheet("""
+            QLineEdit {
+                padding: 8px;
+                border: 2px solid #3498db;
+                border-radius: 15px;
+                font-size: 14px;
+            }
+        """)
+        
         browse_button = QPushButton("Browse")
-        browse_button.clicked.connect(lambda: self.browse_file(self.trophy_entry, "Trophy files (*.trp)"))
+        browse_button.setStyleSheet("""
+            QPushButton {
+                padding: 8px 15px;
+                background: #3498db;
+                color: white;
+                border: none;
+                border-radius: 15px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: #2980b9;
+            }
+        """)
+        browse_button.clicked.connect(self.browse_trophy)
+        
         file_layout.addWidget(self.trophy_entry)
         file_layout.addWidget(browse_button)
-        layout.addLayout(file_layout)
+        file_group.setLayout(file_layout)
+        layout.addWidget(file_group)
+        
+        # Split view for trophy list and preview
+        split_layout = QHBoxLayout()
+        
+        # Left side: Trophy list and info
+        left_panel = QVBoxLayout()
         
         # Trophy info display
         self.trophy_info = QTextEdit()
         self.trophy_info.setReadOnly(True)
-        layout.addWidget(self.trophy_info)
+        self.trophy_info.setMaximumHeight(100)
+        self.trophy_info.setStyleSheet("""
+            QTextEdit {
+                background-color: white;
+                border: 1px solid #3498db;
+                border-radius: 5px;
+                padding: 5px;
+                font-size: 13px;
+            }
+        """)
+        left_panel.addWidget(self.trophy_info)
         
-        # Trophy image display
-        self.trophy_image = QLabel()
-        self.trophy_image.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.trophy_image)
+        # Trophy list
+        self.trophy_tree = QTreeWidget()
+        self.trophy_tree.setHeaderLabels(["Trophy", "Type", "Grade", "Hidden"])
+        self.trophy_tree.setStyleSheet("""
+            QTreeWidget {
+                border: 1px solid #3498db;
+                border-radius: 5px;
+            }
+            QTreeWidget::item {
+                padding: 5px;
+            }
+            QTreeWidget::item:selected {
+                background-color: #3498db;
+                color: white;
+            }
+        """)
+        self.trophy_tree.itemClicked.connect(self.display_selected_trophy)
+        left_panel.addWidget(self.trophy_tree)
         
-        # Trophy buttons
+        # Right side: Trophy image and details
+        right_panel = QVBoxLayout()
+        
+        # Trophy image viewer
+        self.trophy_image_viewer = QLabel()
+        self.trophy_image_viewer.setAlignment(Qt.AlignCenter)
+        self.trophy_image_viewer.setStyleSheet("""
+            QLabel {
+                background-color: white;
+                border: 1px solid #3498db;
+                border-radius: 5px;
+                min-height: 300px;
+            }
+        """)
+        right_panel.addWidget(self.trophy_image_viewer)
+        
+        # Trophy details
+        self.trophy_details = QTextEdit()
+        self.trophy_details.setReadOnly(True)
+        self.trophy_details.setMaximumHeight(150)
+        self.trophy_details.setStyleSheet(self.trophy_info.styleSheet())
+        right_panel.addWidget(self.trophy_details)
+        
+        # Navigation buttons
+        nav_layout = QHBoxLayout()
+        self.prev_trophy_button = QPushButton("Previous")
+        self.next_trophy_button = QPushButton("Next")
+        
+        for button in [self.prev_trophy_button, self.next_trophy_button]:
+            button.setStyleSheet(browse_button.styleSheet())
+            
+        self.prev_trophy_button.clicked.connect(self.show_previous_trophy)
+        self.next_trophy_button.clicked.connect(self.show_next_trophy)
+        
+        nav_layout.addWidget(self.prev_trophy_button)
+        nav_layout.addWidget(self.next_trophy_button)
+        right_panel.addLayout(nav_layout)
+        
+        # Add panels to split layout
+        split_layout.addLayout(left_panel)
+        split_layout.addLayout(right_panel)
+        layout.addLayout(split_layout)
+        
+        # Action buttons
         button_layout = QHBoxLayout()
-        edit_button = QPushButton("Edit Trophy")
-        recompile_button = QPushButton("Recompile")
-        button_layout.addWidget(edit_button)
-        button_layout.addWidget(recompile_button)
+        
+        self.trophy_edit_button = QPushButton("Edit Trophy")
+        self.trophy_recompile_button = QPushButton("Recompile TRP")
+        self.trophy_decrypt_button = QPushButton("Decrypt Trophy")
+        
+        for button in [self.trophy_edit_button, self.trophy_recompile_button, self.trophy_decrypt_button]:
+            button.setStyleSheet(browse_button.styleSheet())
+            
+        self.trophy_edit_button.clicked.connect(self.edit_trophy_info)
+        self.trophy_recompile_button.clicked.connect(self.recompile_trp)
+        self.trophy_decrypt_button.clicked.connect(self.decrypt_trophy)
+        
+        button_layout.addWidget(self.trophy_edit_button)
+        button_layout.addWidget(self.trophy_recompile_button)
+        button_layout.addWidget(self.trophy_decrypt_button)
+        
         layout.addLayout(button_layout)
 
     def setup_esmf_decrypter_tab(self):
@@ -1196,15 +1413,75 @@ class MainWindow(QMainWindow):
         output_layout.addWidget(browse_button)
         layout.addLayout(output_layout)
         
+        # Passcode input
+        passcode_group = QGroupBox("Passcode")
+        passcode_layout = QVBoxLayout()
+        
+        # Manual passcode input
+        manual_layout = QHBoxLayout()
+        self.passcode_entry = QLineEdit()
+        self.passcode_entry.setPlaceholderText("Enter 32-character passcode (optional)")
+        self.passcode_entry.setMaxLength(32)
+        manual_layout.addWidget(self.passcode_entry)
+        
+        # Try passcode button
+        try_button = QPushButton("Try Passcode")
+        try_button.clicked.connect(self.try_manual_passcode)
+        manual_layout.addWidget(try_button)
+        
+        passcode_layout.addLayout(manual_layout)
+        
+        # Or label
+        or_label = QLabel("- OR -")
+        or_label.setAlignment(Qt.AlignCenter)
+        passcode_layout.addWidget(or_label)
+        
+        # Bruteforce button
+        start_button = QPushButton("Start Bruteforce")
+        start_button.clicked.connect(self.run_bruteforce)
+        passcode_layout.addWidget(start_button)
+        
+        passcode_group.setLayout(passcode_layout)
+        layout.addWidget(passcode_group)
+        
         # Log display
         self.bruteforce_log = QTextEdit()
         self.bruteforce_log.setReadOnly(True)
         layout.addWidget(self.bruteforce_log)
+
+    def try_manual_passcode(self):
+        """Try decrypting with manual passcode"""
+        if not self.package:
+            QMessageBox.warning(self, "Warning", "Please load a PKG file first")
+            return
+
+        output_dir = self.bruteforce_out_entry.text()
+        if not output_dir:
+            QMessageBox.warning(self, "Warning", "Please select an output directory")
+            return
         
-        # Start button
-        start_button = QPushButton("Start Bruteforce")
-        start_button.clicked.connect(self.run_bruteforce)
-        layout.addWidget(start_button)
+        passcode = self.passcode_entry.text()
+        if not passcode:
+            QMessageBox.warning(self, "Warning", "Please enter a passcode")
+            return
+        
+        try:
+            bruteforcer = PS4PasscodeBruteforcer()
+            result = bruteforcer.brute_force_passcode(
+                self.package.original_file,
+                output_dir,
+                lambda msg: self.bruteforce_log.append(msg),
+                manual_passcode=passcode
+            )
+            self.bruteforce_log.append(result)
+            if "successfully" in result.lower():
+                QMessageBox.information(self, "Success", result)
+            else:
+                QMessageBox.warning(self, "Warning", result)
+        except Exception as e:
+            error_msg = f"Failed to try passcode: {str(e)}"
+            self.bruteforce_log.append(error_msg)
+            QMessageBox.critical(self, "Error", error_msg)
 
     def setup_trp_create_tab(self):
         """Setup the TRP creation tab"""
@@ -1319,21 +1596,23 @@ class MainWindow(QMainWindow):
                 
             # Create TRP
             creator = TRPCreator()
-            creator.set_title(title)
-            creator.set_npcommid(npcommid)
+            creator.SetVersion = 1  # Imposta la versione a 1
             
-            # Add files
+            # Raccogli tutti i file
+            files = []
             root = self.trophy_files_list.invisibleRootItem()
             for i in range(root.childCount()):
                 item = root.child(i)
                 file_data = item.data(0, Qt.UserRole)
-                creator.add_file(item.text(0), file_data['data'])
+                files.append(file_data['path'])
             
-            # Create file
-            creator.create(output_path)
-            
-            self.trp_create_log.append(f"TRP file created successfully: {output_path}")
-            QMessageBox.information(self, "Success", "TRP file created successfully")
+            # Crea il file TRP
+            try:
+                creator.Create(output_path, files)
+                self.trp_create_log.append(f"TRP file created successfully: {output_path}")
+                QMessageBox.information(self, "Success", "TRP file created successfully")
+            except Exception as e:
+                raise Exception(f"Failed to create TRP: {str(e)}")
             
         except Exception as e:
             self.trp_create_log.append(f"Error creating TRP: {str(e)}")
@@ -1686,3 +1965,341 @@ class MainWindow(QMainWindow):
             self.showNormal()
         else:
             self.showFullScreen()
+
+    def browse_trophy(self):
+        """Browse for trophy file"""
+        filename, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Trophy file",
+            "",
+            "Trophy files (*.trp *.ucp);;TRP files (*.trp);;UCP files (*.ucp);;All files (*.*)"
+        )
+        if filename:
+            try:
+                self.trophy_entry.setText(filename)
+                
+                # Carica le informazioni del trofeo
+                trophy_reader = TRPReader(filename)
+                
+                # Mostra le informazioni nel text edit
+                info_text = f"""
+                Title: {trophy_reader._title if trophy_reader._title else 'N/A'}
+                NP Communication ID: {trophy_reader._npcommid if trophy_reader._npcommid else 'N/A'}
+                Number of Trophies: {len(trophy_reader._trophyList) if trophy_reader._trophyList else 0}
+                File Type: {os.path.splitext(filename)[1].upper()[1:]}
+                """
+                self.trophy_info.setText(info_text)
+                
+                # Carica i trofei nella tree view
+                self.trophy_tree.clear()
+                for trophy in trophy_reader._trophyList:
+                    item = QTreeWidgetItem(self.trophy_tree)
+                    item.setText(0, trophy.name)
+                    
+                    # Determina il tipo di trofeo dal nome del file
+                    if "TROP" in trophy.name.upper():
+                        if "BRONZE" in trophy.name.upper():
+                            trophy_type = "Bronze"
+                        elif "SILVER" in trophy.name.upper():
+                            trophy_type = "Silver"
+                        elif "GOLD" in trophy.name.upper():
+                            trophy_type = "Gold"
+                        elif "PLATINUM" in trophy.name.upper():
+                            trophy_type = "Platinum"
+                        else:
+                            trophy_type = "Unknown"
+                    else:
+                        trophy_type = "Unknown"
+                        
+                    item.setText(1, trophy_type)  # Tipo di trofeo
+                    item.setText(2, self.get_trophy_grade(trophy))  # Grado del trofeo
+                    item.setText(3, "No")  # Hidden di default
+                    
+                    # Salva i dati del trofeo nell'item
+                    item.setData(0, Qt.UserRole, trophy)
+                
+                # Abilita/disabilita pulsanti in base al tipo di file
+                is_trp = filename.lower().endswith('.trp')
+                self.trophy_decrypt_button.setEnabled(is_trp)
+                self.trophy_recompile_button.setEnabled(not is_trp)
+                
+                Logger.log_information(f"Trophy file loaded: {filename}")
+                
+            except Exception as e:
+                error_msg = f"Error loading trophy file: {str(e)}"
+                Logger.log_error(error_msg)
+                QMessageBox.critical(self, "Error", error_msg)
+
+    def display_selected_trophy(self, item, column):
+        """Display selected trophy information"""
+        try:
+            trophy = item.data(0, Qt.UserRole)
+            if not trophy:
+                return
+                
+            # Aggiorna le informazioni del trofeo
+            trophy_details = f"""
+            Name: {trophy.name}
+            Type: {self.get_trophy_type(trophy)}
+            Grade: {self.get_trophy_grade(trophy)}
+            Hidden: {'Yes' if hasattr(trophy, 'hidden') and trophy.hidden else 'No'}
+            """
+            self.trophy_details.setText(trophy_details)
+            
+            # Carica l'immagine del trofeo se disponibile
+            if trophy.name.upper().endswith('.PNG'):
+                try:
+                    with open(self.trophy_entry.text(), 'rb') as f:
+                        f.seek(trophy.offset)
+                        image_data = f.read(trophy.size)
+                    pixmap = ImageUtils.create_thumbnail(image_data)
+                    self.trophy_image_viewer.setPixmap(pixmap)
+                    self.trophy_image_viewer.setAlignment(Qt.AlignCenter)
+                except Exception as e:
+                    Logger.log_error(f"Error loading trophy image: {str(e)}")
+                    self.trophy_image_viewer.clear()
+            else:
+                self.trophy_image_viewer.clear()
+                
+        except Exception as e:
+            Logger.log_error(f"Error displaying trophy: {str(e)}")
+            self.trophy_details.clear()
+            self.trophy_image_viewer.clear()
+
+    def get_trophy_type(self, trophy):
+        """Get trophy type based on filename"""
+        name = trophy.name.upper()
+        if "BRONZE" in name:
+            return "Bronze"
+        elif "SILVER" in name:
+            return "Silver"
+        elif "GOLD" in name:
+            return "Gold"
+        elif "PLATINUM" in name:
+            return "Platinum"
+        return "Unknown"
+
+    def get_trophy_grade(self, trophy):
+        """Get trophy grade based on filename"""
+        name = trophy.name.upper()
+        if "TROP" in name:
+            if "BRONZE" in name:
+                if "COMMON" in name:
+                    return "Common"
+                elif "UNCOMMON" in name:
+                    return "Uncommon"
+                elif "RARE" in name:
+                    return "Rare"
+                elif "VERY_RARE" in name:
+                    return "Very Rare"
+                return "Common"  # Default per Bronze
+            elif "SILVER" in name:
+                if "COMMON" in name:
+                    return "Common"
+                elif "UNCOMMON" in name:
+                    return "Uncommon"
+                elif "RARE" in name:
+                    return "Rare"
+                elif "VERY_RARE" in name:
+                    return "Very Rare"
+                return "Uncommon"  # Default per Silver
+            elif "GOLD" in name:
+                if "COMMON" in name:
+                    return "Common"
+                elif "UNCOMMON" in name:
+                    return "Uncommon"
+                elif "RARE" in name:
+                    return "Rare"
+                elif "VERY_RARE" in name:
+                    return "Very Rare"
+                return "Rare"  # Default per Gold
+            elif "PLATINUM" in name:
+                if "COMMON" in name:
+                    return "Common"
+                elif "UNCOMMON" in name:
+                    return "Uncommon"
+                elif "RARE" in name:
+                    return "Rare"
+                elif "VERY_RARE" in name:
+                    return "Very Rare"
+                return "Very Rare"  # Default per Platinum
+        return "Unknown"
+
+    def show_previous_trophy(self):
+        """Show previous trophy in the list"""
+        current_item = self.trophy_tree.currentItem()
+        if current_item:
+            current_index = self.trophy_tree.indexOfTopLevelItem(current_item)
+            if current_index > 0:
+                previous_item = self.trophy_tree.topLevelItem(current_index - 1)
+                self.trophy_tree.setCurrentItem(previous_item)
+                self.display_selected_trophy(previous_item, 0)
+
+    def show_next_trophy(self):
+        """Show next trophy in the list"""
+        current_item = self.trophy_tree.currentItem()
+        if current_item:
+            current_index = self.trophy_tree.indexOfTopLevelItem(current_item)
+            if current_index < self.trophy_tree.topLevelItemCount() - 1:
+                next_item = self.trophy_tree.topLevelItem(current_index + 1)
+                self.trophy_tree.setCurrentItem(next_item)
+                self.display_selected_trophy(next_item, 0)
+
+    def edit_trophy_info(self):
+        """Edit selected trophy information"""
+        selected_items = self.trophy_tree.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "Warning", "No trophy selected")
+            return
+        
+        item = selected_items[0]
+        trophy_data = item.data(0, Qt.UserRole)
+        
+        if not trophy_data:
+            return
+        
+        try:
+            # Mostra dialog per modificare le informazioni
+            dialog = QDialog(self)
+            dialog.setWindowTitle("Edit Trophy Info")
+            layout = QVBoxLayout(dialog)
+            
+            # Form per le informazioni modificabili
+            form_layout = QGridLayout()
+            name_edit = QLineEdit(trophy_data.get('name', ''))
+            desc_edit = QTextEdit(trophy_data.get('description', ''))
+            type_combo = QComboBox()
+            type_combo.addItems(['Bronze', 'Silver', 'Gold', 'Platinum'])
+            type_combo.setCurrentText(trophy_data.get('type', 'Bronze'))
+            hidden_check = QCheckBox("Hidden")
+            hidden_check.setChecked(trophy_data.get('hidden', False))
+            
+            form_layout.addWidget(QLabel("Name:"), 0, 0)
+            form_layout.addWidget(name_edit, 0, 1)
+            form_layout.addWidget(QLabel("Description:"), 1, 0)
+            form_layout.addWidget(desc_edit, 1, 1)
+            form_layout.addWidget(QLabel("Type:"), 2, 0)
+            form_layout.addWidget(type_combo, 2, 1)
+            form_layout.addWidget(hidden_check, 3, 1)
+            
+            layout.addLayout(form_layout)
+            
+            # Pulsanti
+            buttons = QHBoxLayout()
+            save_btn = QPushButton("Save")
+            cancel_btn = QPushButton("Cancel")
+            save_btn.clicked.connect(dialog.accept)
+            cancel_btn.clicked.connect(dialog.reject)
+            buttons.addWidget(save_btn)
+            buttons.addWidget(cancel_btn)
+            layout.addLayout(buttons)
+            
+            if dialog.exec_() == QDialog.Accepted:
+                # Aggiorna i dati del trofeo
+                trophy_data['name'] = name_edit.text()
+                trophy_data['description'] = desc_edit.toPlainText()
+                trophy_data['type'] = type_combo.currentText()
+                trophy_data['hidden'] = hidden_check.isChecked()
+                
+                # Aggiorna la visualizzazione
+                item.setText(0, trophy_data['name'])
+                item.setText(1, trophy_data['type'])
+                item.setText(2, trophy_data['grade'])
+                item.setText(3, 'Yes' if trophy_data['hidden'] else 'No')
+                
+                self.display_selected_trophy(item, 0)
+                
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to edit trophy: {str(e)}")
+
+    def recompile_trp(self):
+        """Recompile TRP file"""
+        try:
+            if not hasattr(self, 'trophy_files'):
+                QMessageBox.warning(self, "Warning", "No trophy files loaded")
+                return
+                
+            output_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Save TRP File",
+                "",
+                "TRP files (*.trp)"
+            )
+            
+            if not output_path:
+                return
+                
+            creator = TRPCreator()
+            creator.create(output_path, self.trophy_files)
+            
+            QMessageBox.information(self, "Success", "TRP file created successfully")
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to create TRP: {str(e)}")
+
+    def decrypt_trophy(self):
+        """Decrypt selected trophy file"""
+        try:
+            if not self.trophy_entry.text():
+                QMessageBox.warning(self, "Warning", "No trophy file selected")
+                return
+                
+            output_dir = QFileDialog.getExistingDirectory(
+                self,
+                "Select Output Directory"
+            )
+            
+            if not output_dir:
+                return
+                
+            decrypter = TRPReader()
+            decrypter.decrypt_trp(self.trophy_entry.text(), output_dir)
+            
+            QMessageBox.information(self, "Success", "Trophy file decrypted successfully")
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to decrypt trophy: {str(e)}")
+
+    def retranslate_ui(self):
+        """Update UI text with current language"""
+        # Update window title
+        self.setWindowTitle(self.translator.translate("PKG Tool Box v1.5.2"))
+        
+        # Update menu items
+        self.file_menu.setTitle(self.translator.translate("File"))
+        self.tools_menu.setTitle(self.translator.translate("Tools"))
+        self.view_menu.setTitle(self.translator.translate("View"))
+        self.help_menu.setTitle(self.translator.translate("Help"))
+        
+        # Update actions
+        self.open_action.setText(self.translator.translate("Open PKG"))
+        self.exit_action.setText(self.translator.translate("Exit"))
+        
+        # Update tab names
+        self.tab_widget.setTabText(0, self.translator.translate("Info"))
+        self.tab_widget.setTabText(1, self.translator.translate("File Browser"))
+        # ... aggiorna altri tab ...
+        
+        # Force update
+        self.update()
+
+    def should_skip_updates(self):
+        """Check if user has chosen to skip updates"""
+        try:
+            config_file = os.path.join(os.path.expanduser("~"), ".pkgtoolbox", "update_preferences.json")
+            if os.path.exists(config_file):
+                with open(config_file, 'r') as f:
+                    prefs = json.load(f)
+                    return prefs.get("skip_updates", False)
+        except:
+            pass
+        return False
+
+    def show_update_dialog(self, version, download_url):
+        """Show update dialog when new version is available"""
+        dialog = UpdateDialog(version, download_url, self)
+        dialog.exec_()
+
+    def handle_update_error(self, error_msg):
+        """Handle errors during update check"""
+        Logger.log_error(f"Update check failed: {error_msg}")

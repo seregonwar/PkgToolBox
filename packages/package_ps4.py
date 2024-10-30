@@ -4,6 +4,8 @@ from .enums import DRMType, ContentType, IROTag
 from utils import Logger
 import os
 import shutil
+import logging
+from .crypto_utils import AES_ctx, AES_set_key, AES_cbc_decrypt, AES_KEY_LEN_128
 
 class PackagePS4(PackageBase):
     MAGIC_PS4 = 0x7f434E54  # ?CNT for PS4
@@ -205,3 +207,99 @@ class PackagePS4(PackageBase):
         except Exception as e:
             Logger.log_error(f"Error reading file data: {str(e)}")
             raise
+
+    def is_encrypted(self):
+        """Check if package is encrypted"""
+        try:
+            # Controlla se il PKG è cifrato verificando il flag di crittografia
+            with open(self.original_file, 'rb') as f:
+                # Vai all'offset del flag di crittografia (0x1A nel header PS4)
+                f.seek(0x1A)
+                # Leggi il flag (2 byte)
+                encryption_flag = int.from_bytes(f.read(2), byteorder='little')
+                # Se il flag è diverso da 0, il PKG è cifrato
+                return encryption_flag != 0
+        except Exception as e:
+            logging.error(f"Error checking encryption: {str(e)}")
+            return False
+
+    def extract_with_passcode(self, passcode, output_dir):
+        """Extract encrypted PKG with passcode"""
+        if not self.is_encrypted():
+            raise ValueError("Package is not encrypted")
+            
+        try:
+            # Verifica il formato del passcode
+            if len(passcode) != 32:
+                raise ValueError("Invalid passcode length")
+                
+            # Converti il passcode in chiave AES
+            try:
+                # Prima prova a convertire da esadecimale
+                key = bytes.fromhex(passcode)
+            except ValueError:
+                # Se fallisce, usa il passcode direttamente come chiave
+                key = passcode.encode('utf-8')
+            
+            # Decripta il PKG usando la chiave
+            self.decrypt_pkg(key, output_dir)
+            
+            return True
+        except ValueError as e:
+            raise e
+        except Exception as e:
+            raise ValueError(f"Failed to decrypt with passcode: {str(e)}")
+
+    def decrypt_pkg(self, key, output_dir):
+        """Decrypt PKG using AES key"""
+        try:
+            # Crea la directory di output
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Leggi il PKG cifrato
+            with open(self.original_file, 'rb') as f:
+                # Leggi l'header (non cifrato)
+                header = f.read(0x400)  # I primi 0x400 bytes sono l'header
+                
+                # Leggi il contenuto cifrato
+                encrypted_data = f.read()
+                
+            # Decripta i dati
+            try:
+                # Inizializza il contesto AES
+                ctx = AES_ctx()
+                AES_set_key(ctx, key, AES_KEY_LEN_128)
+                
+                # Decripta i dati in blocchi di 16 bytes (AES block size)
+                decrypted = bytearray()
+                for i in range(0, len(encrypted_data), 16):
+                    block = encrypted_data[i:i+16]
+                    if len(block) < 16:  # Padding per l'ultimo blocco
+                        block = block.ljust(16, b'\x00')
+                    
+                    temp = bytearray(16)
+                    AES_cbc_decrypt(ctx, block, temp)
+                    decrypted.extend(temp)
+                
+                # Rimuovi il padding solo se necessario
+                if len(decrypted) > 0 and decrypted[-1] <= 16:
+                    padding_len = decrypted[-1]
+                    if all(x == padding_len for x in decrypted[-padding_len:]):
+                        decrypted = decrypted[:-padding_len]
+                
+                # Combina header e dati decriptati
+                decrypted_pkg = header + bytes(decrypted)
+                
+                # Salva il PKG decifrato
+                decrypted_path = os.path.join(output_dir, os.path.basename(self.original_file))
+                with open(decrypted_path, 'wb') as f:
+                    f.write(decrypted_pkg)
+                
+                # Estrai i file dal PKG decifrato
+                self.extract_all_files(output_dir)
+                
+            except Exception as e:
+                raise Exception(f"Error in AES decryption: {str(e)}")
+            
+        except Exception as e:
+            raise Exception(f"Error decrypting PKG: {str(e)}")

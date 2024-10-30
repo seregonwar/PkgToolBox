@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import time
 import datetime
+import sys
 
 class PackagePS3(PackageBase):
     MAGIC_PS3 = 0x7f504b47  # ?PKG per PS3
@@ -94,8 +95,14 @@ class PackagePS3(PackageBase):
     def decrypt_and_extract(self, progress=None):
         """Decripta il PKG ed estrae i file usando Ps3DebugLib.exe"""
         try:
-            ps3lib_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
-                                      "packages", "ps3lib", "Ps3DebugLib.exe")
+            if getattr(sys, 'frozen', False):
+                # Se l'app è "frozen" (compilata con PyInstaller)
+                base_path = sys._MEIPASS
+            else:
+                # Se l'app è in esecuzione da script
+                base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                
+            ps3lib_path = os.path.join(base_path, "packages", "ps3lib", "Ps3DebugLib.exe")
             
             if not os.path.exists(ps3lib_path):
                 logging.error(f"Ps3DebugLib.exe not found at: {ps3lib_path}")
@@ -661,8 +668,15 @@ class PackagePS3(PackageBase):
         try:
             os.makedirs(output_dir, exist_ok=True)
             
-            ps3lib_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
-                                      "packages", "ps3lib", "Ps3DebugLib.exe")
+            # Modifica il modo in cui otteniamo il percorso di Ps3DebugLib.exe
+            if getattr(sys, 'frozen', False):
+                # Se l'app è "frozen" (compilata con PyInstaller)
+                base_path = sys._MEIPASS
+            else:
+                # Se l'app è in esecuzione da script
+                base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                
+            ps3lib_path = os.path.join(base_path, "packages", "ps3lib", "Ps3DebugLib.exe")
             
             if not os.path.exists(ps3lib_path):
                 logging.error(f"Ps3DebugLib.exe not found at: {ps3lib_path}")

@@ -472,3 +472,48 @@ class TRPReader:
             logger.info(f"Found {len(self._trophyList)} files")
         
         self._hdr.files_count = len(self._trophyList).to_bytes(4, byteorder='little')
+
+    def decrypt_trp(self, input_file, output_dir):
+        """Decrypt and extract TRP file contents"""
+        try:
+            # Carica il file TRP se non è già stato caricato
+            if not self._trophyList:
+                self.load(input_file)
+            
+            # Crea la directory di output se non esiste
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Estrai ogni file trovato
+            for trophy in self._trophyList:
+                try:
+                    # Determina il tipo di file dall'estensione
+                    file_ext = os.path.splitext(trophy.name)[1].lower()
+                    
+                    # Leggi i dati del file
+                    with open(input_file, 'rb') as f:
+                        f.seek(trophy.offset)
+                        data = f.read(trophy.size)
+                    
+                    # Determina il nome del file di output
+                    if "TROP" in trophy.name.upper():
+                        output_name = f"trophy_{trophy.index:03d}{file_ext}"
+                    else:
+                        output_name = trophy.name
+                    
+                    # Salva il file
+                    output_path = os.path.join(output_dir, output_name)
+                    with open(output_path, 'wb') as f:
+                        f.write(data)
+                    
+                    logging.info(f"Extracted: {output_name}")
+                    
+                except Exception as e:
+                    logging.error(f"Error extracting {trophy.name}: {e}")
+                    continue
+            
+            return "Trophy file decrypted and extracted successfully"
+            
+        except Exception as e:
+            error_msg = f"Error decrypting TRP: {str(e)}"
+            logging.error(error_msg)
+            raise Exception(error_msg)

@@ -1,9 +1,11 @@
 ﻿import os
-import re
 import hashlib
-from decimal import Decimal
-from io import BytesIO
+import struct
 import logging
+from io import BytesIO
+from decimal import Decimal
+import re
+from pathlib import Path
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -17,20 +19,43 @@ class Archiver:
         self.bytes = bytes_data
 
 class TRPCreator:
+    class TRPHeader:
+        def __init__(self):
+            self.magic = None
+            self.version = None
+            self.file_size = None
+            self.files_count = None
+            self.element_size = None
+            self.dev_flag = None
+            self.sha1 = None
+            self.padding = None
+
     def __init__(self):
         self._hdr = self.TRPHeader()
         self._trophyList = []
         self._hdrmagic = bytearray([220, 162, 77, 0])
         self._iserror = False
         self._setversion = 0
+        self._set_title = None # Added set_title attribute
+        self.header_size = 0x400
+        self.trophy_size = 0x200
+        self.image_size = 0x12000
 
-    @property
+    @property 
     def SetVersion(self):
         return self._setversion
 
     @SetVersion.setter
     def SetVersion(self, value):
         self._setversion = value
+        
+    @property
+    def set_title(self): # Added set_title property
+        return self._set_title
+        
+    @set_title.setter 
+    def set_title(self, value):
+        self._set_title = value
 
     def Create(self, filename, contents):
         try:
@@ -102,7 +127,7 @@ class TRPCreator:
     def SortList(self, alist):
         patterns = [
             "TROPCONF.(E?)SFM",
-            "TROP.(E?)SFM",
+            "TROP.(E?)SFM", 
             "TROP_\\d+.(E?)SFM",
             "ICON0.PNG",
             "ICON0_\\d+.PNG",
@@ -188,7 +213,7 @@ class TRPCreator:
             memoryStream.write(bytearray(36))
         elif version == 3:
             memoryStream.write(bytearray(20))
-            memoryStream.write(bytearray([48, 49, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+            memoryStream.write(bytearray([48, 49, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
         self._hdr = trpHeader
         return memoryStream.getvalue()
 
@@ -214,13 +239,93 @@ class TRPCreator:
             num += 1
         return num
 
-    class TRPHeader:
-        def __init__(self):
-            self.magic = None
-            self.version = None
-            self.file_size = None
-            self.files_count = None
-            self.element_size = None
-            self.dev_flag = None
-            self.sha1 = None
-            self.padding = None
+    def create(self, output_path, trophy_files):
+        """Create TRP file from trophy files"""
+        try:
+            # Ordina i file per nome per mantenere l'ordine corretto
+            trophy_files = sorted(trophy_files, key=lambda x: x.name)
+            
+            # Calcola le dimensioni
+            total_size = (
+                self.header_size +  # Header
+                (len(trophy_files) * self.trophy_size) +  # Trophy entries
+                (len([f for f in trophy_files if f.name.upper().endswith('.PNG')]) * self.image_size)  # Images
+            )
+            
+            # Crea il file TRP
+            with open(output_path, 'wb') as f:
+                # Scrivi l'header
+                header = struct.pack('<4sIQII',
+                    b'\xDC\xA2\x4D\x00',  # Magic
+                    1,                     # Version
+                    total_size,            # File size
+                    len(trophy_files),     # Number of files
+                    self.trophy_size       # Trophy entry size
+                )
+                f.write(header)
+                
+                # Padding fino a 0x400
+                f.write(b'\x00' * (self.header_size - len(header)))
+                
+                # Scrivi i trofei
+                for trophy in trophy_files:
+                    if not trophy.name.upper().endswith('.PNG'):
+                        continue
+                        
+                    # Leggi i dati del trofeo
+                    with open(trophy.name, 'rb') as tf:
+                        trophy_data = tf.read()
+                    
+                    # Scrivi i dati del trofeo
+                    f.write(trophy_data[:self.trophy_size])
+                    
+                    # Padding se necessario
+                    if len(trophy_data) < self.trophy_size:
+                        f.write(b'\x00' * (self.trophy_size - len(trophy_data)))
+                
+                # Scrivi le immagini
+                for trophy in trophy_files:
+                    if trophy.name.upper().endswith('.PNG'):
+                        with open(trophy.name, 'rb') as tf:
+                            image_data = tf.read()
+                        
+                        # Scrivi l'immagine
+                        f.write(image_data)
+                        
+                        # Padding se necessario
+                        if len(image_data) < self.image_size:
+                            f.write(b'\x00' * (self.image_size - len(image_data)))
+            
+            logging.info(f"TRP file created successfully: {output_path}")
+            return True
+            
+        except Exception as e:
+            error_msg = f"Error creating TRP file: {str(e)}"
+            logging.error(error_msg)
+            raise Exception(error_msg)
+
+    def validate_trophy_files(self, files):
+        """Validate trophy files before creating TRP"""
+        try:
+            # Verifica che ci siano file
+            if not files:
+                raise ValueError("No trophy files provided")
+            
+            # Verifica che ci siano solo file PNG e dati trofeo
+            valid_extensions = {'.PNG', '.DAT'}
+            for f in files:
+                ext = os.path.splitext(f.name)[1].upper()
+                if ext not in valid_extensions:
+                    raise ValueError(f"Invalid file type: {f.name}")
+            
+            # Verifica che ci sia almeno un'immagine
+            png_files = [f for f in files if f.name.upper().endswith('.PNG')]
+            if not png_files:
+                raise ValueError("No trophy images found")
+            
+            return True
+            
+        except Exception as e:
+            error_msg = f"Trophy files validation failed: {str(e)}"
+            logging.error(error_msg)
+            raise Exception(error_msg)

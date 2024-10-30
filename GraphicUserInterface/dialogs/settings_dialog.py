@@ -3,9 +3,12 @@ from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QTabWidget, QWidget, QGroupBo
                             QCheckBox, QLineEdit, QHBoxLayout, QColorDialog, QFontDialog,
                             QFileDialog, QMessageBox, QApplication)
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QColor
-from ..utils import StyleManager
+from PyQt5.QtGui import QFont, QColor, QFontDatabase
+import os
 import json
+
+# Modifica l'import relativo in import assoluto
+from GraphicUserInterface.utils.style_manager import StyleManager
 
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
@@ -60,27 +63,56 @@ class SettingsDialog(QDialog):
         
         theme_layout.addWidget(QLabel("Theme:"), 0, 0)
         self.theme_combo = QComboBox()
-        self.theme_combo.addItems(["Light", "Dark", "System"])
+        self.theme_combo.addItems(["Light", "Dark", "System", "Custom"])
+        self.theme_combo.currentTextChanged.connect(self.on_theme_changed)
         theme_layout.addWidget(self.theme_combo, 0, 1)
         
         theme_group.setLayout(theme_layout)
         layout.addWidget(theme_group)
         
+        # Language group
+        language_group = QGroupBox("Language")
+        language_layout = QGridLayout()
+        
+        language_layout.addWidget(QLabel("Language:"), 0, 0)
+        self.language_combo = QComboBox()
+        self.language_combo.addItems(["English", "Italian", "Spanish", "French", "German", "Japanese"])
+        self.language_combo.currentTextChanged.connect(self.on_language_changed)
+        language_layout.addWidget(self.language_combo, 0, 1)
+        
+        language_group.setLayout(language_layout)
+        layout.addWidget(language_group)
+        
         # Font group
         font_group = QGroupBox("Font")
         font_layout = QGridLayout()
         
-        self.font_button = QPushButton("Select Font...")
+        # Font family combo
+        font_layout.addWidget(QLabel("Font:"), 0, 0)
+        self.font_combo = QComboBox()
+        self.font_combo.addItems(QFontDatabase().families())
+        font_layout.addWidget(self.font_combo, 0, 1)
+        
+        # Font size spinner
+        font_layout.addWidget(QLabel("Size:"), 1, 0)
+        self.font_size_spin = QSpinBox()
+        self.font_size_spin.setRange(8, 24)
+        self.font_size_spin.setValue(12)
+        font_layout.addWidget(self.font_size_spin, 1, 1)
+        
+        # Font preview button
+        self.font_button = QPushButton("Preview Font")
         self.font_button.clicked.connect(self.select_font)
-        font_layout.addWidget(self.font_button, 0, 0, 1, 2)
+        font_layout.addWidget(self.font_button, 2, 0, 1, 2)
         
         font_group.setLayout(font_layout)
         layout.addWidget(font_group)
         
         # Colors group
-        colors_group = QGroupBox("Colors")
+        self.colors_group = QGroupBox("Colors")
         colors_layout = QGridLayout()
         
+        # Color buttons with labels and preview
         self.bg_color_button = QPushButton()
         self.text_color_button = QPushButton()
         self.accent_color_button = QPushButton()
@@ -96,10 +128,12 @@ class SettingsDialog(QDialog):
         self.text_color_button.clicked.connect(lambda: self.pick_color("text"))
         self.accent_color_button.clicked.connect(lambda: self.pick_color("accent"))
         
-        colors_group.setLayout(colors_layout)
-        layout.addWidget(colors_group)
+        # Disabilita i pulsanti dei colori se non è selezionato Custom
+        self.colors_group.setEnabled(self.theme_combo.currentText() == "Custom")
         
-        layout.addStretch()
+        self.colors_group.setLayout(colors_layout)
+        layout.addWidget(self.colors_group)
+        
         return tab
 
     def create_behavior_tab(self):
@@ -168,9 +202,9 @@ class SettingsDialog(QDialog):
         """Open color picker dialog"""
         color = QColorDialog.getColor()
         if color.isValid():
-            color_hex = color.name()  # Ottiene il colore in formato #RRGGBB
+            color_hex = color.name()
             
-            # Crea lo stile del pulsante
+            # Aggiorna il pulsante con il nuovo colore
             button_style = f"""
                 QPushButton {{
                     background-color: {color_hex};
@@ -182,16 +216,40 @@ class SettingsDialog(QDialog):
                 }}
             """
             
-            # Applica lo stile e salva il colore come testo del pulsante
+            # Aggiorna il pulsante appropriato e applica immediatamente il colore
             if color_type == "background":
                 self.bg_color_button.setStyleSheet(button_style)
                 self.bg_color_button.setText(color_hex)
+                settings = {
+                    "theme": self.theme_combo.currentText(),
+                    "bg_color": color_hex,
+                    "text_color": self.text_color_button.text(),
+                    "accent_color": self.accent_color_button.text()
+                }
             elif color_type == "text":
                 self.text_color_button.setStyleSheet(button_style)
                 self.text_color_button.setText(color_hex)
+                settings = {
+                    "theme": self.theme_combo.currentText(),
+                    "bg_color": self.bg_color_button.text(),
+                    "text_color": color_hex,
+                    "accent_color": self.accent_color_button.text()
+                }
             elif color_type == "accent":
                 self.accent_color_button.setStyleSheet(button_style)
                 self.accent_color_button.setText(color_hex)
+                settings = {
+                    "theme": self.theme_combo.currentText(),
+                    "bg_color": self.bg_color_button.text(),
+                    "text_color": self.text_color_button.text(),
+                    "accent_color": color_hex
+                }
+                
+            # Applica immediatamente le modifiche
+            if self.parent:
+                StyleManager.apply_theme(self.parent, settings)
+                self.parent.repaint()
+                QApplication.processEvents()
 
     def browse_directory(self, line_edit):
         """Browse for directory"""
@@ -202,44 +260,40 @@ class SettingsDialog(QDialog):
     def save_settings(self):
         """Save settings and apply them"""
         try:
-            # Crea il dizionario delle impostazioni
             settings = {
-                "theme": self.theme_combo.currentText(),
-                "night_mode": self.theme_combo.currentText() == "Dark",
-                "font_family": self.current_font.family() if hasattr(self, 'current_font') else "Arial",
-                "font_size": self.current_font.pointSize() if hasattr(self, 'current_font') else 12,
-                "auto_expand": self.auto_expand_check.isChecked(),
-                "show_hidden": self.show_hidden_check.isChecked(),
-                "confirm_exit": self.confirm_exit_check.isChecked(),
-                "output_path": self.output_path_edit.text(),
-                "temp_path": self.temp_path_edit.text()
+                "appearance": {
+                    "theme": self.theme_combo.currentText(),
+                    "night_mode": self.theme_combo.currentText() == "Dark",
+                    "font_family": self.current_font.family() if hasattr(self, 'current_font') else "Arial",
+                    "font_size": self.current_font.pointSize() if hasattr(self, 'current_font') else 12,
+                    "colors": {
+                        "background": self.bg_color_button.text() if self.bg_color_button.text().startswith('#') else "#ffffff",
+                        "text": self.text_color_button.text() if self.text_color_button.text().startswith('#') else "#000000",
+                        "accent": self.accent_color_button.text() if self.accent_color_button.text().startswith('#') else "#3498db"
+                    }
+                },
+                "behavior": {
+                    "auto_expand": self.auto_expand_check.isChecked(),
+                    "show_hidden": self.show_hidden_check.isChecked(),
+                    "confirm_exit": self.confirm_exit_check.isChecked()
+                },
+                "paths": {
+                    "output": self.output_path_edit.text(),
+                    "temp": self.temp_path_edit.text()
+                }
             }
 
-            # Gestisci i colori separatamente
-            try:
-                settings["bg_color"] = self.bg_color_button.text() if self.bg_color_button.text().startswith('#') else "#ffffff"
-                settings["text_color"] = self.text_color_button.text() if self.text_color_button.text().startswith('#') else "#000000"
-                settings["accent_color"] = self.accent_color_button.text() if self.accent_color_button.text().startswith('#') else "#3498db"
-            except:
-                # Se c'è un errore nel recuperare i colori, usa i valori predefiniti
-                settings["bg_color"] = "#ffffff"
-                settings["text_color"] = "#000000"
-                settings["accent_color"] = "#3498db"
-
-            # Salva le impostazioni nel file
-            with open("settings.json", "w") as f:
-                json.dump(settings, f, indent=4)
-
+            # Salva le impostazioni
+            StyleManager.save_settings(settings)
+            
             # Applica le impostazioni
             if self.parent:
-                self.parent.night_mode = settings["night_mode"]
+                StyleManager.apply_theme(self.parent, settings)
                 
                 # Applica il font
-                font = QFont(settings["font_family"], settings["font_size"])
+                font = QFont(settings["appearance"]["font_family"], 
+                            settings["appearance"]["font_size"])
                 QApplication.setFont(font)
-                
-                # Applica lo stile
-                StyleManager.apply_theme(self.parent, settings)
 
             self.accept()
             
@@ -247,35 +301,43 @@ class SettingsDialog(QDialog):
             QMessageBox.critical(self, "Error", f"Failed to save settings: {str(e)}")
 
     def load_settings(self):
-        """Load current settings"""
+        """Load settings from config file"""
         try:
-            settings = StyleManager.load_settings()
-            
-            # Theme
-            self.theme_combo.setCurrentText(settings.get("theme", "Light"))
-            
-            # Font
-            font = QFont(settings.get("font_family", "Arial"), 
-                        settings.get("font_size", 12))
-            self.current_font = font
-            self.font_button.setText(f"{font.family()} - {font.pointSize()}pt")
-            
-            # Colors
-            self.bg_color_button.setStyleSheet(settings.get("bg_color", ""))
-            self.text_color_button.setStyleSheet(settings.get("text_color", ""))
-            self.accent_color_button.setStyleSheet(settings.get("accent_color", ""))
-            
-            # Behavior
-            self.auto_expand_check.setChecked(settings.get("auto_expand", True))
-            self.show_hidden_check.setChecked(settings.get("show_hidden", False))
-            self.confirm_exit_check.setChecked(settings.get("confirm_exit", True))
-            
-            # Paths
-            self.output_path_edit.setText(settings.get("output_path", ""))
-            self.temp_path_edit.setText(settings.get("temp_path", ""))
-            
+            config_file = os.path.join(os.path.expanduser("~"), ".pkgtoolbox", "config.json")
+            if os.path.exists(config_file):
+                with open(config_file, "r") as f:
+                    settings = json.load(f)
+                
+                # Carica il tema
+                self.theme_combo.setCurrentText(settings.get("theme", "Light"))
+                
+                # Carica il font
+                font = QFont(settings.get("font_family", "Arial"), 
+                            settings.get("font_size", 12))
+                self.current_font = font
+                self.font_button.setText(f"{font.family()} - {font.pointSize()}pt")
+                
+                # Carica i colori
+                colors = settings.get("colors", {})
+                if colors:
+                    self.update_color_button(self.bg_color_button, colors.get("background", "#ffffff"))
+                    self.update_color_button(self.text_color_button, colors.get("text", "#000000"))
+                    self.update_color_button(self.accent_color_button, colors.get("accent", "#3498db"))
+                
+                # Carica altre impostazioni
+                self.auto_expand_check.setChecked(settings.get("auto_expand", True))
+                self.show_hidden_check.setChecked(settings.get("show_hidden", False))
+                self.confirm_exit_check.setChecked(settings.get("confirm_exit", True))
+                self.output_path_edit.setText(settings.get("output_path", ""))
+                self.temp_path_edit.setText(settings.get("temp_path", ""))
+                
+            else:
+                # Usa valori predefiniti se il file non esiste
+                self.reset_settings()
+                
         except Exception as e:
             QMessageBox.warning(self, "Warning", f"Failed to load settings: {str(e)}")
+            self.reset_settings()
 
     def reset_settings(self):
         """Reset settings to default"""
@@ -308,24 +370,90 @@ class SettingsDialog(QDialog):
     def apply_settings(self, settings):
         """Apply settings to parent window"""
         if self.parent:
-            # Applica il tema
-            self.parent.night_mode = settings["theme"] == "Dark"
-            
-            # Applica i colori
-            settings['bg_color'] = self.bg_color_button.styleSheet().replace("background-color: ", "").strip()
-            settings['text_color'] = self.text_color_button.styleSheet().replace("background-color: ", "").strip()
-            settings['accent_color'] = self.accent_color_button.styleSheet().replace("background-color: ", "").strip()
-            
-            # Applica il font
-            font = QFont(settings["font_family"], settings["font_size"])
-            QApplication.setFont(font)
-            
-            # Applica lo stile
-            StyleManager.apply_theme(self.parent, settings)
-            
-            # Applica le impostazioni del file browser
-            if hasattr(self.parent, 'file_browser'):
-                if settings["auto_expand"]:
-                    self.parent.file_browser.file_tree.expandAll()
-                else:
-                    self.parent.file_browser.file_tree.collapseAll()
+            try:
+                # Applica il tema
+                theme = settings.get("theme", "Light")
+                
+                # Gestisci i colori personalizzati
+                if theme == "Custom":
+                    colors = {
+                        'bg_color': self.bg_color_button.text(),
+                        'text_color': self.text_color_button.text(),
+                        'accent_color': self.accent_color_button.text()
+                    }
+                    settings.update(colors)
+                
+                # Applica il font
+                font = QFont(settings["font_family"], settings["font_size"])
+                QApplication.setFont(font)
+                
+                # Applica il tema
+                StyleManager.apply_theme(self.parent, settings)
+                
+                # Aggiorna le impostazioni del file browser
+                if hasattr(self.parent, 'file_browser'):
+                    if settings.get("auto_expand", True):
+                        self.parent.file_browser.file_tree.expandAll()
+                    else:
+                        self.parent.file_browser.file_tree.collapseAll()
+                
+                # Forza l'aggiornamento visuale
+                self.parent.repaint()
+                QApplication.processEvents()
+                
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to apply settings: {str(e)}")
+
+    def on_theme_changed(self, theme):
+        """Handle theme change"""
+        self.colors_group.setEnabled(theme == "Custom")
+        if theme != "Custom":
+            # Imposta i colori predefiniti per il tema selezionato
+            if theme == "Light":
+                self.set_theme_colors("#ffffff", "#000000", "#3498db")
+            elif theme == "Dark":
+                self.set_theme_colors("#1e1e1e", "#ffffff", "#3498db")
+            elif theme == "System":
+                # Usa i colori di sistema
+                from PyQt5.QtGui import QPalette
+                palette = QApplication.palette()
+                self.set_theme_colors(
+                    palette.color(QPalette.Window).name(),
+                    palette.color(QPalette.WindowText).name(),
+                    palette.color(QPalette.Highlight).name()
+                )
+
+    def set_theme_colors(self, bg, text, accent):
+        """Set theme colors"""
+        self.update_color_button(self.bg_color_button, bg)
+        self.update_color_button(self.text_color_button, text)
+        self.update_color_button(self.accent_color_button, accent)
+
+    def update_color_button(self, button, color):
+        """Update color button appearance"""
+        button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {color};
+                color: {"#ffffff" if QColor(color).lightness() < 128 else "#000000"};
+                min-width: 100px;
+                padding: 5px;
+                border: 1px solid #bdc3c7;
+                border-radius: 4px;
+            }}
+        """)
+        button.setText(color)
+
+    def on_language_changed(self, language):
+        """Handle language change"""
+        lang_codes = {
+            "English": "en",
+            "Italian": "it",
+            "Spanish": "es",
+            "French": "fr",
+            "German": "de",
+            "Japanese": "ja"
+        }
+        
+        if language in lang_codes:
+            self.parent.translator.change_language(lang_codes[language])
+            self.parent.retranslate_ui()

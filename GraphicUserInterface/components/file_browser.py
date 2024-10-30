@@ -547,6 +547,7 @@ class FileBrowser(QWidget):
             self.view_file_as_hex()
 
     def clear(self):
+        """Clear the file browser"""
         self.file_tree.clear()
         self.file_search.clear()
         self.preview_tabs.clear()
