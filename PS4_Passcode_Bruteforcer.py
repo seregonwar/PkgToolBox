@@ -8,6 +8,7 @@ import subprocess
 from pathlib import Path
 from packages import PackagePS4, PackagePS5, PackagePS3
 import struct
+import logging
 
 class PS4PasscodeBruteforcer:
     def __init__(self):
@@ -21,33 +22,59 @@ class PS4PasscodeBruteforcer:
         self.package = None
 
     def generate_random_passcode(self, length=32):
+        """Generate random passcode"""
         if self.debug_mode:
             return "00000000000000000000000000000000"
 
+        # Usa lettere, numeri, - e _
         characters = string.ascii_letters + string.digits + "-_"
         return ''.join(random.choice(characters) for _ in range(length))
 
-    def ensure_output_directory(self, output_directory):
-        os.makedirs(output_directory, exist_ok=True)
+    def validate_passcode(self, passcode):
+        """Validate passcode format"""
+        # Verifica solo la lunghezza
+        if len(passcode) != 32:
+            raise ValueError("Passcode must be 32 characters long")
+        
+        return True
 
-    def is_pkg_file(self, file_name):
-        return file_name.lower().endswith(".pkg")
-
-    def read_cid(self, package_file):
+    def try_passcode(self, input_file, output_directory, passcode):
+        """Try to decrypt with a specific passcode"""
         try:
-            with open(package_file, "rb") as file:
-                file.seek(0x40)
-                cid_buffer = file.read(36)
-                cid_string = ''.join(filter(lambda x: x in string.printable, cid_buffer.decode('latin-1')))
-                return cid_string
+            # Determine package type and create appropriate instance
+            with open(input_file, "rb") as fp:
+                magic = struct.unpack(">I", fp.read(4))[0]
+                if magic == PackagePS4.MAGIC_PS4:
+                    self.package = PackagePS4(input_file)
+                elif magic == PackagePS5.MAGIC_PS5:
+                    self.package = PackagePS5(input_file)
+                elif magic == PackagePS3.MAGIC_PS3:
+                    self.package = PackagePS3(input_file)
+                else:
+                    return f"[-] Unknown PKG format: {magic:08X}"
+
+            if not self.package.is_encrypted():
+                self.package.extract_all_files(output_directory)
+                return "[+] Package is not encrypted. Files extracted."
+
+            try:
+                # Verifica solo la lunghezza del passcode
+                if len(passcode) != 32:
+                    return f"[-] Invalid passcode length: {len(passcode)}"
+                
+                self.package.extract_with_passcode(passcode, output_directory)
+                self.passcode_found = True
+                self.found_passcode = passcode
+                return f"[+] Successfully decrypted with passcode: {passcode}"
+            except ValueError as e:
+                return f"[-] Failed to decrypt with passcode: {str(e)}"
+
         except Exception as e:
-            print(f"[-] Failed to read the CID from the package file: {e}")
-            return ""
+            logging.error(f"Error trying passcode: {str(e)}")
+            return f"[-] Error: {str(e)}"
 
-    def check_executable(self, executable_name):
-        return shutil.which(executable_name) is not None
-
-    def brute_force_passcode(self, input_file, output_directory, progress_callback=None):
+    def brute_force_passcode(self, input_file, output_directory, progress_callback=None, manual_passcode=None):
+        """Brute force or try specific passcode"""
         self.ensure_output_directory(output_directory)
 
         try:
@@ -62,55 +89,66 @@ class PS4PasscodeBruteforcer:
                     self.package = PackagePS3(input_file)
                 else:
                     return f"[-] Unknown PKG format: {magic:08X}"
+
+            if not self.package.is_encrypted():
+                self.package.extract_all_files(output_directory)
+                return "[+] Package is not encrypted. Files extracted."
+
+            if progress_callback:
+                progress_callback("[+] Package is encrypted. Starting decryption...")
+
+            # Se è fornito un passcode manuale, prova solo quello
+            if manual_passcode:
+                try:
+                    self.validate_passcode(manual_passcode)
+                    result = self.try_passcode(input_file, output_directory, manual_passcode)
+                    if progress_callback:
+                        progress_callback(result)
+                    return result
+                except ValueError as e:
+                    return f"[-] Invalid passcode format: {str(e)}"
+
+            # Altrimenti procedi con il brute force
+            while not self.passcode_found:
+                passcode = self.generate_random_passcode()
+                self.last_used_passcode = passcode
+
+                result = self.try_passcode(input_file, output_directory, passcode)
+                if progress_callback:
+                    progress_callback(result)
+
+                if self.passcode_found:
+                    break
+
+            if self.passcode_found:
+                success_file_name = f"{input_file}.success"
+                try:
+                    with open(success_file_name, "w") as success_file:
+                        success_file.write(self.found_passcode)
+                    return f"[+] Passcode found: {self.found_passcode}\n[+] Passcode has been saved to: {success_file_name}"
+                except Exception as e:
+                    return f"[+] Passcode found: {self.found_passcode}\n[-] Failed to create/save the success file: {e}"
+            else:
+                return "[-] Passcode not found."
+
         except FileNotFoundError:
             return f"[-] Package file not found: {input_file}"
+        except Exception as e:
+            logging.error(f"Error during brute force: {str(e)}")
+            return f"[-] Error: {str(e)}"
 
-        if not self.package.is_encrypted():
-            self.package.extract_all_files(output_directory)
-            return "[+] Package is not encrypted. Files extracted."
-
-        if progress_callback:
-            progress_callback("[+] Package is encrypted. Starting brute force...")
-
-        while not self.passcode_found:
-            passcode = self.generate_random_passcode()
-            self.last_used_passcode = passcode
-
-            try:
-                self.package.extract_with_passcode(passcode, output_directory)
-                self.passcode_found = True
-                self.found_passcode = passcode
-                if progress_callback:
-                    progress_callback(f"[+] Passcode found: {passcode}")
-                break
-            except ValueError:
-                if progress_callback:
-                    progress_callback(f"[-] Incorrect passcode: {passcode}")
-                continue
-
-        if self.passcode_found:
-            success_file_name = f"{input_file}.success"
-            try:
-                with open(success_file_name, "w") as success_file:
-                    success_file.write(self.found_passcode)
-                return f"[+] Passcode found: {self.found_passcode}\n[+] Passcode has been saved to: {success_file_name}"
-            except Exception as e:
-                return f"[+] Passcode found: {self.found_passcode}\n[-] Failed to create/save the success file: {e}"
-        else:
-            return "[-] Passcode not found."
+    def ensure_output_directory(self, output_directory):
+        """Assicura che la directory di output esista"""
+        os.makedirs(output_directory, exist_ok=True)
 
     def get_package(self):
+        """Restituisce l'oggetto package corrente"""
         return self.package
 
-    def some_method(self, pkg_path):
-        # Determine package type and create appropriate instance
-        with open(pkg_path, "rb") as fp:
-            magic = struct.unpack(">I", fp.read(4))[0]
-            if magic == PackagePS4.MAGIC_PS4:
-                package = PackagePS4(pkg_path)
-            elif magic == PackagePS5.MAGIC_PS5:
-                package = PackagePS5(pkg_path)
-            elif magic == PackagePS3.MAGIC_PS3:
-                package = PackagePS3(pkg_path)
-            else:
-                raise ValueError(f"Formato PKG sconosciuto: {magic:08X}")
+    def set_debug_mode(self, enabled):
+        """Imposta la modalità debug"""
+        self.debug_mode = enabled
+
+    def set_silence_mode(self, enabled):
+        """Imposta la modalità silenziosa"""
+        self.silence_mode = enabled

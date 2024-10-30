@@ -1,14 +1,26 @@
 {
-    "theme": "Dark",
-    "night_mode": true,
-    "font_family": "Arial",
-    "font_size": 12,
-    "auto_expand": true,
-    "show_hidden": false,
-    "confirm_exit": true,
-    "output_path": "",
-    "temp_path": "",
-    "bg_color": "#ffffff",
-    "text_color": "#000000",
-    "accent_color": "#3498db"
+    "appearance": {
+        "theme": "Light",
+        "night_mode": false,
+        "font_family": "Arial",
+        "font_size": 12,
+        "colors": {
+            "background": "#ffffff",
+            "text": "#000000",
+            "accent": "#3498db"
+        }
+    },
+    "language": {
+        "current": "en"
+    },
+    "behavior": {
+        "auto_expand": true,
+        "show_hidden": false,
+        "confirm_exit": true
+    },
+    "paths": {
+        "output": "",
+        "temp": "",
+        "last_pkg": ""
+    }
 }
