@@ -14,8 +14,9 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
                              QLabel, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem,
                              QFileDialog, QMessageBox, QTabWidget, QScrollArea, QSizePolicy,
                              QTextEdit, QSpinBox, QFrame, QStatusBar, QToolBar, QAction, QMenu, QInputDialog, QHeaderView,
-                             QProgressDialog, QListWidget, QListWidgetItem, QDialog, QTableWidget, QTableWidgetItem, QStackedLayout)
-from PyQt5.QtGui import QFont, QPixmap, QPalette, QColor, QRegExpValidator, QIcon, QBrush, QImage, QDesktopServices
+                             QProgressDialog, QListWidget, QListWidgetItem, QDialog, QTableWidget, QTableWidgetItem, QStackedLayout, QStyle, QSplitter,
+                             QGroupBox, QComboBox, QCheckBox, QColorDialog, QGridLayout)
+from PyQt5.QtGui import QFont, QPixmap, QPalette, QColor, QRegExpValidator, QIcon, QBrush, QImage, QDesktopServices, QFontDatabase
 from PyQt5.QtCore import Qt, QRegExp, QSize, QTimer, QUrl, QMimeData
 from kiwisolver import *
 
@@ -37,7 +38,7 @@ Hexpattern = re.compile(r'[^\x20-\x7E]')
 class PS4PKGTool(QMainWindow):
     def __init__(self, temp_directory):
         super().__init__()
-        self.setWindowTitle("PKG Tool Box v1.4")
+        self.setWindowTitle("PKG Tool Box v1.5.2(dev update)")
         self.setGeometry(100, 100, 1200, 800)
         
         # Initialize all necessary widgets
@@ -104,6 +105,9 @@ class PS4PKGTool(QMainWindow):
         # Add the label to the main layout
         main_layout = self.centralWidget().layout()
         main_layout.insertWidget(0, self.drag_drop_label)
+
+        # Aggiungi il pulsante delle impostazioni nella toolbar
+        self.setup_settings_button()
 
     def dragEnterEvent(self, event):
         """Handles the event when a file is dragged over the window"""
@@ -517,27 +521,175 @@ class PS4PKGTool(QMainWindow):
     def set_style(self):
         if self.night_mode:
             self.setStyleSheet("""
-                QWidget { background-color: #000000; color: #ecf0f1; }
-                QLineEdit, QTextEdit { background-color: #1c1c1c; color: #ecf0f1; border: 1px solid #7f8c8d; }
-                QPushButton { background-color: #3498db; color: #ecf0f1; }
-                QTreeWidget { background-color: #1c1c1c; color: #ecf0f1; }
-                QTreeWidget::item { color: #ecf0f1; }
-                QTabWidget::pane { border: 1px solid #7f8c8d; }
-                QTabBar::tab { background: #1c1c1c; color: #ecf0f1; }
-                QTabBar::tab:selected { background: #2980b9; }
-                QLabel { color: #ecf0f1; }
+                QMainWindow, QWidget { 
+                    background-color: #1e1e1e; 
+                    color: #ffffff; 
+                }
+                QLineEdit, QTextEdit { 
+                    background-color: #2d2d2d; 
+                    color: #ffffff; 
+                    border: 1px solid #3d3d3d;
+                    padding: 5px;
+                }
+                QPushButton { 
+                    background-color: #0d47a1; 
+                    color: white;
+                    border: none;
+                    padding: 8px;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #1565c0;
+                }
+                QTreeWidget { 
+                    background-color: #2d2d2d;
+                    alternate-background-color: #353535;
+                    color: #ffffff;
+                    border: 1px solid #3d3d3d;
+                }
+                QTreeWidget::item:hover {
+                    background-color: #3d3d3d;
+                }
+                QTreeWidget::item:selected {
+                    background-color: #0d47a1;
+                }
+                QHeaderView::section {
+                    background-color: #2d2d2d;
+                    color: #ffffff;
+                    padding: 5px;
+                    border: 1px solid #3d3d3d;
+                }
+                QTabWidget::pane { 
+                    border: 1px solid #3d3d3d; 
+                }
+                QTabBar::tab { 
+                    background: #2d2d2d; 
+                    color: #ffffff;
+                    padding: 8px;
+                }
+                QTabBar::tab:selected { 
+                    background: #0d47a1; 
+                }
+                QLabel { 
+                    color: #ffffff; 
+                }
+                QMenu {
+                    background-color: #2d2d2d;
+                    color: #ffffff;
+                    border: 1px solid #3d3d3d;
+                }
+                QMenu::item:selected {
+                    background-color: #0d47a1;
+                }
+                QGroupBox {
+                    color: #ffffff;
+                    border: 1px solid #3d3d3d;
+                    margin-top: 1ex;
+                }
+                QGroupBox::title {
+                    color: #ffffff;
+                }
+                QComboBox {
+                    background-color: #2d2d2d;
+                    color: #ffffff;
+                    border: 1px solid #3d3d3d;
+                    padding: 5px;
+                }
+                QComboBox:drop-down {
+                    border: none;
+                }
+                QComboBox::down-arrow {
+                    image: none;
+                    border: none;
+                }
+                QSpinBox {
+                    background-color: #2d2d2d;
+                    color: #ffffff;
+                    border: 1px solid #3d3d3d;
+                    padding: 5px;
+                }
+                QCheckBox {
+                    color: #ffffff;
+                }
+                QScrollBar {
+                    background-color: #2d2d2d;
+                }
+                QScrollBar::handle {
+                    background-color: #3d3d3d;
+                }
+                QToolTip {
+                    background-color: #2d2d2d;
+                    color: #ffffff;
+                    border: 1px solid #3d3d3d;
+                }
             """)
         else:
             self.setStyleSheet("""
-                QWidget { background-color: #ecf0f1; color: #2c3e50; }
-                QLineEdit, QTextEdit { background-color: white; color: #2c3e50; border: 1px solid #bdc3c7; }
-                QPushButton { background-color: #3498db; color: white; }
-                QTreeWidget { background-color: white; color: #2c3e50; }
-                QTreeWidget::item { color: #2c3e50; }
-                QTabWidget::pane { border: 1px solid #3498db; }
-                QTabBar::tab { background: #3498db; color: white; }
-                QTabBar::tab:selected { background: #2980b9; }
-                QLabel { color: #2c3e50; }
+                QMainWindow, QWidget { 
+                    background-color: #ffffff; 
+                    color: #000000; 
+                }
+                QLineEdit, QTextEdit { 
+                    background-color: #ffffff; 
+                    color: #000000; 
+                    border: 1px solid #bdc3c7;
+                    padding: 5px;
+                }
+                QPushButton { 
+                    background-color: #3498db; 
+                    color: white;
+                    border: none;
+                    padding: 8px;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #2980b9;
+                }
+                QTreeWidget { 
+                    background-color: #ffffff;
+                    alternate-background-color: #f5f5f5;
+                    color: #000000;
+                    border: 1px solid #bdc3c7;
+                }
+                QTreeWidget::item:hover {
+                    background-color: #e8f0fe;
+                }
+                QTreeWidget::item:selected {
+                    background-color: #3498db;
+                    color: white;
+                }
+                QHeaderView::section {
+                    background-color: #f5f5f5;
+                    color: #000000;
+                    padding: 5px;
+                    border: 1px solid #bdc3c7;
+                }
+                QTabWidget::pane { 
+                    border: 1px solid #bdc3c7; 
+                }
+                QTabBar::tab { 
+                    background: #f5f5f5; 
+                    color: #000000;
+                    padding: 8px;
+                }
+                QTabBar::tab:selected { 
+                    background: #3498db;
+                    color: white;
+                }
+                QGroupBox {
+                    color: #000000;
+                    border: 1px solid #bdc3c7;
+                    margin-top: 1ex;
+                }
+                QGroupBox::title {
+                    color: #000000;
+                }
+                QComboBox, QSpinBox {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #bdc3c7;
+                    padding: 5px;
+                }
             """)
 
     def save_night_mode(self):
@@ -625,7 +777,7 @@ class PS4PKGTool(QMainWindow):
         # Dictionary of descriptions for each key
         self.key_descriptions = {
             "pkg_magic": "Magic number identifying the PKG file format",
-            "pkg_type": "Type of the PKG (e.g., 0x1 for PS4)",
+            "pkg_type": "Type of the PKG (e.g., 0x1 for PS4)", 
             "pkg_0x008": "Reserved field, usually 0",
             "pkg_file_count": "Number of files contained in the PKG",
             "pkg_entry_count": "Number of entries in the PKG table",
@@ -634,7 +786,7 @@ class PS4PKGTool(QMainWindow):
             "pkg_table_offset": "Offset to the start of the PKG table",
             "pkg_entry_data_size": "Size of the entry data in bytes",
             "pkg_body_offset": "Offset to the start of the PKG body",
-            "pkg_body_size": "Size of the PKG body in bytes",
+            "pkg_body_size": "Size of the PKG body in bytes", 
             "pkg_content_offset": "Offset to the start of the content",
             "pkg_content_size": "Size of the content in bytes",
             "pkg_content_id": "Unique identifier for the PKG content",
@@ -646,40 +798,40 @@ class PS4PKGTool(QMainWindow):
             "pkg_version_date": "Version date of the PKG",
             "pkg_version_hash": "Version hash",
             "pkg_0x088": "Reserved field",
-            "pkg_0x08C": "Reserved field",
+            "pkg_0x08C": "Reserved field", 
             "pkg_0x090": "Reserved field",
             "pkg_0x094": "Reserved field",
             "pkg_iro_tag": "IRO (Installation Requirement Option) tag",
             "pkg_drm_type_version": "Version of the DRM type",
             "Main Entry 1 Hash": "Hash of the first main entry",
-            "Main Entry 2 Hash": "Hash of the second main entry",
+            "Main Entry 2 Hash": "Hash of the second main entry", 
             "Digest Table Hash": "Hash of the digest table",
             "Main Table Hash": "Hash of the main table",
             "DESTINATION_COUNTRY": "Region or country code for which the package is intended",
-            "pkg_revision": "Revisione del formato PKG",
-            "pkg_metadata_offset": "Offset dei metadata nel PKG",
-            "pkg_metadata_count": "Numero di entry nei metadata",
-            "pkg_metadata_size": "Dimensione totale dei metadata",
-            "item_count": "Numero totale di file nel PKG",
-            "data_offset": "Offset dei dati nel PKG",
-            "data_size": "Dimensione totale dei dati",
-            "digest": "Hash di verifica del PKG",
-            "pkg_data_riv": "Vettore di inizializzazione per la decrittazione",
-            "pkg_header_digest": "Hash dell'header del PKG",
-            "drm_type": "Tipo di protezione DRM",
-            "content_type": "Tipo di contenuto del PKG",
-            "package_type": "Tipo di pacchetto",
-            "package_flag": "Flag del pacchetto",
-            "package_size": "Dimensione totale del pacchetto",
-            "make_package_npdrm_revision": "Revisione NPDRM",
-            "package_version": "Versione del pacchetto",
-            "title_id": "ID del titolo",
-            "qa_digest": "Hash di verifica QA",
-            "system_version": "Versione minima del sistema richiesta",
-            "app_version": "Versione dell'applicazione",
-            "install_directory": "Directory di installazione",
-            "is_encrypted": "Stato della crittografia",
-            "valid_files": "Numero di file validi nel PKG"
+            "pkg_revision": "PKG format revision",
+            "pkg_metadata_offset": "Offset of metadata in PKG",
+            "pkg_metadata_count": "Number of metadata entries",
+            "pkg_metadata_size": "Total size of metadata",
+            "item_count": "Total number of files in PKG",
+            "data_offset": "Data offset in PKG",
+            "data_size": "Total data size",
+            "digest": "PKG verification hash",
+            "pkg_data_riv": "Initialization vector for decryption",
+            "pkg_header_digest": "PKG header hash",
+            "drm_type": "DRM protection type",
+            "content_type": "PKG content type",
+            "package_type": "Package type",
+            "package_flag": "Package flags",
+            "package_size": "Total package size",
+            "make_package_npdrm_revision": "NPDRM revision",
+            "package_version": "Package version",
+            "title_id": "Title ID",
+            "qa_digest": "QA verification hash",
+            "system_version": "Minimum required system version",
+            "app_version": "Application version",
+            "install_directory": "Installation directory",
+            "is_encrypted": "Encryption status",
+            "valid_files": "Number of valid files in PKG"
         }
 
     def create_file_selection_layout(self, entry_widget, browse_function):
@@ -954,13 +1106,13 @@ class PS4PKGTool(QMainWindow):
         right_column.setStretch(0, 1)  # Image viewer
 
     def load_trophy_files(self):
-        files, _ = QFileDialog.getOpenFileNames(self, "Seleziona i file dei trofei", "", "Tutti i file (*.*)")
+        files, _ = QFileDialog.getOpenFileNames(self, "Select trophy files", "", "All files (*.*)")
         for file in files:
             with open(file, 'rb') as f:
                 data = f.read()
             archiver = Archiver(len(self.trophy_files), os.path.basename(file), 0, len(data), data)
             self.trophy_files.append(archiver)
-        QMessageBox.information(self, "Successo", f"Caricati {len(files)} file dei trofei")
+        QMessageBox.information(self, "Success", f"Loaded {len(files)} trophy files")
 
     def setup_trp_create_tab(self):
         layout = QVBoxLayout(self.trp_create_tab)
@@ -983,61 +1135,151 @@ class PS4PKGTool(QMainWindow):
     def setup_file_browser_tab(self):
         layout = QVBoxLayout(self.file_browser_tab)
         
-        self.file_browser_entry = QLineEdit()
-        layout.addLayout(self.create_file_selection_layout(self.file_browser_entry, lambda: self.browse_file_browser(self.file_browser_entry)))
-
-        self.file_browser_tree = QTreeWidget()
-        self.file_browser_tree.setHeaderLabels(["Name", "Size", "Type"])
-        self.file_browser_tree.setStyleSheet("""
-            QTreeWidget {
-                background-color: white;
-                color: black;
+        # Barra di ricerca con stile migliorato
+        search_layout = QHBoxLayout()
+        self.file_search = QLineEdit()
+        self.file_search.setPlaceholderText("🔍 Cerca file...")
+        self.file_search.textChanged.connect(self.filter_files)
+        self.file_search.setStyleSheet("""
+            QLineEdit {
+                padding: 8px;
+                border: 1px solid #3498db;
+                border-radius: 15px;
                 font-size: 14px;
-                border: none;
-            }
-            QTreeWidget::item {
-                color: black;
             }
         """)
-        self.file_browser_tree.itemClicked.connect(self.display_selected_file)
-        layout.addWidget(self.file_browser_tree)
-
-        self.file_viewer = QTextEdit()
-        self.file_viewer.setReadOnly(True)
-        self.file_viewer.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
-        layout.addWidget(self.file_viewer)
-
-        self.file_browser_log = QTextEdit()
-        self.file_browser_log.setReadOnly(True)
-        self.file_browser_log.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
-        layout.addWidget(self.file_browser_log)
-
-        run_button = QPushButton("Esegui File Browser")
-        run_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
-        run_button.clicked.connect(lambda: self.run_command("file_browser"))
-        layout.addWidget(run_button)
+        search_layout.addWidget(self.file_search)
+        layout.addLayout(search_layout)
         
-        layout.addStretch(1)
+        # TreeWidget migliorato
+        self.file_tree = QTreeWidget()
+        self.file_tree.setHeaderLabels(["Nome", "Dimensione", "Tipo"])
+        self.file_tree.setColumnWidth(0, 400)
+        self.file_tree.setColumnWidth(1, 100)
+        self.file_tree.setColumnWidth(2, 100)
+        self.file_tree.setAlternatingRowColors(True)
+        self.file_tree.setAnimated(True)
+        self.file_tree.setIndentation(20)
+        self.file_tree.setSortingEnabled(True)
         
-        self.load_file_system()
+        # Menu contestuale e doppio click
+        self.file_tree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.file_tree.customContextMenuRequested.connect(self.show_context_menu)
+        self.file_tree.itemDoubleClicked.connect(self.on_item_double_clicked)
+        layout.addWidget(self.file_tree)
 
-    def load_file_system(self):
-        root_path = QFileDialog.getExistingDirectory(self, "Seleziona Directory")
-        if root_path:
-            self.populate_file_tree(root_path)
+    def filter_files(self):
+        search_text = self.file_search.text().lower()
+        
+        def filter_item(item):
+            # Mostra l'item se il testo di ricerca è vuoto o se corrisponde
+            should_show = not search_text or search_text in item.text(0).lower()
+            
+            # Se è una directory, controlla anche i figli
+            if item.childCount() > 0:
+                # Mostra/nascondi i figli
+                for i in range(item.childCount()):
+                    child = item.child(i)
+                    child_visible = filter_item(child)
+                    should_show = should_show or child_visible
+            
+            item.setHidden(not should_show)
+            return should_show
+        
+        # Applica il filtro a tutti gli item di primo livello
+        root = self.file_tree.invisibleRootItem()
+        for i in range(root.childCount()):
+            filter_item(root.child(i))
 
-    def populate_file_tree(self, path, parent_item=None):
-        for root, dirs, files in os.walk(path):
-            if parent_item is None:
-                parent_item = self.file_browser_tree.invisibleRootItem()
-            for dir_name in dirs:
-                dir_item = QTreeWidgetItem(parent_item, [dir_name, "", "Directory"])
-                self.populate_file_tree(os.path.join(root, dir_name), dir_item)
-            for file_name in files:
-                file_path = os.path.join(root, file_name)
-                file_size = os.path.getsize(file_path)
-                file_item = QTreeWidgetItem(parent_item, [file_name, str(file_size), "File"])
-            break
+    def load_files(self):
+        if self.package:
+            self.file_tree.clear()
+            
+            # Dizionario per la struttura delle directory
+            file_structure = {}
+            
+            for file_id, file_info in self.package.files.items():
+                if not file_info.get("name"):
+                    continue
+                    
+                file_path = file_info["name"]
+                path_parts = file_path.split('/')
+                
+                current_dict = file_structure
+                
+                # Crea struttura directory
+                for part in path_parts[:-1]:
+                    if part:
+                        current_dict = current_dict.setdefault(part, {})
+                
+                # Aggiungi file
+                if path_parts[-1]:
+                    current_dict[path_parts[-1]] = file_info
+
+            def add_items(parent_item, structure, path=""):
+                for name, content in sorted(structure.items()):
+                    if isinstance(content, dict):
+                        if any(isinstance(v, dict) for v in content.values()):
+                            # Directory
+                            folder_item = QTreeWidgetItem(parent_item)
+                            folder_item.setText(0, name)
+                            folder_item.setText(1, "")
+                            folder_item.setText(2, "Directory")
+                            folder_item.setIcon(0, self.style().standardIcon(QStyle.SP_DirIcon))
+                            
+                            # Calcola dimensione totale della directory
+                            total_size = self.calculate_directory_size(content)
+                            folder_item.setText(1, self.format_size(total_size))
+                            
+                            current_path = f"{path}/{name}" if path else name
+                            add_items(folder_item, content, current_path)
+                        else:
+                            # File
+                            self.add_file_item(parent_item, name, content)
+
+            # Popola il tree
+            add_items(self.file_tree.invisibleRootItem(), file_structure)
+            self.file_tree.expandAll()
+            
+            # Aggiorna anche la sezione wallpapers
+            self.load_wallpapers()
+            
+            Logger.log_information(f"Loaded {len(self.package.files)} files into browser")
+        else:
+            logging.warning("No PKG file loaded. Unable to populate file browser.")
+
+    def calculate_directory_size(self, directory):
+        total_size = 0
+        for name, content in directory.items():
+            if isinstance(content, dict):
+                if any(isinstance(v, dict) for v in content.values()):
+                    total_size += self.calculate_directory_size(content)
+                else:
+                    total_size += content.get('size', 0)
+        return total_size
+
+    def format_size(self, size):
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024:
+                return f"{size:.2f} {unit}"
+            size /= 1024
+        return f"{size:.2f} TB"
+
+    def add_file_item(self, parent_item, name, file_info):
+        file_item = QTreeWidgetItem(parent_item)
+        file_item.setText(0, name)
+        file_item.setText(1, self.format_size(file_info['size']))
+        file_type = self.get_file_type(os.path.splitext(name)[1].lower())
+        file_item.setText(2, file_type)
+        file_item.setData(0, Qt.UserRole, file_info)
+        
+        # Imposta icona appropriata
+        if file_type == 'Image':
+            file_item.setIcon(0, self.style().standardIcon(QStyle.SP_FileIcon))
+        elif file_type == 'Executable':
+            file_item.setIcon(0, self.style().standardIcon(QStyle.SP_FileLinkIcon))
+        else:
+            file_item.setIcon(0, self.style().standardIcon(QStyle.SP_FileIcon))
 
     def setup_wallpaper_tab(self):
         layout = QVBoxLayout(self.wallpaper_tab)
@@ -1233,51 +1475,256 @@ class PS4PKGTool(QMainWindow):
     def setup_trp_create_tab(self):
         layout = QVBoxLayout(self.trp_create_tab)
         
-        self.trp_info = QTextEdit()
-        self.trp_info.setReadOnly(True)
-        self.trp_info.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
-        layout.addWidget(self.trp_info)
+        self.trp_create_entry = QLineEdit()
+        layout.addLayout(self.create_file_selection_layout(self.trp_create_entry, lambda: self.browse_trp_create(self.trp_create_entry)))
 
-        self.trp_trophy_count = QSpinBox()
-        self.trp_trophy_count.setRange(1, 100)
-        self.trp_trophy_count.setValue(1)
-        layout.addWidget(self.trp_trophy_count)
-
-        self.trp_trophy_description = QTextEdit()
-        self.trp_trophy_description.setPlaceholderText("Enter trophy descriptions and information")
-        self.trp_trophy_description.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
-        layout.addWidget(self.trp_trophy_description)
+        self.trp_create_log = QTextEdit()
+        self.trp_create_log.setReadOnly(True)
+        self.trp_create_log.setStyleSheet("QTextEdit { background-color: white; color: #2c3e50; font-size: 14px; border: none; border-radius: 5px; }")
+        layout.addWidget(self.trp_create_log)
 
         run_button = QPushButton("Create TRP")
         run_button.setStyleSheet("QPushButton { font-size: 16px; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 5px; } QPushButton:hover { background-color: #2980b9; }")
-        run_button.clicked.connect(lambda: self.run_command("create_trp"))
+        run_button.clicked.connect(lambda: self.run_command("trp_create"))
         layout.addWidget(run_button)
         
         layout.addStretch(1)
 
-    def setup_file_browser_tab(self):
-        layout = QVBoxLayout(self.file_browser_tab)
+    def setup_esmf_decrypter_tab(self):
+        layout = QVBoxLayout(self.esmf_decrypter_tab)
         
-        self.file_tree = QTreeWidget()
-        self.file_tree.setHeaderLabels(["File Name", "Size", "Type"])
-        self.file_tree.setColumnWidth(0, 300)
-        self.file_tree.setColumnWidth(1, 100)
-        self.file_tree.setColumnWidth(2, 100)
-        self.file_tree.setStyleSheet("""
-            QTreeWidget { 
-                background-color: white; 
-                color: black; 
-                font-size: 14px; 
-                border: none; 
-            }
-            QTreeWidget::item { 
-                color: black; 
-            }
-        """)
-        self.file_tree.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.file_tree.customContextMenuRequested.connect(self.show_context_menu)
-        self.file_tree.itemDoubleClicked.connect(self.on_item_double_clicked)
-        layout.addWidget(self.file_tree)
+        file_layout = QHBoxLayout()
+        self.esmf_file_entry = QLineEdit()
+        self.esmf_file_entry.setPlaceholderText("Select ESFM file")
+        file_layout.addWidget(self.esmf_file_entry)
+        browse_button = QPushButton("Browse")
+        browse_button.clicked.connect(self.browse_esmf_file)
+        file_layout.addWidget(browse_button)
+        layout.addLayout(file_layout)
+
+        self.cusa_label = QLabel("CUSA: Not loaded")
+        layout.addWidget(self.cusa_label)
+
+        output_layout = QHBoxLayout()
+        self.esmf_output_entry = QLineEdit()
+        self.esmf_output_entry.setPlaceholderText("Select output folder")
+        output_layout.addWidget(self.esmf_output_entry)
+        output_browse_button = QPushButton("Browse")
+        output_browse_button.clicked.connect(self.browse_esmf_output)
+        output_layout.addWidget(output_browse_button)
+        layout.addLayout(output_layout)
+
+        decrypt_button = QPushButton("Decrypt ESFM")
+        decrypt_button.clicked.connect(self.decrypt_esmf)
+        layout.addWidget(decrypt_button)
+
+        self.esmf_log = QTextEdit()
+        self.esmf_log.setReadOnly(True)
+        layout.addWidget(self.esmf_log)
+
+    def browse_esmf_file(self):
+        filename, _ = QFileDialog.getOpenFileName(self, "Select ESFM file", "", "ESFM files (*.ESFM)")
+        if filename:
+            self.esmf_file_entry.setText(filename)
+            self.load_cusa_from_path(filename)
+
+    def load_cusa_from_path(self, file_path):
+        if self.package:
+            content_id = self.package.content_id
+            if content_id:
+                cusa = self.extract_cusa_from_content_id(content_id)
+                if cusa:
+                    self.cusa_label.setText(f"CUSA: {cusa}")
+                    self.cusa = cusa
+                    self.esmf_log.append(f"CUSA extracted from content_id: {cusa}")
+                else:
+                    self.esmf_log.append("CUSA not found in content_id. Trying to extract from file name...")
+                    cusa = self.extract_cusa_from_filename(file_path)
+                    if cusa:
+                        self.cusa_label.setText(f"CUSA: {cusa}")
+                        self.cusa = cusa
+                        self.esmf_log.append(f"CUSA extracted from filename: {cusa}")
+                    else:
+                        self.esmf_log.append("Unable to extract CUSA from filename.")
+            else:
+                self.esmf_log.append("No content_id found in package. Trying to extract CUSA from file name...")
+                cusa = self.extract_cusa_from_filename(file_path)
+                if cusa:
+                    self.cusa_label.setText(f"CUSA: {cusa}")
+                    self.cusa = cusa
+                    self.esmf_log.append(f"CUSA extracted from filename: {cusa}")
+                else:
+                    self.esmf_log.append("Unable to extract CUSA from filename.")
+        else:
+            self.esmf_log.append("No package loaded. Trying to extract CUSA from file name...")
+            cusa = self.extract_cusa_from_filename(file_path)
+            if cusa:
+                self.cusa_label.setText(f"CUSA: {cusa}")
+                self.cusa = cusa
+                self.esmf_log.append(f"CUSA extracted from filename: {cusa}")
+            else:
+                self.esmf_log.append("Unable to extract CUSA from filename.")
+
+    def extract_cusa_from_content_id(self, content_id):
+        match = re.search(r'(CUSA\d{5})', content_id)
+        return match.group(1) if match else None
+
+    def extract_cusa_from_filename(self, file_path):
+        file_name = os.path.basename(file_path)
+        match = re.search(r'(CUSA\d{5})', file_name)
+        return match.group(1) if match else None
+
+    def browse_esmf_output(self):
+        directory = QFileDialog.getExistingDirectory(self, "Select output folder")
+        if directory:
+            self.esmf_output_entry.setText(directory)
+
+    def decrypt_esmf(self):
+        esmf_file = self.esmf_file_entry.text()
+        output_folder = self.esmf_output_entry.text()
+
+        if not esmf_file or not output_folder or not hasattr(self, 'cusa'):
+            QMessageBox.warning(self, "Warning", "Please select ESFM file, output folder, and ensure CUSA is loaded.")
+            return
+
+        try:
+            np_com_id = self.get_np_com_id_from_api(self.cusa)
+            if not np_com_id:
+                QMessageBox.warning(self, "Warning", "Failed to retrieve NP Communication ID from API.")
+                return
+
+            decrypter = ESMFDecrypter()
+            result = decrypter.decrypt_esmf(esmf_file, np_com_id, output_folder)
+            if result:
+                self.esmf_log.append(f"Decryption successful. Output file: {result}")
+                QMessageBox.information(self, "Success", f"ESFM file decrypted successfully.\nOutput file: {result}")
+            else:
+                self.esmf_log.append("Decryption failed.")
+                QMessageBox.critical(self, "Error", "Decryption failed. Check the log for details.")
+        except Exception as e:
+            self.esmf_log.append(f"Error during decryption: {str(e)}")
+            QMessageBox.critical(self, "Error", f"An error occurred during decryption: {str(e)}")
+
+    def get_np_com_id_from_api(self, cusa):
+        base_url = "https://m.np.playstation.com/api/trophy/v1/apps/CUSA{}/trophyTitles"
+        url = base_url.format(cusa[4:])  # Rimuove "CUSA" dal codice
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        }
+
+        try:
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                if 'trophyTitles' in data and len(data['trophyTitles']) > 0:
+                    np_com_id = data['trophyTitles'][0].get('npCommunicationId')
+                    if np_com_id:
+                        self.esmf_log.append(f"NP Communication ID retrieved: {np_com_id}")
+                        return np_com_id
+                    else:
+                        self.esmf_log.append("NP Communication ID not found in API response")
+                else:
+                    self.esmf_log.append("No trophy titles found in API response")
+            else:
+                self.esmf_log.append(f"API request failed with status code: {response.status_code}")
+        except Exception as e:
+            self.esmf_log.append(f"Error during API request: {str(e)}")
+
+        return None
+
+    def load_pkg_icon(self):
+        try:
+            Logger.log_information("Attempting to load PKG icon...")
+            
+            # Recupera e visualizza il content ID
+            content_id = self.get_content_id()
+            if content_id:
+                self.content_id_label.setText(f"Content ID: {content_id}")
+                Logger.log_information(f"Content ID displayed: {content_id}")
+            else:
+                self.content_id_label.setText("Content ID: N/A")
+                Logger.log_warning("No content ID found")
+
+            # Per PS3, cerca prima nella directory temporanea
+            if isinstance(self.package, PackagePS3):
+                icon_path = os.path.join(self.package.temp_dir, 'ICON0.PNG')
+                if os.path.exists(icon_path):
+                    try:
+                        with Image.open(icon_path) as pil_image:
+                            if pil_image.mode != 'RGB':
+                                pil_image = pil_image.convert('RGB')
+                            pil_image.thumbnail((300, 300), Image.Resampling.LANCZOS)
+                            qimage = QImage(pil_image.tobytes(), 
+                                          pil_image.width, 
+                                          pil_image.height, 
+                                          3 * pil_image.width,
+                                          QImage.Format_RGB888)
+                            pixmap = QPixmap.fromImage(qimage)
+                            if not pixmap.isNull():
+                                self.image_label.setPixmap(pixmap)
+                                self.image_label.setAlignment(Qt.AlignCenter)
+                                Logger.log_information("PS3 PKG icon loaded and displayed successfully")
+                                return
+                    except Exception as e:
+                        Logger.log_error(f"Error loading PS3 icon: {str(e)}")
+            
+            # Per PS4/PS5
+            icon_file = next((f for f in self.package.files.values() 
+                             if isinstance(f, dict) and f.get('name', '').lower() in ['icon0.png', 'ICON0.PNG']), None)
+            
+            if icon_file:
+                Logger.log_information(f"Icon file found in package: {icon_file}")
+                try:
+                    icon_data = self.package.read_file(icon_file['id'])
+                    pil_image = Image.open(io.BytesIO(icon_data))
+                    Logger.log_information(f"Icon loaded with PIL: format={pil_image.format}, size={pil_image.size}, mode={pil_image.mode}")
+                    
+                    if pil_image.mode != 'RGB':
+                        pil_image = pil_image.convert('RGB')
+                    
+                    pil_image.thumbnail((300, 300), Image.Resampling.LANCZOS)
+                    qimage = QImage(pil_image.tobytes(), 
+                                  pil_image.width, 
+                                  pil_image.height, 
+                                  3 * pil_image.width,
+                                  QImage.Format_RGB888)
+                    
+                    pixmap = QPixmap.fromImage(qimage)
+                    if not pixmap.isNull():
+                        self.image_label.setPixmap(pixmap)
+                        self.image_label.setAlignment(Qt.AlignCenter)
+                        Logger.log_information("PKG icon loaded and displayed successfully.")
+                        return
+                except Exception as e:
+                    Logger.log_error(f"Error processing icon image: {str(e)}")
+
+        except Exception as e:
+            Logger.log_error(f"Unexpected error loading PKG icon: {str(e)}")
+            self.image_label.setText("Error loading icon")
+
+    def get_content_id(self):
+        """Retrieves the content ID based on package type"""
+        try:
+            if not self.package:
+                return None
+            
+            if isinstance(self.package, PackagePS3):
+                return getattr(self.package, 'content_id', None)
+            elif isinstance(self.package, (PackagePS4, PackagePS5)):
+                return getattr(self.package, 'pkg_content_id', None)
+            
+            # Try to retrieve from other common attributes
+            for attr in ['content_id', 'pkg_content_id']:
+                if hasattr(self.package, attr):
+                    value = getattr(self.package, attr)
+                    if value:
+                        return value
+                        
+            return None
+            
+        except Exception as e:
+            Logger.log_error(f"Error getting content ID: {str(e)}")
+            return None
 
     def show_context_menu(self, position):
         menu = QMenu()
@@ -1336,17 +1783,15 @@ class PS4PKGTool(QMainWindow):
         
         self.wallpaper_tree = QTreeWidget()
         self.wallpaper_tree.setHeaderLabels(["Name", "Size"])
-        self.wallpaper_tree.setColumnWidth(0, 200)
-        self.wallpaper_tree.setColumnWidth(1, 100)
         self.wallpaper_tree.setStyleSheet("""
-            QTreeWidget { 
-                background-color: white; 
-                color: black; 
-                font-size: 14px; 
-                border: none; 
+            QTreeWidget {
+                background-color: white;
+                color: black;
+                font-size: 14px;
+                border: none;
             }
-            QTreeWidget::item { 
-                color: black; 
+            QTreeWidget::item {
+                color: black;
             }
         """)
         self.wallpaper_tree.itemClicked.connect(self.display_selected_wallpaper)
@@ -1355,6 +1800,7 @@ class PS4PKGTool(QMainWindow):
         self.wallpaper_viewer = QLabel()
         self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
         self.wallpaper_viewer.setStyleSheet("background-color: white; border: 1px solid #3498db; border-radius: 5px;")
+        self.wallpaper_viewer.setMinimumSize(300, 300)
         layout.addWidget(self.wallpaper_viewer)
 
         button_layout = QHBoxLayout()
@@ -1377,14 +1823,49 @@ class PS4PKGTool(QMainWindow):
     def load_wallpapers(self):
         if self.package:
             self.wallpaper_tree.clear()
+            
+            # Trova tutti i file immagine
             wallpaper_files = [
                 f for f in self.package.files.values() 
-                if isinstance(f.get("name"), str) and f["name"].lower().endswith(('.png', '.jpg', '.jpeg'))
+                if isinstance(f.get("name"), str) and 
+                f["name"].lower().endswith(('.png', '.jpg', '.jpeg'))
             ]
+            
+            # Organizza in cartelle
+            wallpaper_structure = {}
             for file_info in wallpaper_files:
-                item = QTreeWidgetItem(self.wallpaper_tree)
-                item.setText(0, file_info["name"])
-                item.setText(1, str(file_info['size']))
+                path_parts = file_info["name"].split('/')
+                current_dict = wallpaper_structure
+                
+                # Crea struttura directory
+                for part in path_parts[:-1]:
+                    if part:
+                        current_dict = current_dict.setdefault(part, {})
+                
+                # Aggiungi file
+                if path_parts[-1]:
+                    current_dict[path_parts[-1]] = file_info
+            
+            def add_wallpaper_items(parent_item, structure):
+                for name, content in sorted(structure.items()):
+                    if isinstance(content, dict):
+                        if any(isinstance(v, dict) for v in content.values()):
+                            # Directory
+                            folder_item = QTreeWidgetItem(parent_item)
+                            folder_item.setText(0, name)
+                            folder_item.setIcon(0, self.style().standardIcon(QStyle.SP_DirIcon))
+                            add_wallpaper_items(folder_item, content)
+                        else:
+                            # File
+                            item = QTreeWidgetItem(parent_item)
+                            item.setText(0, name)
+                            item.setText(1, self.format_size(content['size']))
+                            item.setIcon(0, self.style().standardIcon(QStyle.SP_FileIcon))
+            
+            # Popola il tree
+            add_wallpaper_items(self.wallpaper_tree.invisibleRootItem(), wallpaper_structure)
+            self.wallpaper_tree.expandAll()
+            
             Logger.log_information(f"Loaded {len(wallpaper_files)} wallpapers")
             if not wallpaper_files:
                 Logger.log_warning("No wallpaper files found in the package")
@@ -1393,66 +1874,56 @@ class PS4PKGTool(QMainWindow):
 
     def display_selected_wallpaper(self, item, column):
         try:
+            if not self.package:
+                return
+            
             file_name = item.text(0)
             Logger.log_information(f"Attempting to display wallpaper: {file_name}")
             
-            if not self.package:
-                Logger.log_warning("No package loaded")
-                return
-
-            # Per PS3, cerca prima nella directory temporanea
-            if isinstance(self.package, PackagePS3):
-                file_path = os.path.join(self.package.temp_dir, file_name)
-                if os.path.exists(file_path):
-                    try:
-                        with Image.open(file_path) as pil_image:
-                            if pil_image.mode != 'RGB':
-                                pil_image = pil_image.convert('RGB')
-                            pil_image.thumbnail((300, 300), Image.Resampling.LANCZOS)
-                            qimage = QImage(pil_image.tobytes(), 
-                                          pil_image.width, 
-                                          pil_image.height, 
-                                          3 * pil_image.width,
-                                          QImage.Format_RGB888)
-                            pixmap = QPixmap.fromImage(qimage)
-                            if not pixmap.isNull():
-                                self.wallpaper_viewer.setPixmap(pixmap)
-                                self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
-                                Logger.log_information(f"PS3 wallpaper displayed successfully: {file_name}")
-                                return
-                    except Exception as e:
-                        Logger.log_error(f"Error loading PS3 wallpaper: {str(e)}")
+            # Verifica che il file esista nel package corrente
+            file_info = next((f for f in self.package.files.values() 
+                             if f.get('name') == file_name), None)
             
-            # Per PS4/PS5
-            file_info = next((f for f in self.package.files.values() if f.get('name') == file_name), None)
-            if file_info:
-                try:
-                    image_data = self.package.read_file(file_info['id'])
-                    pil_image = Image.open(io.BytesIO(image_data))
-                    
-                    if pil_image.mode != 'RGB':
-                        pil_image = pil_image.convert('RGB')
-                    
-                    pil_image.thumbnail((300, 300), Image.Resampling.LANCZOS)
-                    qimage = QImage(pil_image.tobytes(), 
-                                  pil_image.width, 
-                                  pil_image.height, 
-                                  3 * pil_image.width,
-                                  QImage.Format_RGB888)
-                    
-                    pixmap = QPixmap.fromImage(qimage)
-                    if not pixmap.isNull():
-                        self.wallpaper_viewer.setPixmap(pixmap)
-                        self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
-                        Logger.log_information(f"Wallpaper displayed successfully: {file_name}")
+            if not file_info:
+                Logger.log_warning(f"File {file_name} not found in current package")
+                return
+            
+            try:
+                # Per PS3, usa il percorso del file estratto
+                if isinstance(self.package, PackagePS3):
+                    if 'path' in file_info:
+                        with open(file_info['path'], 'rb') as f:
+                            image_data = f.read()
+                    else:
+                        Logger.log_error(f"File path not found for {file_name}")
                         return
-                except Exception as e:
-                    Logger.log_error(f"Error processing wallpaper: {str(e)}")
-                    QMessageBox.warning(self, "Error", f"Error processing wallpaper: {str(e)}")
-
+                else:
+                    # Per altri pacchetti, usa il metodo read_file
+                    image_data = self.package.read_file(file_info['id'])
+                
+                image = Image.open(io.BytesIO(image_data))
+                image.thumbnail((300, 300), Image.Resampling.LANCZOS)
+                
+                if image.mode != 'RGB':
+                    image = image.convert('RGB')
+                
+                qimage = QImage(image.tobytes(), 
+                              image.width, 
+                              image.height, 
+                              3 * image.width,
+                              QImage.Format_RGB888)
+                
+                pixmap = QPixmap.fromImage(qimage)
+                self.wallpaper_viewer.setPixmap(pixmap)
+                self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
+                
+            except Exception as e:
+                Logger.log_error(f"Error processing wallpaper: {str(e)}")
+                self.wallpaper_viewer.clear()
+            
         except Exception as e:
-            Logger.log_error(f"Unexpected error in display_selected_wallpaper: {str(e)}")
-            QMessageBox.critical(self, "Error", f"An unexpected error occurred: {str(e)}")
+            Logger.log_error(f"Error displaying wallpaper: {str(e)}")
+            self.wallpaper_viewer.clear()
 
     def show_previous_wallpaper(self):
         current_item = self.wallpaper_tree.currentItem()  
@@ -1573,14 +2044,12 @@ class PS4PKGTool(QMainWindow):
             file_structure = {}
             
             for file_id, file_info in self.package.files.items():
-                # Ignora i file senza nome
                 if not file_info.get("name"):
                     continue
                     
                 file_path = file_info["name"]
                 path_parts = file_path.split('/')
                 
-                # Ignora i file con percorsi vuoti
                 if not any(path_parts):
                     continue
                     
@@ -1588,14 +2057,42 @@ class PS4PKGTool(QMainWindow):
                 
                 # Crea la struttura delle directory
                 for part in path_parts[:-1]:
-                    if part:  # Ignora parti vuote del percorso
+                    if part:
                         current_dict = current_dict.setdefault(part, {})
                 
                 # Aggiungi il file alla struttura
-                if path_parts[-1]:  # Ignora nomi file vuoti
+                if path_parts[-1]:
                     current_dict[path_parts[-1]] = file_info
 
-            # Funzione ricorsiva per popolare il QTreeWidget
+            def format_size(size):
+                """Format file size in a readable way"""
+                for unit in ['B', 'KB', 'MB', 'GB']:
+                    if size < 1024:
+                        return f"{size:.2f} {unit}"
+                    size /= 1024
+                return f"{size:.2f} TB"
+
+            def get_file_type(name):
+                """Determine file type based on extension"""
+                ext = os.path.splitext(name)[1].lower()
+                type_map = {
+                    '.png': 'Image',
+                    '.jpg': 'Image',
+                    '.jpeg': 'Image',
+                    '.bin': 'Binary',
+                    '.self': 'Executable',
+                    '.sprx': 'System Plugin',
+                    '.rco': 'Resource',
+                    '.sfo': 'System File',
+                    '.ac3': 'Audio',
+                    '.at3': 'Audio',
+                    '.txt': 'Text',
+                    '.xml': 'XML',
+                    '.json': 'JSON',
+                    '.pkg': 'Package'
+                }
+                return type_map.get(ext, 'Unknown')
+
             def add_items(parent_item, structure):
                 for name, content in sorted(structure.items()):
                     if isinstance(content, dict):
@@ -1603,16 +2100,26 @@ class PS4PKGTool(QMainWindow):
                             # È una directory
                             folder_item = QTreeWidgetItem(parent_item)
                             folder_item.setText(0, name)
+                            folder_item.setText(1, "")
                             folder_item.setText(2, "Directory")
+                            folder_item.setIcon(0, self.style().standardIcon(QStyle.SP_DirIcon))
                             add_items(folder_item, content)
                         else:
                             # È un file
                             file_item = QTreeWidgetItem(parent_item)
                             file_item.setText(0, name)
-                            if 'size' in content:
-                                file_item.setText(1, self.format_size(content['size']))
-                            file_item.setText(2, self.get_file_type(os.path.splitext(name)[1]))
+                            file_item.setText(1, format_size(content['size']))
+                            file_type = get_file_type(name)
+                            file_item.setText(2, file_type)
                             file_item.setData(0, Qt.UserRole, content)
+                            
+                            # Imposta l'icona in base al tipo
+                            if file_type == 'Image':
+                                file_item.setIcon(0, self.style().standardIcon(QStyle.SP_FileIcon))
+                            elif file_type == 'Executable':
+                                file_item.setIcon(0, self.style().standardIcon(QStyle.SP_FileLinkIcon))
+                            else:
+                                file_item.setIcon(0, self.style().standardIcon(QStyle.SP_FileIcon))
 
             # Popola il QTreeWidget
             add_items(self.file_tree.invisibleRootItem(), file_structure)
@@ -1620,17 +2127,9 @@ class PS4PKGTool(QMainWindow):
             # Espandi tutte le cartelle
             self.file_tree.expandAll()
             
-            Logger.log_information(f"Loaded {len(self.package.files)} files into the file browser")
+            logging.info(f"Loaded {len(self.package.files)} files into the file browser")
         else:
-            Logger.log_warning("No PKG file loaded. Unable to populate file browser.")
-
-    def format_size(self, size):
-        """Formatta la dimensione del file in un formato leggibile"""
-        for unit in ['B', 'KB', 'MB', 'GB']:
-            if size < 1024:
-                return f"{size:.2f} {unit}"
-            size /= 1024
-        return f"{size:.2f} TB"
+            logging.warning("No PKG file loaded. Unable to populate file browser.")
 
     def replace_hex(self):
         if not self.offset_entry.text():
@@ -1738,7 +2237,7 @@ class PS4PKGTool(QMainWindow):
             self.update_pkg_entries(filename)  
             self.file_path = filename
             try:
-                # Determina il tipo di pacchetto e crea l'istanza appropriata
+                # Determine package type and create appropriate instance
                 with open(filename, "rb") as fp:
                     magic = struct.unpack(">I", fp.read(4))[0]
                     if magic == PackagePS4.MAGIC_PS4:
@@ -2115,14 +2614,49 @@ class PS4PKGTool(QMainWindow):
     def load_wallpapers(self):
         if self.package:
             self.wallpaper_tree.clear()
+            
+            # Trova tutti i file immagine
             wallpaper_files = [
                 f for f in self.package.files.values() 
-                if isinstance(f.get("name"), str) and f["name"].lower().endswith(('.png', '.jpg', '.jpeg'))
+                if isinstance(f.get("name"), str) and 
+                f["name"].lower().endswith(('.png', '.jpg', '.jpeg'))
             ]
+            
+            # Organizza in cartelle
+            wallpaper_structure = {}
             for file_info in wallpaper_files:
-                item = QTreeWidgetItem(self.wallpaper_tree)
-                item.setText(0, file_info["name"])
-                item.setText(1, str(file_info['size']))
+                path_parts = file_info["name"].split('/')
+                current_dict = wallpaper_structure
+                
+                # Crea struttura directory
+                for part in path_parts[:-1]:
+                    if part:
+                        current_dict = current_dict.setdefault(part, {})
+                
+                # Aggiungi file
+                if path_parts[-1]:
+                    current_dict[path_parts[-1]] = file_info
+            
+            def add_wallpaper_items(parent_item, structure):
+                for name, content in sorted(structure.items()):
+                    if isinstance(content, dict):
+                        if any(isinstance(v, dict) for v in content.values()):
+                            # Directory
+                            folder_item = QTreeWidgetItem(parent_item)
+                            folder_item.setText(0, name)
+                            folder_item.setIcon(0, self.style().standardIcon(QStyle.SP_DirIcon))
+                            add_wallpaper_items(folder_item, content)
+                        else:
+                            # File
+                            item = QTreeWidgetItem(parent_item)
+                            item.setText(0, name)
+                            item.setText(1, self.format_size(content['size']))
+                            item.setIcon(0, self.style().standardIcon(QStyle.SP_FileIcon))
+            
+            # Popola il tree
+            add_wallpaper_items(self.wallpaper_tree.invisibleRootItem(), wallpaper_structure)
+            self.wallpaper_tree.expandAll()
+            
             Logger.log_information(f"Loaded {len(wallpaper_files)} wallpapers")
             if not wallpaper_files:
                 Logger.log_warning("No wallpaper files found in the package")
@@ -2131,66 +2665,147 @@ class PS4PKGTool(QMainWindow):
 
     def display_selected_wallpaper(self, item, column):
         try:
+            if not self.package:
+                return
+            
             file_name = item.text(0)
             Logger.log_information(f"Attempting to display wallpaper: {file_name}")
             
-            if not self.package:
-                Logger.log_warning("No package loaded")
-                return
-
-            # Per PS3, cerca prima nella directory temporanea
-            if isinstance(self.package, PackagePS3):
-                file_path = os.path.join(self.package.temp_dir, file_name)
-                if os.path.exists(file_path):
-                    try:
-                        with Image.open(file_path) as pil_image:
-                            if pil_image.mode != 'RGB':
-                                pil_image = pil_image.convert('RGB')
-                            pil_image.thumbnail((300, 300), Image.Resampling.LANCZOS)
-                            qimage = QImage(pil_image.tobytes(), 
-                                          pil_image.width, 
-                                          pil_image.height, 
-                                          3 * pil_image.width,
-                                          QImage.Format_RGB888)
-                            pixmap = QPixmap.fromImage(qimage)
-                            if not pixmap.isNull():
-                                self.wallpaper_viewer.setPixmap(pixmap)
-                                self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
-                                Logger.log_information(f"PS3 wallpaper displayed successfully: {file_name}")
-                                return
-                    except Exception as e:
-                        Logger.log_error(f"Error loading PS3 wallpaper: {str(e)}")
+            # Verifica che il file esista nel package corrente
+            file_info = next((f for f in self.package.files.values() 
+                             if f.get('name') == file_name), None)
             
-            # Per PS4/PS5
-            file_info = next((f for f in self.package.files.values() if f.get('name') == file_name), None)
-            if file_info:
-                try:
-                    image_data = self.package.read_file(file_info['id'])
-                    pil_image = Image.open(io.BytesIO(image_data))
-                    
-                    if pil_image.mode != 'RGB':
-                        pil_image = pil_image.convert('RGB')
-                    
-                    pil_image.thumbnail((300, 300), Image.Resampling.LANCZOS)
-                    qimage = QImage(pil_image.tobytes(), 
-                                  pil_image.width, 
-                                  pil_image.height, 
-                                  3 * pil_image.width,
-                                  QImage.Format_RGB888)
-                    
-                    pixmap = QPixmap.fromImage(qimage)
-                    if not pixmap.isNull():
-                        self.wallpaper_viewer.setPixmap(pixmap)
-                        self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
-                        Logger.log_information(f"Wallpaper displayed successfully: {file_name}")
+            if not file_info:
+                Logger.log_warning(f"File {file_name} not found in current package")
+                return
+            
+            try:
+                # Per PS3, usa il percorso del file estratto
+                if isinstance(self.package, PackagePS3):
+                    if 'path' in file_info:
+                        with open(file_info['path'], 'rb') as f:
+                            image_data = f.read()
+                    else:
+                        Logger.log_error(f"File path not found for {file_name}")
                         return
-                except Exception as e:
-                    Logger.log_error(f"Error processing wallpaper: {str(e)}")
-                    QMessageBox.warning(self, "Error", f"Error processing wallpaper: {str(e)}")
-
+                else:
+                    # Per altri pacchetti, usa il metodo read_file
+                    image_data = self.package.read_file(file_info['id'])
+                
+                image = Image.open(io.BytesIO(image_data))
+                image.thumbnail((300, 300), Image.Resampling.LANCZOS)
+                
+                if image.mode != 'RGB':
+                    image = image.convert('RGB')
+                
+                qimage = QImage(image.tobytes(), 
+                              image.width, 
+                              image.height, 
+                              3 * image.width,
+                              QImage.Format_RGB888)
+                
+                pixmap = QPixmap.fromImage(qimage)
+                self.wallpaper_viewer.setPixmap(pixmap)
+                self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
+                
+            except Exception as e:
+                Logger.log_error(f"Error processing wallpaper: {str(e)}")
+                self.wallpaper_viewer.clear()
+            
         except Exception as e:
-            Logger.log_error(f"Unexpected error in display_selected_wallpaper: {str(e)}")
-            QMessageBox.critical(self, "Error", f"An unexpected error occurred: {str(e)}")
+            Logger.log_error(f"Error displaying wallpaper: {str(e)}")
+            self.wallpaper_viewer.clear()
+
+    def show_previous_wallpaper(self):
+        current_item = self.wallpaper_tree.currentItem()  
+        if current_item:
+            current_index = self.wallpaper_tree.indexOfTopLevelItem(current_item)
+            if current_index > 0:
+                previous_item = self.wallpaper_tree.topLevelItem(current_index - 1)
+                self.wallpaper_tree.setCurrentItem(previous_item)
+                self.display_selected_wallpaper(previous_item, 0)
+
+    def show_next_wallpaper(self):
+        current_item = self.wallpaper_tree.currentItem()  
+        if current_item:
+            current_index = self.wallpaper_tree.indexOfTopLevelItem(current_item)
+            if current_index < self.wallpaper_tree.topLevelItemCount() - 1:
+                next_item = self.wallpaper_tree.topLevelItem(current_index + 1)
+                self.wallpaper_tree.setCurrentItem(next_item)
+                self.display_selected_wallpaper(next_item, 0)
+
+    def show_fullscreen_wallpaper(self):
+        try:
+            current_item = self.wallpaper_tree.currentItem()  
+            if current_item:
+                file_name = current_item.text(0)
+                file_info = next((f for f in self.package.files.values() if f.get("name") == file_name), None)
+                if file_info:
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(self.package.read_file(file_info["id"]))
+                    
+                    fullscreen_dialog = QDialog(self)
+                    fullscreen_dialog.setWindowTitle("Fullscreen Wallpaper")
+                    layout = QVBoxLayout(fullscreen_dialog)
+                    label = QLabel()
+                    
+                    screen_size = QApplication.primaryScreen().size()
+                    label.setPixmap(pixmap.scaled(screen_size, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                    
+                    layout.addWidget(label)
+                    fullscreen_dialog.showFullScreen()
+        except Exception as e:
+            Logger.log_error(f"Error displaying fullscreen wallpaper: {str(e)}")
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+
+    def modify_wallpaper(self):
+        selected_items = self.wallpaper_tree.selectedItems()  # Usa il widget corretto
+        if selected_items:
+            item = selected_items[0]
+            file_name = item.text(0)
+            file_info = next((f for f in self.package.files.values() if f.get("name") == file_name), None)
+            if file_info:
+                # Extract the file temporarily
+                temp_file_path = os.path.join(self.temp_directory, file_name)
+                with open(temp_file_path, 'wb') as temp_file:
+                    temp_file.write(self.package.read_file(file_info["id"]))
+
+                # Open the default image editor for the operating system
+                try:
+                    if sys.platform == "win32":
+                        os.startfile(temp_file_path)
+                    elif sys.platform == "darwin":
+                        subprocess.call(["open", temp_file_path])
+                    else:
+                        subprocess.call(["xdg-open", temp_file_path])
+                    
+                    QMessageBox.information(self, "Modify Wallpaper", f"Modifying wallpaper: {file_name}")
+                    
+                    # Wait for the user to finish editing and close the editor
+                    reply = QMessageBox.question(self, 'Confirm', 
+                                                 "Have you finished modifying the wallpaper?",
+                                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                    
+                    if reply == QMessageBox.Yes:
+                        # Read the modified file and update it in the package
+                        with open(temp_file_path, 'rb') as modified_file:
+                            modified_data = modified_file.read()
+                        self.package.update_file(file_info["id"], modified_data)
+                        
+                        # Update the display
+                        self.display_selected_wallpaper(item, 0)
+                        QMessageBox.information(self, "Success", "Wallpaper updated successfully")
+                    
+                    # Remove the temporary file
+                    os.remove(temp_file_path)
+                
+                except Exception as e:
+                    Logger.log_error(f"Error opening image editor: {e}")
+                    QMessageBox.critical(self, "Error", f"Error opening image editor: {e}")
+            else:
+                QMessageBox.warning(self, "Warning", "Selected wallpaper not found in the package.")
+        else:
+            QMessageBox.warning(self, "Warning", "No wallpaper selected.")
 
     def update_pkg_entries(self, filename):
         # Update all input fields related to the PKG with the new filename
@@ -2218,32 +2833,43 @@ class PS4PKGTool(QMainWindow):
         
     def load_pkg(self, pkg_path):
         try:
-            # Chiudi il package precedente se esiste
+            # Reset selections and references
+            self.wallpaper_tree.clearSelection()
+            self.file_tree.clearSelection()
+            self.wallpaper_viewer.clear()
+            self.image_label.clear()
+            
+            # Close previous package if it exists
             if self.package:
-                self.package = None
-                Logger.log_information("Previous package closed")
+                try:
+                    if hasattr(self.package, 'close'):
+                        self.package.close()
+                    self.package = None
+                    Logger.log_information("Previous package closed and cleaned")
+                except Exception as e:
+                    Logger.log_error(f"Error closing previous package: {str(e)}")
 
-            # Determina il tipo di pacchetto e crea l'istanza appropriata
+            # Determine package type and create appropriate instance
             with open(pkg_path, "rb") as fp:
                 magic = struct.unpack(">I", fp.read(4))[0]
                 if magic == PackagePS4.MAGIC_PS4:
                     self.package = PackagePS4(pkg_path)
                     Logger.log_information("PS4 PKG detected")
-                    # Estrai il content ID per PS4
+                    # Extract content ID for PS4
                     if hasattr(self.package, 'pkg_content_id'):
                         self.content_id = self.package.pkg_content_id
                         Logger.log_information(f"Content ID found: {self.content_id}")
                 elif magic == PackagePS5.MAGIC_PS5:
                     self.package = PackagePS5(pkg_path)
                     Logger.log_information("PS5 PKG detected")
-                    # Estrai il content ID per PS5
+                    # Extract content ID for PS5
                     if hasattr(self.package, 'pkg_content_id'):
                         self.content_id = self.package.pkg_content_id
                         Logger.log_information(f"Content ID found: {self.content_id}")
                 elif magic == PackagePS3.MAGIC_PS3:
                     self.package = PackagePS3(pkg_path)
                     Logger.log_information("PS3 PKG detected")
-                    # Estrai il content ID per PS3
+                    # Extract content ID for PS3
                     if hasattr(self.package, 'content_id'):
                         self.content_id = self.package.content_id
                         Logger.log_information(f"Content ID found: {self.content_id}")
@@ -2256,7 +2882,7 @@ class PS4PKGTool(QMainWindow):
             self.load_pkg_icon()
             self.load_files()
 
-            # Estrai il CUSA dal content ID
+            # Extract CUSA from content ID
             if hasattr(self.package, 'content_id'):
                 cusa_match = re.search(r'(CUSA\d{5})', self.package.content_id)
                 if cusa_match:
@@ -2486,7 +3112,7 @@ class PS4PKGTool(QMainWindow):
             self.image_label.setText("Error loading icon")
 
     def get_content_id(self):
-        """Recupera il content ID in base al tipo di pacchetto"""
+        """Retrieves the content ID based on package type"""
         try:
             if not self.package:
                 return None
@@ -2496,7 +3122,7 @@ class PS4PKGTool(QMainWindow):
             elif isinstance(self.package, (PackagePS4, PackagePS5)):
                 return getattr(self.package, 'pkg_content_id', None)
             
-            # Prova a recuperare da altri attributi comuni
+            # Try to retrieve from other common attributes
             for attr in ['content_id', 'pkg_content_id']:
                 if hasattr(self.package, attr):
                     value = getattr(self.package, attr)
@@ -2508,6 +3134,351 @@ class PS4PKGTool(QMainWindow):
         except Exception as e:
             Logger.log_error(f"Error getting content ID: {str(e)}")
             return None
+
+    def setup_settings_button(self):
+        """Add settings button to toolbar"""
+        settings_toolbar = QToolBar()
+        settings_toolbar.setIconSize(QSize(24, 24))
+        settings_toolbar.setStyleSheet("""
+            QToolBar {
+                spacing: 10px;
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        # Usa l'icona dell'ingranaggio invece di quella generica
+        settings_button = QAction(self.style().standardIcon(QStyle.SP_FileDialogDetailedView), "", self)
+        settings_button.setToolTip("Settings")
+        settings_button.triggered.connect(self.show_settings_dialog)
+        
+        settings_toolbar.addAction(settings_button)
+        # Posiziona la toolbar nell'angolo in alto a destra
+        self.addToolBar(Qt.TopToolBarArea, settings_toolbar)
+        settings_toolbar.setMovable(False)  # Impedisce lo spostamento della toolbar
+
+    def show_settings_dialog(self):
+        """Show settings dialog"""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Settings")
+        dialog.setMinimumWidth(500)
+        
+        layout = QVBoxLayout(dialog)
+        
+        # Tabs per le impostazioni
+        tabs = QTabWidget()
+        
+        # Tab Appearance
+        appearance_tab = QWidget()
+        appearance_layout = QVBoxLayout(appearance_tab)
+        
+        # Theme Selection
+        theme_group = QGroupBox("Theme")
+        theme_layout = QVBoxLayout()
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItems(["Light", "Dark", "System"])
+        theme_layout.addWidget(self.theme_combo)
+        theme_group.setLayout(theme_layout)
+        appearance_layout.addWidget(theme_group)
+        
+        # Font Settings
+        font_group = QGroupBox("Font")
+        font_layout = QGridLayout()
+        
+        self.font_combo = QComboBox()
+        self.font_combo.addItems(QFontDatabase().families())
+        
+        self.font_size_spin = QSpinBox()
+        self.font_size_spin.setRange(8, 24)
+        self.font_size_spin.setValue(12)
+        
+        font_layout.addWidget(QLabel("Font:"), 0, 0)
+        font_layout.addWidget(self.font_combo, 0, 1)
+        font_layout.addWidget(QLabel("Size:"), 1, 0)
+        font_layout.addWidget(self.font_size_spin, 1, 1)
+        
+        font_group.setLayout(font_layout)
+        appearance_layout.addWidget(font_group)
+        
+        # Colors
+        colors_group = QGroupBox("Colors")
+        colors_layout = QGridLayout()
+        
+        self.bg_color_button = QPushButton()
+        self.text_color_button = QPushButton()
+        self.accent_color_button = QPushButton()
+        
+        colors_layout.addWidget(QLabel("Background:"), 0, 0)
+        colors_layout.addWidget(self.bg_color_button, 0, 1)
+        colors_layout.addWidget(QLabel("Text:"), 1, 0)
+        colors_layout.addWidget(self.text_color_button, 1, 1)
+        colors_layout.addWidget(QLabel("Accent:"), 2, 0)
+        colors_layout.addWidget(self.accent_color_button, 2, 1)
+        
+        self.bg_color_button.clicked.connect(lambda: self.pick_color("background"))
+        self.text_color_button.clicked.connect(lambda: self.pick_color("text"))
+        self.accent_color_button.clicked.connect(lambda: self.pick_color("accent"))
+        
+        colors_group.setLayout(colors_layout)
+        appearance_layout.addWidget(colors_group)
+        
+        tabs.addTab(appearance_tab, "Appearance")
+        
+        # Tab Behavior
+        behavior_tab = QWidget()
+        behavior_layout = QVBoxLayout(behavior_tab)
+        
+        self.auto_expand_check = QCheckBox("Auto-expand file tree")
+        self.show_hidden_check = QCheckBox("Show hidden files")
+        self.confirm_exit_check = QCheckBox("Confirm before exit")
+        
+        behavior_layout.addWidget(self.auto_expand_check)
+        behavior_layout.addWidget(self.show_hidden_check)
+        behavior_layout.addWidget(self.confirm_exit_check)
+        behavior_layout.addStretch()
+        
+        tabs.addTab(behavior_tab, "Behavior")
+        
+        # Tab Paths
+        paths_tab = QWidget()
+        paths_layout = QVBoxLayout(paths_tab)
+        
+        paths_group = QGroupBox("Default Paths")
+        paths_inner_layout = QGridLayout()
+        
+        self.output_path_edit = QLineEdit()
+        self.temp_path_edit = QLineEdit()
+        
+        output_browse = QPushButton("Browse")
+        temp_browse = QPushButton("Browse")
+        
+        output_browse.clicked.connect(lambda: self.browse_directory(self.output_path_edit))
+        temp_browse.clicked.connect(lambda: self.browse_directory(self.temp_path_edit))
+        
+        paths_inner_layout.addWidget(QLabel("Output:"), 0, 0)
+        paths_inner_layout.addWidget(self.output_path_edit, 0, 1)
+        paths_inner_layout.addWidget(output_browse, 0, 2)
+        paths_inner_layout.addWidget(QLabel("Temp:"), 1, 0)
+        paths_inner_layout.addWidget(self.temp_path_edit, 1, 1)
+        paths_inner_layout.addWidget(temp_browse, 1, 2)
+        
+        paths_group.setLayout(paths_inner_layout)
+        paths_layout.addWidget(paths_group)
+        paths_layout.addStretch()
+        
+        tabs.addTab(paths_tab, "Paths")
+        
+        layout.addWidget(tabs)
+        
+        # Buttons
+        button_box = QHBoxLayout()
+        save_button = QPushButton("Save")
+        reset_button = QPushButton("Reset to Default")
+        cancel_button = QPushButton("Cancel")
+        
+        save_button.clicked.connect(lambda: self.save_and_apply_settings(dialog))
+        reset_button.clicked.connect(self.reset_settings)
+        cancel_button.clicked.connect(dialog.reject)
+        
+        button_box.addWidget(save_button)
+        button_box.addWidget(reset_button)
+        button_box.addWidget(cancel_button)
+        
+        layout.addLayout(button_box)
+        
+        # Carica le impostazioni correnti
+        self.load_settings()
+        
+        dialog.exec_()
+
+    def save_and_apply_settings(self, dialog):
+        """Save settings and apply them immediately"""
+        self.save_settings()
+        self.apply_settings()
+        dialog.accept()
+
+    def apply_settings(self):
+        """Apply current settings"""
+        # Applica il tema
+        self.change_theme(self.theme_combo.currentText())
+        
+        # Applica il font
+        font = QFont(self.font_combo.currentText(), self.font_size_spin.value())
+        QApplication.setFont(font)
+        
+        # Applica i colori
+        bg_color = self.bg_color_button.styleSheet()
+        text_color = self.text_color_button.styleSheet()
+        accent_color = self.accent_color_button.styleSheet()
+        
+        # Aggiorna lo stile dell'applicazione con i nuovi colori
+        self.update_style_with_colors(bg_color, text_color, accent_color)
+        
+        # Applica le impostazioni di comportamento
+        if hasattr(self, 'file_tree'):
+            if self.auto_expand_check.isChecked():
+                self.file_tree.expandAll()
+            else:
+                self.file_tree.collapseAll()
+
+    def update_style_with_colors(self, bg_color, text_color, accent_color):
+        """Update application style with custom colors"""
+        bg_color = bg_color.replace("background-color: ", "").strip()
+        text_color = text_color.replace("background-color: ", "").strip()
+        accent_color = accent_color.replace("background-color: ", "").strip()
+        
+        if self.night_mode:
+            self.setStyleSheet(f"""
+                QMainWindow, QWidget {{ 
+                    background-color: {bg_color or "#1e1e1e"}; 
+                    color: {text_color or "#ffffff"}; 
+                }}
+                QPushButton {{ 
+                    background-color: {accent_color or "#0d47a1"}; 
+                    color: {text_color or "#ffffff"};
+                }}
+                /* ... resto dello stile dark mode ... */
+            """)
+        else:
+            self.setStyleSheet(f"""
+                QMainWindow, QWidget {{ 
+                    background-color: {bg_color or "#ffffff"}; 
+                    color: {text_color or "#000000"}; 
+                }}
+                QPushButton {{ 
+                    background-color: {accent_color or "#3498db"}; 
+                    color: {text_color or "#ffffff"};
+                }}
+                /* ... resto dello stile light mode ... */
+            """)
+
+    def reset_settings(self):
+        """Reset all settings to default"""
+        reply = QMessageBox.question(self, "Confirm Reset", 
+                                   "Are you sure you want to reset all settings to default?",
+                                   QMessageBox.Yes | QMessageBox.No)
+        
+        if reply == QMessageBox.Yes:
+            # Reset theme
+            self.theme_combo.setCurrentText("Light")
+            self.night_mode = False
+            
+            # Reset font
+            self.font_combo.setCurrentText("Arial")
+            self.font_size_spin.setValue(12)
+            QApplication.setFont(QFont("Arial", 12))
+            
+            # Reset colors
+            self.bg_color_button.setStyleSheet("")
+            self.text_color_button.setStyleSheet("")
+            self.accent_color_button.setStyleSheet("")
+            
+            # Reset behavior settings
+            self.auto_expand_check.setChecked(True)
+            self.show_hidden_check.setChecked(False)
+            self.confirm_exit_check.setChecked(True)
+            
+            # Reset paths
+            self.output_path_edit.clear()
+            self.temp_path_edit.clear()
+            
+            # Apply default style
+            self.set_style()
+            
+            # Save default settings
+            self.save_settings()
+            
+            Logger.log_information("Settings reset to default")
+
+    def save_settings(self):
+        """Save all settings to file"""
+        settings = {
+            "theme": self.theme_combo.currentText(),
+            "night_mode": self.night_mode,
+            "font": self.font_combo.currentText(),
+            "font_size": self.font_size_spin.value(),
+            "bg_color": self.bg_color_button.styleSheet(),
+            "text_color": self.text_color_button.styleSheet(),
+            "accent_color": self.accent_color_button.styleSheet(),
+            "auto_expand": self.auto_expand_check.isChecked(),
+            "show_hidden": self.show_hidden_check.isChecked(),
+            "confirm_exit": self.confirm_exit_check.isChecked(),
+            "output_path": self.output_path_edit.text(),
+            "temp_path": self.temp_path_edit.text()
+        }
+        
+        try:
+            with open("settings.json", "w") as f:
+                json.dump(settings, f, indent=4)
+            Logger.log_information("Settings saved successfully")
+        except Exception as e:
+            Logger.log_error(f"Error saving settings: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to save settings: {str(e)}")
+
+    def load_settings(self):
+        """Load settings from file"""
+        try:
+            with open("settings.json", "r") as f:
+                settings = json.load(f)
+                
+            # Load and apply theme
+            self.theme_combo.setCurrentText(settings.get("theme", "Light"))
+            self.night_mode = settings.get("night_mode", False)
+            
+            # Load font settings
+            self.font_combo.setCurrentText(settings.get("font", "Arial"))
+            self.font_size_spin.setValue(settings.get("font_size", 12))
+            
+            # Load colors
+            self.bg_color_button.setStyleSheet(settings.get("bg_color", ""))
+            self.text_color_button.setStyleSheet(settings.get("text_color", ""))
+            self.accent_color_button.setStyleSheet(settings.get("accent_color", ""))
+            
+            # Load behavior settings
+            self.auto_expand_check.setChecked(settings.get("auto_expand", True))
+            self.show_hidden_check.setChecked(settings.get("show_hidden", False))
+            self.confirm_exit_check.setChecked(settings.get("confirm_exit", True))
+            
+            # Load paths
+            self.output_path_edit.setText(settings.get("output_path", ""))
+            self.temp_path_edit.setText(settings.get("temp_path", ""))
+            
+            Logger.log_information("Settings loaded successfully")
+        except FileNotFoundError:
+            Logger.log_information("No settings file found, using defaults")
+        except Exception as e:
+            Logger.log_error(f"Error loading settings: {str(e)}")
+            QMessageBox.warning(self, "Warning", f"Failed to load settings: {str(e)}")
+
+    def change_theme(self, theme_name):
+        """Change application theme"""
+        if theme_name == "Dark":
+            self.night_mode = True
+        elif theme_name == "Light":
+            self.night_mode = False
+        elif theme_name == "System":
+            # TODO: Implement system theme detection
+            pass
+        self.set_style()
+
+    def pick_color(self, color_type):
+        """Open color picker dialog"""
+        color = QColorDialog.getColor()
+        if color.isValid():
+            style = f"background-color: {color.name()}"
+            if color_type == "background":
+                self.bg_color_button.setStyleSheet(style)
+            elif color_type == "text":
+                self.text_color_button.setStyleSheet(style)
+            elif color_type == "accent":
+                self.accent_color_button.setStyleSheet(style)
+            self.apply_settings()
+
+    def browse_directory(self, line_edit):
+        """Browse for directory"""
+        directory = QFileDialog.getExistingDirectory(self, "Select Directory")
+        if directory:
+            line_edit.setText(directory)
 
 def start_gui(run_command_callback, temp_directory):
     app = QApplication(sys.argv)
