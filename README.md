@@ -1,5 +1,6 @@
 # PKG Tool Box
-
+[![Github All Releases](https://img.shields.io/github/downloads/seregonwar/PkgToolBox/total.svg)]()
+--
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/seregon)
 
 ## 🤝 Contributions Welcome!
