@@ -1,4 +1,4 @@
-﻿import struct
+import struct
 import io
 import zipfile
 from typing import List, Optional
@@ -143,5 +143,4 @@ class Utils:
     def clamp4(value: int) -> int:
         return Utils.clamp(value, -8, 7)
 
-# The rest of the classes and functions would need to be implemented similarly,
-# translating C# concepts to their Python equivalents.
+
