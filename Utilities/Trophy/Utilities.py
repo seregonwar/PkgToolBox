@@ -4,7 +4,7 @@ import threading
 import io
 
 class Utilities:
-    # Definizione del byte array imgStandardIcon
+    # Byte array definition imgStandardIcon
     imgStandardIcon = [
         137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 48, 0, 0, 0, 48, 8, 6, 0, 0, 0, 87, 2, 249,
         135, 0, 0, 3, 197, 73, 68, 65, 84, 120, 156, 237, 89, 221, 106, 19, 65, 20, 254, 102, 119, 147, 108, 154, 100, 211,
