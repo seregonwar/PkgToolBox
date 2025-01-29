@@ -18,7 +18,7 @@ Currently, I am the only developer 👨‍💻 and handling all the work can be 
 PS4 PKG Tool is a tool for manipulating PS4 PKG files. It allows you to extract, inject, modify, and obtain information about PKG files.
 
 ## Contributions
-- **[Sinajet](https://github.com/sinajet/)**: Creator of **[PS5-Game-Info](https://github.com/sinajet/PS5-Game-Info)**, used in the program to read `eboot.bin` packages from `.pkg` files and recognize whether they are fake or not.
+- **[Sinajet](https://github.com/sinajet/)**: Creator of **[PS5-Game-Info](https://github.com/sinajet/PS5-Game-Info)**, used in the program to read `eboot.bin` packages from `.pkg` files and recognize whether they are fpkg or not.
 
 ## Features
 - **Extraction**: Extract specific files from a PKG.
