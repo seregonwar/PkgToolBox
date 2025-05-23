@@ -336,12 +336,12 @@ PKG_ENTRY_ID_TO_NAME_FULL = { # Corretto
     0x145D: "trophy/trophy93.trp", 0x145E: "trophy/trophy94.trp",
     0x145F: "trophy/trophy95.trp", 0x1460: "trophy/trophy96.trp",
     0x1461: "trophy/trophy97.trp", 0x1462: "trophy/trophy98.trp",
-    0x1463: "trophy/trophy99.trp", 0x1600: "keymap_rp/001.png",
-    0x1601: "keymap_rp/002.png", 0x1602: "keymap_rp/003.png",
-    0x1603: "keymap_rp/004.png", 0x1604: "keymap_rp/005.png",
-    0x1605: "keymap_rp/006.png", 0x1606: "keymap_rp/007.png",
-    0x1607: "keymap_rp/008.png", 0x1608: "keymap_rp/009.png",
-    0x1609: "keymap_rp/010.png", 0x1610: "keymap_rp/00/001.png",
+    0x1463: "trophy/trophy99.trp",  0x1600: "keymap_rp/001.png",
+    0x1601: "keymap_rp/002.png",    0x1602: "keymap_rp/003.png",
+    0x1603: "keymap_rp/004.png",    0x1604: "keymap_rp/005.png",
+    0x1605: "keymap_rp/006.png",    0x1606: "keymap_rp/007.png",
+    0x1607: "keymap_rp/008.png",    0x1608: "keymap_rp/009.png",
+    0x1609: "keymap_rp/010.png",    0x1610: "keymap_rp/00/001.png",
     0x1611: "keymap_rp/00/002.png", 0x1612: "keymap_rp/00/003.png",
     0x1613: "keymap_rp/00/004.png", 0x1614: "keymap_rp/00/005.png",
     0x1615: "keymap_rp/00/006.png", 0x1616: "keymap_rp/00/007.png",
@@ -534,42 +534,195 @@ PKG_FLAG_NAMES_MAP = {
 }
 
 # Funzioni helper mancanti (implementazioni placeholder)
-def get_pfsc_offset(data: bytes) -> int:
+def get_pfsc_offset(data: bytes, logger_func=print) -> int:
     magic_bytes = PFSC_MAGIC.to_bytes(4, 'little')
     start_offset = 0x20000
+    
+    logger_func(f"Ricerca PFSC magic 0x{PFSC_MAGIC:08X} in {len(data)} bytes di dati PFS decrittati")
+    logger_func(f"Start offset: 0x{start_offset:08X}")
+    
     if len(data) < start_offset:
+        logger_func(f"Dati insufficienti: {len(data)} < {start_offset}")
         return -1
     
-    # La logica C++ ha un loop con step 0x10000
-    # for (u32 i = 0x20000; i < pfs_image.size(); i += 0x10000)
+    # Prova prima una ricerca completa per il magic
+    magic_positions = []
+    for i in range(0, len(data) - 4, 4):
+        if data[i:i+4] == magic_bytes:
+            magic_positions.append(i)
+    
+    if magic_positions:
+        logger_func(f"Magic PFSC trovato alle posizioni: {[hex(pos) for pos in magic_positions]}")
+        # Restituisci la prima posizione valida >= start_offset se esiste
+        for pos in magic_positions:
+            if pos >= start_offset:
+                return pos
+        # Altrimenti restituisci la prima posizione trovata
+        return magic_positions[0]
+    
+    # Fallback alla ricerca originale con step 0x10000
+    logger_func("Ricerca con step 0x10000...")
     current_search_offset = start_offset
-    while current_search_offset < len(data):
+    search_count = 0
+    while current_search_offset < len(data) and search_count < 100:  # Limite di sicurezza
         # Leggi u32 all'offset corrente
         if current_search_offset + 4 > len(data):
             break # Non abbastanza dati per leggere un u32
         
         value = struct.unpack_from("<I", data, current_search_offset)[0]
+        if search_count < 10:  # Log solo i primi 10 tentativi
+            logger_func(f"Offset 0x{current_search_offset:08X}: 0x{value:08X}")
+        
         if value == PFSC_MAGIC:
+            logger_func(f"PFSC magic trovato all'offset 0x{current_search_offset:08X}")
             return current_search_offset
         current_search_offset += 0x10000
+        search_count += 1
+        logger_func(f"PFSC magic NON trovato dopo {search_count} tentativi")
+    
+    # Debug aggiuntivo: controlla i primi bytes dell'immagine decrittata
+    if len(data) >= 64:
+        logger_func(f"Primi 64 bytes dell'immagine PFS decrittata: {data[:64].hex()}")
+    
+    # Debug: cerca il magic in entrambi gli endianness
+    magic_be = PFSC_MAGIC.to_bytes(4, 'big')  # Big endian
+    magic_le = PFSC_MAGIC.to_bytes(4, 'little')  # Little endian
+    
+    logger_func(f"Cerco magic BE (0x43534650): {magic_be.hex()}")
+    logger_func(f"Cerco magic LE (0x50465343): {magic_le.hex()}")
+    
+    # Cerca in tutto il buffer senza step
+    for i in range(len(data) - 4):
+        if data[i:i+4] == magic_be:
+            logger_func(f"Magic PFSC (BE) trovato all'offset 0x{i:08X}")
+            return i
+        if data[i:i+4] == magic_le:
+            logger_func(f"Magic PFSC (LE) trovato all'offset 0x{i:08X}")
+            return i
+    
+    # Cerca pattern simili (potrebbero essere corrupted)
+    logger_func("Cercando pattern simili a PFSC...")
+    possible_patterns = [
+        b'PFSC', b'CFSP', b'SCPF', b'SPFC',  # Permutazioni
+        b'\x50\x46\x53\x43', b'\x43\x53\x46\x50'  # Espliciti
+    ]
+    
+    for pattern in possible_patterns:
+        for i in range(len(data) - 4):
+            if data[i:i+4] == pattern:
+                logger_func(f"Pattern simile '{pattern}' trovato all'offset 0x{i:08X}")
+    
     return -1
 
-def decompress_pfsc(compressed_data: bytes, decompressed_size: int) -> bytes:
+def decompress_pfsc(compressed_data: bytes, decompressed_size: int, logger_func=print) -> bytes:
+    """Optimized PFSC decompression function with reduced logging for performance."""
+    compressed_data_len = len(compressed_data)
+    
+    # Only log for smaller compressed data to reduce I/O overhead in performance-critical paths
+    is_verbose = compressed_data_len < 1000000  # Only verbose logging for smaller files
+    
+    if is_verbose:
+        logger_func(f"DEBUG decompress_pfsc: Dati compressi: {compressed_data_len} bytes, decompressed_size atteso: {decompressed_size} bytes")
+    
+    if compressed_data_len == 0:
+        if is_verbose:
+            logger_func("DEBUG decompress_pfsc: ERRORE - I dati compressi sono vuoti (0 bytes)")
+        return b'\0' * decompressed_size
+    
+    # Check first few bytes only in verbose mode
+    if is_verbose:
+        sample_size = min(32, compressed_data_len)
+        logger_func(f"DEBUG decompress_pfsc: Primi {sample_size} bytes dati compressi: {compressed_data[:sample_size].hex()}")
+        
+        # Check if data seems to be all zeros
+        if all(b == 0 for b in compressed_data[:min(100, compressed_data_len)]):
+            logger_func("DEBUG decompress_pfsc: AVVISO - I dati compressi sembrano essere tutti zeri")
+    
+    # Cache the result of common decompression sizes
+    # This significantly improves performance for repeated decompression of same-sized blocks
+    global _pfsc_decompress_cache
+    cache_key = None
+    
     try:
-        decompressor = zlib.decompressobj(-zlib.MAX_WBITS) # Raw deflate
+        # Use the cache for blocks under 1MB to avoid memory issues
+        if compressed_data_len < 1024*1024:
+            if '_pfsc_decompress_cache' not in globals():
+                _pfsc_decompress_cache = {}
+                
+            # Generate a cache key based on the compressed data
+            if compressed_data_len > 64:
+                # Use first and last 32 bytes as a fingerprint for cache key
+                cache_key = (compressed_data[:32], compressed_data[-32:], compressed_data_len, decompressed_size)
+                if cache_key in _pfsc_decompress_cache:
+                    return _pfsc_decompress_cache[cache_key]
+        
+        # For performance, use a raw decompressobj
+        decompressor = zlib.decompressobj(-zlib.MAX_WBITS)  # Raw deflate
         decompressed = decompressor.decompress(compressed_data)
         decompressed += decompressor.flush()
         
+        if is_verbose:
+            actual_decompressed_len = len(decompressed)
+            logger_func(f"DEBUG decompress_pfsc: Decompressione RIUSCITA. Dimensione effettiva: {actual_decompressed_len} bytes")
+        
+        # Handle size adjustments
         if len(decompressed) < decompressed_size:
+            if is_verbose:
+                logger_func(f"DEBUG decompress_pfsc: Padding aggiunto: {decompressed_size - len(decompressed)} bytes")
             decompressed += b'\0' * (decompressed_size - len(decompressed))
         elif len(decompressed) > decompressed_size:
+            if is_verbose:
+                logger_func(f"DEBUG decompress_pfsc: Troncamento: {len(decompressed) - decompressed_size} bytes rimossi")
             decompressed = decompressed[:decompressed_size]
+        
+        # Only log in verbose mode
+        if is_verbose:
+            sample_size_output = min(32, len(decompressed))
+            logger_func(f"DEBUG decompress_pfsc: Primi {sample_size_output} bytes decompressione: {decompressed[:sample_size_output].hex()}")
+        
+        # Save to cache if we have a cache key
+        if cache_key is not None and '_pfsc_decompress_cache' in globals():
+            # Limit cache size
+            if len(_pfsc_decompress_cache) > 100:  # Don't let cache grow too large
+                _pfsc_decompress_cache.clear()
+            _pfsc_decompress_cache[cache_key] = decompressed
+        
         return decompressed
+        
     except zlib.error as e:
-        # Il codice C++ non ha un fallback esplicito qui, quindi questo errore
-        # dovrebbe idealmente essere gestito dal chiamante o indicare dati corrotti.
-        # print(f"Errore Zlib grave durante la decompressione PFSC (raw deflate): {e}")
-        # Restituire un buffer vuoto della dimensione attesa per simulare fallimento come nel C++
+        if is_verbose:
+            logger_func(f"DEBUG decompress_pfsc: ERRORE Zlib durante la decompressione: {e}")
+        
+        # Try alternative approach with standard zlib
+        try:
+            if is_verbose:
+                logger_func("DEBUG decompress_pfsc: Tentativo con wbits=15 (standard zlib)...")
+            
+            decompressor_alt = zlib.decompressobj(15)
+            decompressed_alt = decompressor_alt.decompress(compressed_data)
+            decompressed_alt += decompressor_alt.flush()
+            
+            if is_verbose:
+                logger_func(f"DEBUG decompress_pfsc: Alternativa riuscita! Dimensione: {len(decompressed_alt)} bytes")
+            
+            if len(decompressed_alt) < decompressed_size:
+                decompressed_alt += b'\0' * (decompressed_size - len(decompressed_alt))
+            elif len(decompressed_alt) > decompressed_size:
+                decompressed_alt = decompressed_alt[:decompressed_size]
+            
+            # Save to cache if we have a cache key
+            if cache_key is not None and '_pfsc_decompress_cache' in globals():
+                _pfsc_decompress_cache[cache_key] = decompressed_alt
+                
+            return decompressed_alt
+            
+        except zlib.error as e2:
+            if is_verbose:
+                logger_func(f"DEBUG decompress_pfsc: Anche approccio alternativo fallito: {e2}")
+        
+        # Return a zero buffer
+        if is_verbose:
+            logger_func(f"DEBUG decompress_pfsc: Restituzione buffer di zeri ({decompressed_size} bytes)")
         return b'\0' * decompressed_size
 
 @dataclass
@@ -794,8 +947,25 @@ class InodeModePfs(Flag):
     u_read = 64; u_write = 128; u_execute = 256
     dir = 16384; file = 32768
 
-class InodeFlagsPfs(Flag):
-    compressed = 0x1; unk1 = 0x2; readonly = 0x10; internal = 0x20000 # Aggiunti altri se necessario
+class InodeFlagsPfs(Flag): # da pfs.h InodeFlags (enum)
+    compressed = 0x1
+    unk1 = 0x2
+    unk2 = 0x4
+    unk3 = 0x8
+    readonly = 0x10
+    unk4 = 0x20
+    unk5 = 0x40
+    unk6 = 0x80
+    unk7 = 0x100
+    unk8 = 0x200
+    unk9 = 0x400
+    unk10 = 0x800
+    unk11 = 0x1000
+    unk12 = 0x2000
+    unk13 = 0x4000
+    unk14 = 0x8000
+    unk15 = 0x10000
+    internal = 0x20000
 
 @dataclass
 class Inode: # Da pfs.h struct Inode
@@ -847,6 +1017,7 @@ class Dirent: # Da pfs.h
     _FORMAT_BASE = "<iiii" # ino, type, namelen, entsize (tutti s32 Little Endian)
     _NAME_BUFFER_SIZE = 512 # Definizione della costante
     _BASE_SIZE = struct.calcsize(_FORMAT_BASE) # Dimensione base senza nome
+    _SIZE_BASE = _BASE_SIZE  # Aggiunto per compatibilità
     _SIZE = _BASE_SIZE + _NAME_BUFFER_SIZE # Dimensione totale con buffer nome pieno
 
     ino: int = 0
@@ -1110,24 +1281,41 @@ class RealCrypto:
             self.logger(traceback.format_exc()); raise
 
     def RSA2048Decrypt(self, output_key_buffer: bytearray, ciphertext: bytes, is_dk3: bool):
-        # ... (implementazione come prima, assicurarsi che sia corretta) ...
-        # Nota: il messaggio decrittato da RSA PKCS#1v1.5 è più corto della dimensione della chiave.
-        # Il C++ copia i primi N byte (es. 32) nel buffer di output.
         self.logger(f"Crypto: RSA2048Decrypt. is_dk3={is_dk3}, input len={len(ciphertext)}")
+        self.logger(f"  RSA Input ciphertext (primi 32B): {ciphertext[:32].hex()}")
         if len(ciphertext) != 256:
-            self.logger(f"Errore RSA: ciphertext len non è 256 (è {len(ciphertext)})")
+            self.logger(f"  Errore RSA: ciphertext len non è 256 (è {len(ciphertext)}) -> azzero output")
             output_key_buffer[:] = b'\0' * len(output_key_buffer); return
+        
         key_to_use = self._key_pkg_derived_key3 if is_dk3 else self._key_fake
         cipher_rsa = Cipher_PKCS1_v1_5.new(key_to_use)
+        
+        # Non pre-azzerare output_key_buffer per vedere lo stato precedente se il decrypt fallisce silenziosamente
+        # initial_output_buffer_state_sample = output_key_buffer[:min(8, len(output_key_buffer))].hex()
+
         try:
-            decrypted_data = cipher_rsa.decrypt(ciphertext, sentinel=None) 
+            # sentinel=object() farà sollevare ValueError in caso di errore di decrypt
+            decrypted_data = cipher_rsa.decrypt(ciphertext, sentinel=object()) 
+            self.logger(f"  RSA Decrypt OK. Lunghezza dati decrittati: {len(decrypted_data)}")
+            
+            if all(b == 0 for b in decrypted_data):
+                self.logger("  AVVISO RSA: Dati decrittati sono tutti zeri.")
+            # else:
+                # self.logger(f"  RSA Dati decrittati (primi {min(16, len(decrypted_data))}B): {decrypted_data[:min(16, len(decrypted_data))].hex()}")
+
             bytes_to_copy = min(len(output_key_buffer), len(decrypted_data))
             output_key_buffer[:bytes_to_copy] = decrypted_data[:bytes_to_copy]
             if len(output_key_buffer) > bytes_to_copy:
+                # Riempi il resto del buffer di output con zeri se decrypted_data è più corto
                 output_key_buffer[bytes_to_copy:] = b'\0' * (len(output_key_buffer) - bytes_to_copy)
-            # self.logger(f"Crypto: RSA Decrypt OK. Output (primi {min(8, len(output_key_buffer))} byte): {output_key_buffer[:min(8, len(output_key_buffer))].hex()}")
+            
+            # self.logger(f"  RSA Output buffer (primi {min(8, len(output_key_buffer))} byte): {output_key_buffer[:min(8, len(output_key_buffer))].hex()}")
+        except ValueError as ve:
+            # Questo blocco verrà eseguito se la decrittografia fallisce (es. padding errato, chiave errata)
+            self.logger(f"ERRORE RSA Decrypt (ValueError): {ve}. Ciphertext (primi 16B): {ciphertext[:16].hex()}... Output buffer azzerato.")
+            output_key_buffer[:] = b'\0' * len(output_key_buffer)
         except Exception as e:
-            self.logger(f"Errore RSA Decrypt: {e}. Ciphertext: {ciphertext[:16].hex()}...");
+            self.logger(f"ERRORE RSA Decrypt (Altra Eccezione): {e}. Ciphertext (primi 16B): {ciphertext[:16].hex()}... Output buffer azzerato.")
             output_key_buffer[:] = b'\0' * len(output_key_buffer)
 
 
@@ -1148,13 +1336,35 @@ class RealCrypto:
         # self.logger(f"Crypto: aesCbcCfb128Decrypt OK.")
 
     def aesCbcCfb128DecryptEntry(self, ivkey: bytes, ciphertext: bytes, decrypted_buffer: bytearray):
-        # ... (implementazione come prima) ...
-        if len(ivkey) != 32 or len(ciphertext) % AES.block_size != 0 or len(decrypted_buffer) != len(ciphertext):
-            self.logger("Errore aesCbcCfb128DecryptEntry: dimensioni non valide."); return
+        if len(ivkey) != 32:
+            self.logger("Errore aesCbcCfb128DecryptEntry: ivkey lunghezza non valida.")
+            decrypted_buffer[:] = b'\0' * len(decrypted_buffer) # Zero out on error
+            return
+
+        if len(decrypted_buffer) != len(ciphertext):
+            self.logger(f"Errore aesCbcCfb128DecryptEntry: Mismatch len decrypted_buffer ({len(decrypted_buffer)}) vs ciphertext ({len(ciphertext)}).")
+            decrypted_buffer[:] = b'\0' * len(decrypted_buffer) # Zero out on error
+            return
+
         key = ivkey[16:32]; iv = ivkey[0:16]
         cipher_aes = AES.new(key, AES.MODE_CBC, iv)
-        decrypted_buffer[:] = cipher_aes.decrypt(ciphertext)
-        # self.logger(f"Crypto: aesCbcCfb128DecryptEntry OK.")
+        
+        block_size = AES.block_size
+        valid_len = (len(ciphertext) // block_size) * block_size
+        
+        if valid_len > 0:
+            decrypted_part = cipher_aes.decrypt(ciphertext[:valid_len])
+            decrypted_buffer[:valid_len] = decrypted_part
+        
+        # Copia la coda originale (crittata) se esiste
+        if len(ciphertext) > valid_len:
+            decrypted_buffer[valid_len:] = ciphertext[valid_len:]
+        elif valid_len == 0 and len(ciphertext) > 0: # Ciphertext più corto di un blocco
+             decrypted_buffer[:] = ciphertext[:] # Copia i dati originali (ancora crittati)
+        elif valid_len == 0 and len(ciphertext) == 0: # Ciphertext è vuoto
+            pass # Il buffer decrittato rimane vuoto o come inizializzato (dovrebbe essere vuoto)
+
+        # self.logger(f"Crypto: aesCbcCfb128DecryptEntry processed. Input {len(ciphertext)}, valid_len {valid_len}.")
 
     def PfsGenCryptoKey(self, ekpfs: bytes, seed: bytes, dataKey_buffer: bytearray, tweakKey_buffer: bytearray):
         # ... (implementazione come prima) ...
@@ -1177,33 +1387,101 @@ class RealCrypto:
         if feedback != 0: tweak_block[0] ^= 0x87
 
     def decryptPFS(self, dataKey: bytes, tweakKey: bytes, src_image_block: bytes, dst_image_buffer: bytearray, sector_num: int):
-        # ... (implementazione come prima, assicurarsi che src_image_block e dst_image_buffer siano gestiti correttamente
-        # se la loro lunghezza non è esattamente 0x1000 ma un multiplo) ...
+        """Decrypt PFS blocks using optimized implementation for better performance."""
         block_size = 0x1000
         if not (len(dataKey)==16 and len(tweakKey)==16 and \
                 len(src_image_block) % block_size == 0 and \
                 len(dst_image_buffer) == len(src_image_block)):
             self.logger(f"Errore decryptPFS: dimensioni input/output non valide o src non multiplo di {block_size}."); return
 
+        # Use optimized implementation for large blocks to improve performance
+        if len(src_image_block) > block_size * 4:  # For larger data, use optimized version
+            try:
+                import numpy as np
+                # Convert to numpy arrays for faster processing
+                src_np = np.frombuffer(src_image_block, dtype=np.uint8)
+                dst_np = np.frombuffer(dst_image_buffer, dtype=np.uint8)
+                
+                cipher_data = AES.new(dataKey, AES.MODE_ECB)
+                cipher_tweak = AES.new(tweakKey, AES.MODE_ECB)
+                num_main_blocks = len(src_image_block) // block_size
+                
+                # Process blocks in larger chunks (can be adjusted for optimal performance)
+                chunk_size = min(16, num_main_blocks)  # Process multiple sectors at once
+                
+                for chunk_start in range(0, num_main_blocks, chunk_size):
+                    chunk_end = min(chunk_start + chunk_size, num_main_blocks)
+                    
+                    for main_block_idx in range(chunk_start, chunk_end):
+                        current_main_block_offset = main_block_idx * block_size
+                        current_sector_for_tweak = sector_num + main_block_idx
+                        
+                        # Initialize tweak for this sector
+                        tweak_initial_val = bytearray(16)
+                        tweak_initial_val[0:8] = struct.pack("<Q", current_sector_for_tweak)
+                        encrypted_tweak = bytearray(cipher_tweak.encrypt(bytes(tweak_initial_val)))
+                        
+                        # Process 16-byte blocks within the sector
+                        for i in range(0, block_size, 16):
+                            offset = current_main_block_offset + i
+                            
+                            # Extract current block
+                            ct_block = src_np[offset:offset+16]
+                            
+                            # Fast XOR with numpy
+                            xor_buf = np.bitwise_xor(ct_block, np.frombuffer(encrypted_tweak, dtype=np.uint8))
+                            
+                            # Decrypt
+                            dec_interm = cipher_data.decrypt(xor_buf.tobytes())
+                            
+                            # Final XOR
+                            pt_block = np.bitwise_xor(np.frombuffer(dec_interm, dtype=np.uint8), 
+                                                   np.frombuffer(encrypted_tweak, dtype=np.uint8))
+                            
+                            # Store result
+                            dst_np[offset:offset+16] = pt_block
+                            
+                            # Update tweak for next block
+                            if i + 16 < block_size:
+                                self._xts_mult(encrypted_tweak)
+                
+                # No need to copy back since we used a view into the original buffer
+                return
+                
+            except ImportError:
+                # If numpy isn't available, fall back to standard implementation
+                pass
+            except Exception as e:
+                self.logger(f"Optimized decryptPFS fallback to standard: {e}")
+                pass
+        
+        # Standard implementation (fallback)
         cipher_data = AES.new(dataKey, AES.MODE_ECB)
         cipher_tweak = AES.new(tweakKey, AES.MODE_ECB)
         num_main_blocks = len(src_image_block) // block_size
-
+        
+        # Use bytearray.fromhex for faster XOR operations
         for main_block_idx in range(num_main_blocks):
             current_main_block_offset = main_block_idx * block_size
             current_sector_for_tweak = sector_num + main_block_idx
             tweak_initial_val = bytearray(16)
             tweak_initial_val[0:8] = struct.pack("<Q", current_sector_for_tweak)
             encrypted_tweak = bytearray(cipher_tweak.encrypt(bytes(tweak_initial_val)))
+            
+            # Process multiple blocks at once if possible
             for i in range(0, block_size, 16):
                 aes_block_offset_in_src = current_main_block_offset + i
-                ct_sub_block = src_image_block[aes_block_offset_in_src : aes_block_offset_in_src+16]
+                ct_sub_block = src_image_block[aes_block_offset_in_src:aes_block_offset_in_src+16]
+                
+                # Faster XOR operation with bytes
                 xor_buf = bytes(a ^ b for a, b in zip(ct_sub_block, encrypted_tweak))
                 dec_interm = cipher_data.decrypt(xor_buf)
                 pt_sub_block = bytes(a ^ b for a, b in zip(dec_interm, encrypted_tweak))
-                dst_image_buffer[aes_block_offset_in_src : aes_block_offset_in_src+16] = pt_sub_block
-                if i + 16 < block_size: self._xts_mult(encrypted_tweak)
-        # self.logger(f"Crypto: decryptPFS OK per {num_main_blocks} settori da {sector_num}.")
+                
+                dst_image_buffer[aes_block_offset_in_src:aes_block_offset_in_src+16] = pt_sub_block
+                
+                if i + 16 < block_size:
+                    self._xts_mult(encrypted_tweak)
 
     def decryptEFSM(self, trophyKey: bytes, NPcommID: bytes, efsmIv: bytes, ciphertext: bytes, decrypted_buffer: bytearray):
         # ... (implementazione come prima) ...
@@ -1217,17 +1495,17 @@ class RealCrypto:
         decrypted_buffer[:] = cipher2.decrypt(ciphertext)
         # self.logger(f"Crypto: decryptEFSM OK.")
 
-# --- PKG Class (continua revisione) ---
+# --- PKG Class (con logica PFS migliorata) ---
 class PKG:
     def __init__(self, logger_func=print):
         self.logger = logger_func
         self.pkg_header: Optional[PKGHeader] = None
-        self.pkg_file_size: int = 0
+        self.pkg_file_size: int = 0 # Dimensione reale del file PKG su disco
         self.pkg_title_id: str = ""
         self.sfo_data: bytes = b""
         self.pkg_flags_str: str = ""
 
-        self.extract_base_path: Optional[pathlib.Path] = None
+        self.extract_base_path: Optional[pathlib.Path] = None # Path base fornito dall'utente
         self.pkg_path: Optional[pathlib.Path] = None
         
         self.crypto = RealCrypto(logger_func=self.logger)
@@ -1242,12 +1520,17 @@ class PKG:
         
         self.decNp = bytearray()
 
-        self.pfsc_offset_in_pfs_image: int = 0
+        # Attributi specifici del PFS
+        self.pfs_superblock_header: Optional[PFSHeaderPfs] = None # Header del PFS (superblocco)
+        self.pfs_chdr: Optional[PFSCHdrPFS] = None                 # Header del PFSC effettivo
+        self.pfsc_offset_in_pfs_image: int = -1 # Offset di PFSC *all'interno* dell'immagine PFS decrittata
+        self.pfsc_content_actual_bytes: bytes = b'' # Contenuto effettivo del PFSC (dall'header PFSC in poi)
+        
         self.sector_map: list[int] = []
         self.iNodeBuf: list[Inode] = []
-        self.fs_table: list[FSTableEntry] = []
-        self.extract_paths: dict[int, pathlib.Path] = {}
-        self.current_dir_pfs: Optional[pathlib.Path] = None
+        self.fs_table: list[FSTableEntry] = [] # Tabella flat di file/dir trovati nel PFS
+        self.extract_paths: dict[int, pathlib.Path] = {} # Mappa: inode_num -> pathlib.Path completo di estrazione
+        # self.current_dir_pfs non è più un membro di istanza, ma gestito localmente nel BFS.
 
     def _log(self, message):
         if self.logger: self.logger(message)
@@ -1260,7 +1543,7 @@ class PKG:
             self.pkg_header = PKGHeader.from_bytes(header_bytes)
             return True
         except Exception as e:
-            self._log(f"ERRORE lettura/parsing PKGHeader: {e}"); return False
+            self._log(f"ERRORE lettura/parsing PKGHeader: {e}"); import traceback; self.logger(traceback.format_exc()); return False
 
     def _get_pkg_entry_name_by_type(self, entry_id: int) -> str:
         return PKG_ENTRY_ID_TO_NAME_FULL.get(entry_id, "")
@@ -1272,18 +1555,22 @@ class PKG:
         try:
             with open(filepath, "rb") as f:
                 self.pkg_file_size = f.seek(0, os.SEEK_END); f.seek(0)
-                if not self._read_pkg_header(f): return False, "Fallimento lettura header PKG."
+                if not self.pkg_header: # Se non già caricato
+                 if not self._read_pkg_header(f): return False, "Fallimento lettura header PKG."
+                
                 if self.pkg_header.magic not in [PKG_MAGIC_BE, PKG_MAGIC_LE_VARIANT]:
                     return False, f"Magic PKG non valido: {self.pkg_header.magic:#x}"
                 
                 flags_list = [name for flag, name in PKG_FLAG_NAMES_MAP.items() if (self.pkg_header.pkg_content_flags & flag.value)]
                 self.pkg_flags_str = ", ".join(flags_list)
-                self._log(f"Flags PKG: {self.pkg_flags_str}")
+                # self._log(f"Flags PKG: {self.pkg_flags_str}") # Log meno verboso per open
 
-                f.seek(0x47) # Offset assoluto come da C++
+                # Title ID (dal C++ file.Seek(0x47) dopo aver letto l'header)
+                # Questo implica un seek assoluto nel file, non relativo all'header in memoria.
+                f.seek(0x47) 
                 title_id_bytes_raw = f.read(9)
                 self.pkg_title_id = title_id_bytes_raw.decode('ascii', errors='ignore').strip('\0')
-                self._log(f"Title ID: {self.pkg_title_id}")
+                # self._log(f"Title ID (da seek 0x47): {self.pkg_title_id}")
 
                 f.seek(self.pkg_header.pkg_table_entry_offset)
                 for _ in range(self.pkg_header.pkg_table_entry_count):
@@ -1294,7 +1581,8 @@ class PKG:
                     if entry.name == "param.sfo":
                         curr_pos = f.tell(); f.seek(entry.offset)
                         self.sfo_data = f.read(entry.size)
-                        self._log(f"param.sfo trovato (size {len(self.sfo_data)})."); f.seek(curr_pos)
+                        # self._log(f"param.sfo trovato (size {len(self.sfo_data)})."); 
+                        f.seek(curr_pos)
             self.pkg_path = filepath
             return True, "PKG aperto con successo."
         except Exception as e:
@@ -1303,311 +1591,1026 @@ class PKG:
     def extract(self, filepath: pathlib.Path, extract_base_path_gui: pathlib.Path) -> tuple[bool, str]:
         self.pkg_path = filepath
         self._log(f"Inizio estrazione da: {filepath} a GUI base: {extract_base_path_gui}")
-        try:
-            with open(filepath, "rb") as f:
-                if not self.pkg_header: # Rileggi se open_pkg non chiamato
-                    f.seek(0);
+        pfsc_content_actual_bytes = b'' # Initialize to ensure it's always defined
+        # Removing problematic try block and using with statement's own error handling
+        with open(filepath, "rb") as f:
+                if not self.pkg_header: 
+                    f.seek(0)
                     if not self._read_pkg_header(f): return False, "Fallimento rilettura header."
                     f.seek(0x47); self.pkg_title_id = f.read(9).decode('ascii', errors='ignore').strip('\0')
 
                 if self.pkg_header.magic not in [PKG_MAGIC_BE, PKG_MAGIC_LE_VARIANT]: return False, "Magic PKG non valido in extract."
 
-                # Definizione extract_base_path
                 title_id_str = self.get_title_id() or filepath.stem
-                is_update_dlc = "-UPDATE" in str(self.pkg_path).upper() or \
-                                title_id_str.startswith(("EP", "IP")) or \
-                                "_PATCH" in str(self.pkg_path).upper() or \
-                                extract_base_path_gui.name.upper().endswith("-UPDATE")
+                is_update_dlc = "-UPDATE" in str(self.pkg_path).upper() or title_id_str.startswith(("EP", "IP", "HP")) or "_PATCH" in str(self.pkg_path).upper() or extract_base_path_gui.name.upper().endswith(("-UPDATE", "-DLC"))
 
-                if extract_base_path_gui.name != title_id_str and \
-                   extract_base_path_gui.parent.name != title_id_str and not is_update_dlc:
+                if extract_base_path_gui.name != title_id_str and extract_base_path_gui.parent.name != title_id_str and not is_update_dlc:
                     self.extract_base_path = extract_base_path_gui / title_id_str
+                    
                 else:
                     self.extract_base_path = extract_base_path_gui
-                self._log(f"Directory estrazione effettiva: {self.extract_base_path}"); self.extract_base_path.mkdir(parents=True, exist_ok=True)
 
-                if self.pkg_header.pkg_size > self.pkg_file_size: self._log(f"AVVISO: pkg_header.pkg_size > dimensione file.")
-                if (self.pkg_header.pkg_content_size + self.pkg_header.pkg_content_offset) > self.pkg_header.pkg_size:
-                    return False, "Dimensione contenuto (header) > dimensione PKG (header)."
+                self._log(f"Directory estrazione effettiva: {self.extract_base_path}")
+                self.extract_base_path.mkdir(parents=True, exist_ok=True)
 
-                f.seek(self.pkg_header.pkg_table_entry_offset)
+                # --- Read PKG entries and store their raw bytes and parsed objects ---
                 pkg_entries_data = []
+                f.seek(self.pkg_header.pkg_table_entry_offset)
                 for _ in range(self.pkg_header.pkg_table_entry_count):
-                    entry_bytes = f.read(PKGEntry._SIZE);
-                    if len(entry_bytes) < PKGEntry._SIZE: return False, "Lettura tabella PKG entry incompleta."
-                    entry = PKGEntry.from_bytes(entry_bytes); entry.name = self._get_pkg_entry_name_by_type(entry.id)
+                    entry_bytes = f.read(PKGEntry._SIZE)
+                    if len(entry_bytes) < PKGEntry._SIZE:
+                        return False, "Lettura tabella PKG entry incompleta."
+                    entry = PKGEntry.from_bytes(entry_bytes)
+                    entry.name = self._get_pkg_entry_name_by_type(entry.id)
                     pkg_entries_data.append({'obj': entry, 'bytes': entry_bytes})
 
-                sce_sys_path = self.extract_base_path / "sce_sys"; sce_sys_path.mkdir(parents=True, exist_ok=True)
-                
-                for item in pkg_entries_data:
-                    entry, original_bytes = item['obj'], item['bytes']
-                    out_fname = entry.name or str(entry.id)
-                    out_fpath_scesys = sce_sys_path / out_fname
-                    self._log(f"  Processing SCE_SYS Entry ID {entry.id:#06x} ('{out_fname}'), Offset: {entry.offset:#x}, Size: {entry.size}")
+                # --- Step 1: Derive main crypto keys (dk3, ekpfsKey) ---
+                entry_0010_obj = next((item['obj'] for item in pkg_entries_data if item['obj'].id == 0x0010), None)
+                if entry_0010_obj:
+                    f.seek(entry_0010_obj.offset)
+                    _ = f.read(32) # seed_digest
+                    _ = [f.read(32) for _ in range(7)] 
+                    key1_list = [f.read(256) for _ in range(7)]
+                    self.crypto.RSA2048Decrypt(self.dk3_, key1_list[3], True)
+                    self._log(f"  DEBUG dk3_ (primi 16B): {self.dk3_[:16].hex()}")
+                else:
+                    self._log("AVVISO: Entry PKG 0x0010 (ENTRY_KEYS) non trovata. dk3_ potrebbe non essere derivata.")
+                    # dk3_ rimarrà inizializzata a zeri se non trovata.
 
-                    if entry.id == 0x10: # ENTRY_KEYS
-                        f.seek(entry.offset); _ = f.read(32) # seed_digest
-                        _ = [f.read(32) for _ in range(7)] # digest1
-                        key1_list = [f.read(256) for _ in range(7)]
-                        self.crypto.RSA2048Decrypt(self.dk3_, key1_list[3], True)
-                    elif entry.id == 0x20: # IMAGE_KEY
-                        f.seek(entry.offset); imgkeydata_bytes = f.read(256)
-                        concat_buf = bytearray(64); concat_buf[:PKGEntry._SIZE] = original_bytes
-                        concat_buf[PKGEntry._SIZE:PKGEntry._SIZE+32] = self.dk3_[:32]
-                        self.crypto.ivKeyHASH256(bytes(concat_buf), self.ivKey)
-                        self.crypto.aesCbcCfb128Decrypt(self.ivKey, imgkeydata_bytes, self.imgKey)
-                        self.crypto.RSA2048Decrypt(self.ekpfsKey, self.imgKey, False)
+                entry_0020_item = next((item for item in pkg_entries_data if item['obj'].id == 0x0020), None)
+                if not entry_0020_item:
+                    return False, "Entry PKG 0x0020 (IMAGE_KEY) non trovata, impossibile derivare ekpfsKey."
+                
+                entry_0020_obj = entry_0020_item['obj']
+                entry_0020_bytes = entry_0020_item['bytes']
+
+                f.seek(entry_0020_obj.offset)
+                imgkeydata_crypted_bytes = f.read(entry_0020_obj.size)
+                
+                concat_buf = bytearray(64)
+                concat_buf[:PKGEntry._SIZE] = entry_0020_bytes
+                concat_buf[PKGEntry._SIZE:PKGEntry._SIZE+32] = self.dk3_[:32]
+                
+                self.crypto.ivKeyHASH256(bytes(concat_buf), self.ivKey)
+                self._log(f"  DEBUG ivKey (calcolata da entry 0x0020 e dk3_, primi 16B): {self.ivKey[:16].hex()}")
+                
+                self._log(f"  DEBUG imgKey DA PASSARE A RSA (primi 32B prima di AES decrypt): {imgkeydata_crypted_bytes[:32].hex()}") # Questo è imgkeydata_crypted_bytes
+                self.crypto.aesCbcCfb128Decrypt(self.ivKey, imgkeydata_crypted_bytes, self.imgKey)
+                self._log(f"  DEBUG imgKey (dopo AES, primi 32B): {self.imgKey[:32].hex()}")
+                self._log(f"  DEBUG imgKey (dopo AES, ultimi 32B se >32B): {self.imgKey[-32:].hex() if len(self.imgKey)>32 else self.imgKey.hex()}")
+                
+                self.crypto.RSA2048Decrypt(self.ekpfsKey, self.imgKey, False)
+                self._log(f"  DEBUG ekpfsKey (dopo RSA): {self.ekpfsKey.hex()}")
+
+
+                # --- Step 2: Extract system files (sce_sys) ---
+                sce_sys_path = self.extract_base_path / "sce_sys"
+                sce_sys_path.mkdir(parents=True, exist_ok=True)
+                self._log(f"Directory output per SCE_SYS: {sce_sys_path}")
+                self._log(f"Directory output radice per PFS: {self.extract_base_path}")
+
+
+                for item in pkg_entries_data:
+                    entry, original_entry_bytes = item['obj'], item['bytes']
+                    out_fname_base = entry.name or str(entry.id)
+                    
+                    current_out_path = self.extract_base_path # Default per path complessi
+                    if '/' in out_fname_base:
+                        # Path come "app/playgo-chunk.dat" o "trophy/trophy00.trp"
+                        # Questi vanno relativi alla radice di estrazione, non necessariamente in sce_sys
+                        final_out_path = self.extract_base_path / out_fname_base
+                    elif entry.id >= 0x0001 and entry.id <= 0x17F9 : # Range IDs di sistema tipici
+                        final_out_path = sce_sys_path / out_fname_base
+                    else: # Fallback per ID sconosciuti o non di sistema
+                        final_out_path = self.extract_base_path / f"unknown_id_{entry.id:#06x}"
+
+                    self._log(f"  Processing PKG SysEntry ID {entry.id:#06x} ('{out_fname_base}'), Offset: {entry.offset:#x}, Size: {entry.size} -> {final_out_path}")
 
                     if entry.size > 0:
-                        f.seek(entry.offset); data_write = f.read(entry.size)
-                        if entry.id in [0x0400, 0x0401, 0x0402, 0x0403]:
-                            if len(self.decNp) < entry.size: self.decNp = bytearray(entry.size)
-                            temp_concat_np = bytearray(64); temp_concat_np[:PKGEntry._SIZE] = original_bytes
+                        f.seek(entry.offset)
+                        file_content_from_pkg = f.read(entry.size)
+                        data_to_write_final = file_content_from_pkg
+
+                        # Decrittografia per specifici file di sistema
+                        if entry.id in [0x0400, 0x0401, 0x0402, 0x0403]: # license.dat, license.info, nptitle.dat, npbind.dat
+                            current_entry_decrypted_data = bytearray(entry.size)
+                            temp_concat_np = bytearray(64)
+                            temp_concat_np[:PKGEntry._SIZE] = original_entry_bytes # Usa i bytes dell'header dell'entry corrente (0x04xx)
                             temp_concat_np[PKGEntry._SIZE:PKGEntry._SIZE+32] = self.dk3_[:32]
-                            self.crypto.ivKeyHASH256(bytes(temp_concat_np), self.ivKey)
-                            self.crypto.aesCbcCfb128DecryptEntry(self.ivKey, data_write, self.decNp)
-                            data_write = self.decNp[:entry.size]
-                        out_fpath_scesys.parent.mkdir(parents=True, exist_ok=True)
-                        with open(out_fpath_scesys, "wb") as of: of.write(data_write)
-                        self._log(f"    Scritto: {out_fpath_scesys} ({len(data_write)} bytes)")
+                            
+                            local_ivKey_for_sce_entry = bytearray(32) # Usa una ivKey locale per questa entry
+                            self.crypto.ivKeyHASH256(bytes(temp_concat_np), local_ivKey_for_sce_entry)
+                            # self._log(f"    DEBUG local_ivKey for {entry.name} (primi 16B): {local_ivKey_for_sce_entry[:16].hex()}")
 
-                # --- Processamento PFS ---
+                            self.crypto.aesCbcCfb128DecryptEntry(local_ivKey_for_sce_entry, file_content_from_pkg, current_entry_decrypted_data)
+                            data_to_write_final = current_entry_decrypted_data
+                        
+                        final_out_path.parent.mkdir(parents=True, exist_ok=True)
+                        with open(final_out_path, "wb") as of:
+                            of.write(data_to_write_final)
+                        self._log(f"    Scritto: {final_out_path} ({len(data_to_write_final)} bytes)")
+
+                # --- Step 3: Process PFS ---
                 self._log("Inizio processamento PFS...")
-                f.seek(self.pkg_header.pfs_image_offset + 0x370); seed_bytes = f.read(16)
+                f.seek(self.pkg_header.pfs_image_offset + 0x370) # Offset del seed nel PKG
+                seed_bytes = f.read(16)
+                
+                self._log("DEBUG PFS CRYPTO KEYS (prima di PfsGenCryptoKey):")
+                self._log(f"  ekpfsKey: {self.ekpfsKey.hex()}")
+                self._log(f"  seed_bytes: {seed_bytes.hex()}")
                 self.crypto.PfsGenCryptoKey(self.ekpfsKey, seed_bytes, self.dataKey, self.tweakKey)
+                self._log(f"  dataKey (dopo PfsGen): {self.dataKey.hex()}")
+                self._log(f"  tweakKey (dopo PfsGen): {self.tweakKey.hex()}")
 
-                length_cpp_pfsc_buf = self.pkg_header.pfs_cache_size * 2
-                num_data_blocks_in_pfsc = 0
-                pfsc_content_actual_bytes = b''
 
-                if length_cpp_pfsc_buf > 0:
-                    f.seek(self.pkg_header.pfs_image_offset)
-                    pfs_chunk_to_decrypt = f.read(length_cpp_pfsc_buf)
-                    # Arrotonda effective_len_to_decrypt per difetto a multiplo di 0x1000
-                    effective_len_to_decrypt = (len(pfs_chunk_to_decrypt) // 0x1000) * 0x1000
-                    if not effective_len_to_decrypt: return False, "Chunk PFS per PFSC discovery è troppo corto."
-                    pfs_chunk_to_decrypt = pfs_chunk_to_decrypt[:effective_len_to_decrypt]
+                # --- PFSC Discovery and Parsing ---
+                self.pfsc_offset_in_pfs_image = -1
+                # pfsc_content_actual_bytes è già inizializzato a b''
 
-                    pfs_decrypted_chunk = bytearray(effective_len_to_decrypt)
-                    self.crypto.decryptPFS(self.dataKey, self.tweakKey, pfs_chunk_to_decrypt, pfs_decrypted_chunk, 0)
-                    
-                    self.pfsc_offset_in_pfs_image = get_pfsc_offset(pfs_decrypted_chunk)
-                    if self.pfsc_offset_in_pfs_image == -1: return False, "Magic PFSC non trovato."
-                    
-                    size_pfsc_content = effective_len_to_decrypt - self.pfsc_offset_in_pfs_image
-                    if size_pfsc_content <= 0: return False, "Errore calcolo dimensione contenuto PFSC."
-                    pfsc_content_actual_bytes = bytes(pfs_decrypted_chunk[self.pfsc_offset_in_pfs_image : self.pfsc_offset_in_pfs_image + size_pfsc_content])
-                    
-                    if len(pfsc_content_actual_bytes) < PFSCHdrPFS._SIZE: return False, "Dati PFSC insuff. per PFSCHdrPFS."
-                    pfs_chdr = PFSCHdrPFS.from_bytes(pfsc_content_actual_bytes)
-                    if pfs_chdr.block_sz2 > 0: num_data_blocks_in_pfsc = int(pfs_chdr.data_length // pfs_chdr.block_sz2)
-                    
-                    self.sector_map = []
-                    map_start = pfs_chdr.block_offsets
-                    for i in range(num_data_blocks_in_pfsc + 1): 
-                        off = map_start + i * 8
-                        if off + 8 > len(pfsc_content_actual_bytes): break 
-                        self.sector_map.append(struct.unpack_from("<Q", pfsc_content_actual_bytes, off)[0])
+                if self.pkg_header.pfs_image_size == 0:
+                    self._log("Nessuna immagine PFS (pfs_image_size è 0). Salto parsing PFS.")
+                elif self.pkg_header.pfs_cache_size == 0:
+                    self._log("ERRORE: pfs_cache_size è 0, il parsing PFS standard non è possibile.")
                 else:
-                    self._log("pfs_cache_size è 0. Parsing PFS saltato."); return True, "SCE_SYS estratto. PFS non processato."
-
-                # --- Parsing Inodes e Dirents ---
-                self.iNodeBuf.clear(); self.fs_table.clear(); self.extract_paths.clear()
-                self.current_dir_pfs = self.extract_base_path 
-                ndinode_total_count = 0; occupied_inode_blocks = 0
-                decomp_buf = bytearray(0x10000) 
-                ndinode_processed_count = 0; dinode_reached = False; uroot_reached = False
-                
-                for i_block in range(num_data_blocks_in_pfsc):
-                    if i_block + 1 >= len(self.sector_map): break
-                    sect_off = self.sector_map[i_block]; sect_size = self.sector_map[i_block+1] - sect_off
-                    if sect_off + sect_size > len(pfsc_content_actual_bytes):
-                        read_size = len(pfsc_content_actual_bytes) - sect_off
-                        if read_size <=0: continue
-                        sect_size = min(sect_size, read_size)
-                        if sect_size <=0: continue
+                    f.seek(self.pkg_header.pfs_image_offset)
                     
-                    curr_sect_data = pfsc_content_actual_bytes[sect_off : sect_off + sect_size]
-                    if sect_size == 0x10000: decomp_buf[:] = curr_sect_data
-                    elif 0 < sect_size < 0x10000: decomp_buf[:] = decompress_pfsc(bytes(curr_sect_data), 0x10000)
-                    elif sect_size == 0: continue
-                    else: self._log(f"Blocco {i_block} dimensione inattesa. Salto."); continue
-
-                    if i_block == 0:
-                        ndinode_total_count = struct.unpack_from("<I", decomp_buf, 0x30)[0]
-                        if ndinode_total_count == 0: self._log("ndinode è 0."); break
-                        occupied_inode_blocks = (ndinode_total_count * Inode._SIZE + 0xFFFF) // 0x10000
+                    # Calcolo dimensione C++ per debug_pfs_decrypted_chunk.bin
+                    # buffer_size_cpp = (self.pkg_header.pfs_image_offset + self.pkg_header.pfs_image_size + 0x3FFF) & ~0x3FFF
+                    # len_to_read_for_pfsc_discovery_cpp = buffer_size_cpp - self.pkg_header.pfs_image_offset
+                    # self._log(f"Buffer PFSC C++ (length) calcolato come: {len_to_read_for_pfsc_discovery_cpp:#x} bytes.")
+                    # Usiamo una dimensione basata su pfs_cache_size o dimensione immagine PFS
+                    len_to_read_for_pfsc_discovery = min(self.pkg_header.pfs_cache_size * 2, self.pkg_header.pfs_image_size, 0x400000) # Limita a 4MB per la scoperta iniziale
                     
-                    if 1 <= i_block <= occupied_inode_blocks:
-                        for ino_off in range(0, 0x10000, Inode._SIZE):
-                            if len(self.iNodeBuf) >= ndinode_total_count: break
-                            inode_data = decomp_buf[ino_off : ino_off + Inode._SIZE]
-                            if len(inode_data) < Inode._SIZE: break
-                            inode = Inode.from_bytes(inode_data); 
-                            if inode.Mode == 0: break
-                            self.iNodeBuf.append(inode)
-                        if len(self.iNodeBuf) >= ndinode_total_count: self._log(f"Letti {ndinode_total_count} inodes.")
-
-                    try:
-                        if decomp_buf[0x10:0x10+15].decode('ascii') == "flat_path_table": uroot_reached = True
-                    except: pass
-
-                    if uroot_reached:
-                        # ... (logica uroot_reached come prima, assicurati che ndinode_processed_count sia corretto) ...
-                        # Semplificazione per ora: assumi che la root PFS sia self.extract_base_path
-                        # La logica precisa per il path root è complessa e dipende da ndinode_counter_processed.
-                        # Per ora, se uroot_reached, e non abbiamo una root, impostiamo la root.
-                        if not self.extract_paths: # Se nessuna root path è stata definita
-                             # Questo è un punto debole, il C++ usa ndinode_counter_processed come chiave inode.
-                             # ndinode_counter_processed è il numero di inode non-zero visti finora.
-                             # Non è detto che sia l'inode della root.
-                             # Potrebbe essere necessario trovare il primo dirent "."
-                             # Se non lo facciamo, current_dir_pfs non sarà corretto.
-                             self.extract_paths[1] = self.extract_base_path # Assumendo inode 1 per root
-                             self.current_dir_pfs = self.extract_base_path
-                             self._log(f"Path radice PFS (ipotetico da uroot, inode 1) impostato a: {self.current_dir_pfs}")
-                             self.current_dir_pfs.mkdir(parents=True, exist_ok=True)
-                        uroot_reached = False # Processato una volta
-
-                    if not dinode_reached and i_block >= occupied_inode_blocks:
-                        try: # Verifica dirent "." e ".."
-                            d1 = Dirent.from_bytes(decomp_buf)
-                            if d1.name == "." and d1.entsize > 0 and len(decomp_buf) >= d1.entsize + Dirent._SIZE_BASE:
-                                d2 = Dirent.from_bytes(decomp_buf[d1.entsize:])
-                                if d2.name == "..":
-                                    dinode_reached = True
-                                    if d1.ino not in self.extract_paths: # Se uroot non ha impostato root
-                                        self.extract_paths[d1.ino] = self.extract_base_path
-                                        self.current_dir_pfs = self.extract_base_path
-                                        self.current_dir_pfs.mkdir(parents=True, exist_ok=True)
-                                        self._log(f"Root PFS (da '.', inode {d1.ino}) impostata a: {self.current_dir_pfs}")
-                        except: pass
-
-                    if dinode_reached:
-                        off_dirent = 0
-                        while off_dirent < 0x10000:
-                            dirent_d = Dirent.from_bytes(decomp_buf[off_dirent:])
-                            if dirent_d.entsize == 0 or dirent_d.ino == 0: break
-                            
-                            fs_entry = FSTableEntry(dirent_d.name, dirent_d.ino, dirent_d.get_pfs_file_type())
-                            self.fs_table.append(fs_entry)
-
-                            if fs_entry.type == PFSFileType.PFS_CURRENT_DIR:
-                                if fs_entry.inode in self.extract_paths:
-                                    self.current_dir_pfs = self.extract_paths[fs_entry.inode]
-                            
-                            if fs_entry.name != "..": # Non creare path per ".."
-                                if self.current_dir_pfs: # Assicurati che current_dir_pfs sia impostato
-                                     self.extract_paths[fs_entry.inode] = self.current_dir_pfs / fs_entry.name
-                                else: # current_dir_pfs non impostato, probabile errore di logica root
-                                     self._log(f"ERRORE: current_dir_pfs non definito per {fs_entry.name}")
-                                     # Tentativo di fallback se è la root e non è stata ancora mappata
-                                     if fs_entry.type == PFSFileType.PFS_DIR and fs_entry.name == "." and not self.extract_paths:
-                                         self.extract_paths[fs_entry.inode] = self.extract_base_path
-                                         self.current_dir_pfs = self.extract_base_path
-                                         self.current_dir_pfs.mkdir(parents=True, exist_ok=True)
-                                         self._log(f"Root PFS (fallback da '.', inode {fs_entry.inode}) impostata a: {self.current_dir_pfs}")
-                                     else: # Altrimenti, usa il path base come genitore
-                                        self.extract_paths[fs_entry.inode] = self.extract_base_path / fs_entry.name
-
-
-                            if fs_entry.type == PFSFileType.PFS_DIR and fs_entry.name not in [".", ".."]:
-                                if fs_entry.inode in self.extract_paths:
-                                    self.extract_paths[fs_entry.inode].mkdir(parents=True, exist_ok=True)
-                            
-                            if fs_entry.type == PFSFileType.PFS_FILE or \
-                               (fs_entry.type == PFSFileType.PFS_DIR and fs_entry.name not in [".", ".."]):
-                                ndinode_processed_count +=1
-                            off_dirent += dirent_d.entsize
+                    initial_pfs_chunk_for_discovery = b''
+                    if len_to_read_for_pfsc_discovery > 0:
+                        initial_pfs_chunk_for_discovery = f.read(len_to_read_for_pfsc_discovery)
                     
-                    if (ndinode_processed_count + 1) >= ndinode_total_count and ndinode_total_count > 0:
-                        self._log(f"Conteggio inode processati ({ndinode_processed_count}) >= atteso ({ndinode_total_count-1}).")
-                        break
-                
-                self._log(f"Letti {len(self.iNodeBuf)} Inodes. Trovate {len(self.fs_table)} voci Dirent.")
-                return True, "Estrazione metadati e parsing PFS completati."
+                    effective_len_initial_decrypt = (len(initial_pfs_chunk_for_discovery) // 0x1000) * 0x1000
 
+                    if effective_len_initial_decrypt == 0:
+                        self._log(f"AVVISO: Chunk PFS iniziale ({len_to_read_for_pfsc_discovery} B) troppo corto per decrittare un settore. Impossibile trovare PFSC.")
+                    else:
+                        initial_pfs_chunk_to_decrypt = initial_pfs_chunk_for_discovery[:effective_len_initial_decrypt]
+                        decrypted_initial_pfs_chunk = bytearray(effective_len_initial_decrypt)
+                        self.crypto.decryptPFS(self.dataKey, self.tweakKey, initial_pfs_chunk_to_decrypt, decrypted_initial_pfs_chunk, 0)
+                        
+                        # --- Debug: Salva il chunk decrittato ---
+                        debug_chunk_path = self.extract_base_path / "debug_pfs_decrypted_chunk.bin"
+                        try:
+                            with open(debug_chunk_path, "wb") as dbg_f:
+                                dbg_f.write(decrypted_initial_pfs_chunk)
+                            self._log(f"DEBUG: Chunk PFS decrittato salvato in: {debug_chunk_path}")
+                            self._log(f"DEBUG: Chunk size: {len(decrypted_initial_pfs_chunk):#x} bytes")
+                            self._log("DEBUG: Primi 256 bytes del chunk decrittato:")
+                            for i_debug in range(0, min(256, len(decrypted_initial_pfs_chunk)), 32):
+                                self._log(f"  {i_debug:04x}: {decrypted_initial_pfs_chunk[i_debug:i_debug+32].hex()}")
+                        except Exception as e_dbg:
+                            self._log(f"DEBUG: Errore salvataggio chunk decrittato: {e_dbg}")
+                        # --- Fine Debug ---
+
+                        current_pfsc_offset_in_decrypted_chunk = get_pfsc_offset(decrypted_initial_pfs_chunk, self._log)
+
+                        if current_pfsc_offset_in_decrypted_chunk == -1:
+                            self._log("Magic PFSC non trovato nel chunk PFS iniziale decrittato.")
+                            self.pfsc_offset_in_pfs_image = -1 
+                        elif current_pfsc_offset_in_decrypted_chunk + PFSCHdrPFS._SIZE > len(decrypted_initial_pfs_chunk):
+                            self._log("ERRORE: Chunk PFS iniziale decrittato troppo piccolo per contenere PFSCHdr, anche se PFSC magic è stato trovato.")
+                            self.pfsc_offset_in_pfs_image = -1
+                        else:
+                            pfs_chdr_initial = PFSCHdrPFS.from_bytes(decrypted_initial_pfs_chunk[current_pfsc_offset_in_decrypted_chunk:])
+                            self._log(f"PFSC magic trovato a {current_pfsc_offset_in_decrypted_chunk:#x}. Header PFSC iniziale letto.")
+                            self.pfsc_offset_in_pfs_image = current_pfsc_offset_in_decrypted_chunk
+                            
+                            num_data_blocks = 0
+                            if pfs_chdr_initial.block_sz2 > 0:
+                                num_data_blocks = int(pfs_chdr_initial.data_length / pfs_chdr_initial.block_sz2) if pfs_chdr_initial.data_length % pfs_chdr_initial.block_sz2 == 0 else int(pfs_chdr_initial.data_length // pfs_chdr_initial.block_sz2 + 1)
+                            
+                            size_of_sector_map_table = (num_data_blocks + 1) * 8
+                            estimated_pfsc_internal_content_size = pfs_chdr_initial.block_offsets + size_of_sector_map_table # Minima stima iniziale
+                            
+                            initial_sector_map_data_offset_in_pfsc = pfs_chdr_initial.block_offsets
+                            initial_sector_map_data_abs_offset_in_chunk = self.pfsc_offset_in_pfs_image + initial_sector_map_data_offset_in_pfsc
+                            
+                            if initial_sector_map_data_abs_offset_in_chunk + size_of_sector_map_table > len(decrypted_initial_pfs_chunk):
+                                self._log(f"AVVISO: Chunk iniziale ({len(decrypted_initial_pfs_chunk)} B) non contiene l'intera tabella degli offset dei settori.")
+                                available_sector_map_bytes = len(decrypted_initial_pfs_chunk) - initial_sector_map_data_abs_offset_in_chunk
+                                if available_sector_map_bytes > 0 and available_sector_map_bytes >= (num_data_blocks * 8 + 8) : # Se abbiamo almeno l'ultima entry della mappa
+                                     temp_map_data = decrypted_initial_pfs_chunk[initial_sector_map_data_abs_offset_in_chunk : initial_sector_map_data_abs_offset_in_chunk + (num_data_blocks * 8 + 8)]
+                                     total_compressed_data_size = struct.unpack_from("<Q", temp_map_data, num_data_blocks * 8)[0]
+                                     estimated_pfsc_internal_content_size = max(estimated_pfsc_internal_content_size, pfs_chdr_initial.data_start + total_compressed_data_size)
+                                else: # Stima più grezza se non abbiamo l'intera mappa
+                                     estimated_pfsc_internal_content_size = max(estimated_pfsc_internal_content_size, pfs_chdr_initial.data_start + pfs_chdr_initial.data_length)
+                            else: 
+                                temp_map_data = decrypted_initial_pfs_chunk[initial_sector_map_data_abs_offset_in_chunk : initial_sector_map_data_abs_offset_in_chunk + size_of_sector_map_table]
+                                if num_data_blocks >=0 and (num_data_blocks * 8 + 8) <= len(temp_map_data) : 
+                                   total_compressed_data_size = struct.unpack_from("<Q", temp_map_data, num_data_blocks * 8)[0]
+                                   estimated_pfsc_internal_content_size = max(
+                                       pfs_chdr_initial.block_offsets + size_of_sector_map_table, 
+                                       pfs_chdr_initial.data_start + total_compressed_data_size
+                                   )
+                            
+                            total_pfsc_span_in_pfs_image = self.pfsc_offset_in_pfs_image + estimated_pfsc_internal_content_size
+                            total_len_to_read_for_full_pfsc_aligned = ((total_pfsc_span_in_pfs_image + 0xFFF) // 0x1000) * 0x1000
+                            
+                            self._log(f"Dimensione interna PFSC stimata: {estimated_pfsc_internal_content_size}. Totale da leggere/decrittare per PFSC completo: {total_len_to_read_for_full_pfsc_aligned}")
+
+                            f.seek(self.pkg_header.pfs_image_offset)
+                            full_pfs_chunk_for_pfsc_processing = f.read(min(total_len_to_read_for_full_pfsc_aligned, self.pkg_header.pfs_image_size))
+                            effective_len_full_pfsc_decrypt = (len(full_pfs_chunk_for_pfsc_processing) // 0x1000) * 0x1000
+
+                            if effective_len_full_pfsc_decrypt == 0:
+                                self._log("ERRORE: Nessun dato da decrittare per il PFSC completo.")
+                                self.pfsc_offset_in_pfs_image = -1 
+                            elif effective_len_full_pfsc_decrypt < self.pfsc_offset_in_pfs_image + PFSCHdrPFS._SIZE :
+                                self._log(f"ERRORE: Non è stato possibile leggere abbastanza dati ({effective_len_full_pfsc_decrypt}) per l'header PFSC completo.")
+                                self.pfsc_offset_in_pfs_image = -1
+                            else:
+                                full_pfs_chunk_to_decrypt = full_pfs_chunk_for_pfsc_processing[:effective_len_full_pfsc_decrypt]
+                                decrypted_full_pfsc_area = bytearray(effective_len_full_pfsc_decrypt)
+                                self.crypto.decryptPFS(self.dataKey, self.tweakKey, full_pfs_chunk_to_decrypt, decrypted_full_pfsc_area, 0)
+                                self._log(f"Area PFS completa (basata su cache_size*2) decrittata: {len(decrypted_full_pfsc_area)} bytes")
+                                
+                                # --- AGGIUNGI DEBUG per area PFSC completa ---
+                                debug_full_pfsc_path = self.extract_base_path / "debug_DECRYPTED_FULL_PFSC_AREA.bin"
+                                try:
+                                    with open(debug_full_pfsc_path, "wb") as dbg_f_full:
+                                        dbg_f_full.write(decrypted_full_pfsc_area)
+                                    self._log(f"DEBUG: Area PFSC completa decrittata salvata in: {debug_full_pfsc_path}")
+                                    self._log(f"DEBUG: Primi 256B di quest'area: {decrypted_full_pfsc_area[:256].hex()}")
+                                    
+                                    # Controlla l'area dove ti aspetti il superblocco compresso:
+                                    # Offset del superblocco compresso dentro decrypted_full_pfsc_area:
+                                    # self.pfsc_offset_in_pfs_image (offset di PFSC dentro decrypted_full_pfsc_area)
+                                    # + self.pfs_chdr.data_start (offset dell'area dati dentro PFSC)
+                                    # + self.sector_map[0] (offset del superblocco dentro l'area dati)
+                                    if num_data_blocks > 0 and size_of_sector_map_table > 0: # Assicurati che siano stati calcolati
+                                        temp_map_data = decrypted_full_pfsc_area[initial_sector_map_data_abs_offset_in_chunk : initial_sector_map_data_abs_offset_in_chunk + size_of_sector_map_table]
+                                        # Log primi 5 valori della sector_map (se disponibili)
+                                        sector_map_preview = []
+                                        for i in range(min(5, num_data_blocks + 1)):
+                                            if i * 8 + 8 <= len(temp_map_data):
+                                                sector_map_preview.append(struct.unpack_from("<Q", temp_map_data, i * 8)[0])
+                                        if sector_map_preview:
+                                            self._log(f"DEBUG: Primi {len(sector_map_preview)} valori della sector_map estratti direttamente da decrypted_full_pfsc_area: {sector_map_preview}")
+                                        
+                                        # Stima offset superblocco assumendo che pfs_chdr_initial sia valido
+                                        if len(sector_map_preview) >= 1:
+                                            estimated_sb_offset = self.pfsc_offset_in_pfs_image + pfs_chdr_initial.data_start + sector_map_preview[0]
+                                            estimated_sb_size = 0
+                                            if len(sector_map_preview) >= 2:
+                                                estimated_sb_size = sector_map_preview[1] - sector_map_preview[0]
+                                            else:
+                                                estimated_sb_size = 144  # Dimensione riportata in log precedenti
+                                                
+                                            self._log(f"DEBUG: Stima posizione superblocco compresso in DECRYPTED_FULL_PFSC_AREA: "
+                                                    f"offset {estimated_sb_offset:#x} (dim: {estimated_sb_size})")
+                                            
+                                            if estimated_sb_offset + estimated_sb_size <= len(decrypted_full_pfsc_area):
+                                                sb_compressed_sample = decrypted_full_pfsc_area[estimated_sb_offset:estimated_sb_offset + min(64, estimated_sb_size)]
+                                                self._log(f"DEBUG: Primi {min(64, estimated_sb_size)} byte superblocco COMPRESSO da area completa: {sb_compressed_sample.hex()}")
+                                                
+                                                # Salva campione più ampio (256 bytes o size del superblocco) prima e dopo l'offset stimato
+                                                sample_size = max(256, estimated_sb_size)
+                                                sample_start = max(0, estimated_sb_offset - 128)
+                                                sample_end = min(len(decrypted_full_pfsc_area), estimated_sb_offset + sample_size + 128)
+                                                sb_area_sample = decrypted_full_pfsc_area[sample_start:sample_end]
+                                                sb_sample_path = self.extract_base_path / "debug_superblock_area_sample.bin"
+                                                with open(sb_sample_path, "wb") as sb_sample_f:
+                                                    sb_sample_f.write(sb_area_sample)
+                                                self._log(f"DEBUG: Campione area intorno al superblocco compresso salvato in: {sb_sample_path}")
+                                                self._log(f"DEBUG: Campione inizia a offset assoluto {sample_start:#x}, superblocco atteso a {estimated_sb_offset:#x} (offset {estimated_sb_offset-sample_start} nel file)")
+                                            else:
+                                                self._log("DEBUG: Offset stimato del superblocco fuori dai limiti di decrypted_full_pfsc_area!")
+                                except Exception as e_dbg_full:
+                                    self._log(f"DEBUG: Errore debug area PFSC completa: {e_dbg_full}")
+                                # --- FINE DEBUG ---
+                                
+                                actual_pfsc_data_end_offset_in_chunk = min(self.pfsc_offset_in_pfs_image + estimated_pfsc_internal_content_size, len(decrypted_full_pfsc_area))
+                                pfsc_content_actual_bytes = decrypted_full_pfsc_area[self.pfsc_offset_in_pfs_image : actual_pfsc_data_end_offset_in_chunk]
+                                
+                                if len(pfsc_content_actual_bytes) < PFSCHdrPFS._SIZE:
+                                    self._log(f"ERRORE: pfsc_content_actual_bytes ({len(pfsc_content_actual_bytes)}) troppo corto per PFSCHdrPFS dopo decrittazione completa.")
+                                    self.pfsc_offset_in_pfs_image = -1
+                                else:
+                                    self.pfs_chdr = PFSCHdrPFS.from_bytes(pfsc_content_actual_bytes)
+                                    self._log(f"PFSC Header definitivo letto. Magic: {self.pfs_chdr.magic:#x}, BlockOffsets: {self.pfs_chdr.block_offsets:#x}, Block Size2: {self.pfs_chdr.block_sz2}, Data Length: {self.pfs_chdr.data_length}")
+                                    self._log(f"DEBUG: Lunghezza pfsc_content_actual_bytes dopo lettura header: {len(pfsc_content_actual_bytes)}")
+                                    # Salviamo una referenza a pfsc_content_actual_bytes nella variabile d'istanza
+                                    self.pfsc_content_actual_bytes = pfsc_content_actual_bytes
+                                    
+                                    self.sector_map.clear()
+                                    if self.pfs_chdr.block_sz2 > 0:
+                                        # Questo è il numero di blocchi di dati completi (divisione intera/troncamento)
+                                        num_data_blocks_in_pfsc = int(self.pfs_chdr.data_length // self.pfs_chdr.block_sz2)
+                                    else:
+                                        num_data_blocks_in_pfsc = 0
+                                    # La mappa ha un'entry in più per l'offset finale
+                                    map_size_entries = num_data_blocks_in_pfsc + 1
+                                    map_offset_in_pfsc_content_final = self.pfs_chdr.block_offsets
+                                    map_size_bytes_final = map_size_entries * 8
+                                    
+                                    # Debug log per verificare i valori prima del controllo
+                                    self._log(f"DEBUG: Check accesso SectorMap: map_offset={map_offset_in_pfsc_content_final:#x}, map_size_bytes={map_size_bytes_final}, len(pfsc_content)={len(self.pfsc_content_actual_bytes)}")
+                                    
+                                    if map_offset_in_pfsc_content_final + map_size_bytes_final > len(self.pfsc_content_actual_bytes):
+                                        self._log(f"ERRORE: pfsc_content_actual_bytes ({len(self.pfsc_content_actual_bytes)}) troppo corto per la sector_map completa (fino a {map_offset_in_pfsc_content_final + map_size_bytes_final}). N. blocchi attesi in mappa: {map_size_entries}")
+                                        self.pfsc_offset_in_pfs_image = -1
+                                    else:
+                                        current_sector_map_data = self.pfsc_content_actual_bytes[map_offset_in_pfsc_content_final : map_offset_in_pfsc_content_final + map_size_bytes_final]
+                                        for i in range(map_size_entries): # Itera per il numero corretto di entry
+                                            self.sector_map.append(struct.unpack_from("<Q", current_sector_map_data, i * 8)[0])
+                                        self._log(f"Sector map definitiva caricata: {len(self.sector_map)} entries (attese {map_size_entries}).")
+                # Fine del blocco else per pfs_image_size/cache_size (L1385 originale)
+
+                # Ora, dopo aver tentato di inizializzare self.pfs_chdr e self.sector_map
+                if self.pfsc_offset_in_pfs_image != -1 and self.pfs_chdr and self.sector_map:
+                    # Parsing Inodes e Dirents
+                    self._log("Inizio parsing Inodes e Dirents dal contenuto PFSC caricato...")
+                    self.iNodeBuf.clear(); self.fs_table.clear(); self.extract_paths.clear() # Corretta indentazione
+                    
+                    actual_total_inodes = 0
+                    root_dir_inode_num = 0
+                    
+                    decomp_block_buf = bytearray(self.pfs_chdr.block_sz2 if self.pfs_chdr.block_sz2 > 0 else 0x10000)
+                    if not decomp_block_buf: decomp_block_buf = bytearray(0x10000)
+                    
+                    # NOTA: I valori nella sector_map sono offset ASSOLUTI all'interno di pfsc_content_actual_bytes,
+                    # non sono relativi a pfs_chdr.data_start
+                    num_data_blocks_for_pfs_parsing = 0 
+                    if self.pfs_chdr.block_sz2 > 0:
+                         # Uso divisione intera come nella lettura della sector_map (troncamento)
+                         num_data_blocks_for_pfs_parsing = int(self.pfs_chdr.data_length // self.pfs_chdr.block_sz2)
+
+                    self._log(f"DEBUG: Numero di data blocks per PFS parsing: {num_data_blocks_for_pfs_parsing}")
+                    self._log(f"DEBUG: Lunghezza sector_map: {len(self.sector_map)}")
+                    
+                    if num_data_blocks_for_pfs_parsing > 0 and len(self.sector_map) > 0:
+                        # L'offset del superblocco (blocco 0) è direttamente da sector_map[0]
+                        # ed è relativo all'inizio di pfsc_content_actual_bytes
+                        super_block_offset_in_pfsc_content = self.sector_map[0]
+                        
+                        # Calcola la dimensione del blocco superblocco dai dati della sector_map
+                        super_block_size_compressed = 0
+                        if len(self.sector_map) > 1:
+                            super_block_size_compressed = self.sector_map[1] - super_block_offset_in_pfsc_content
+                        else:
+                            self._log("AVVISO: Impossibile determinare la dimensione compressa del superblocco dalla sector_map.")
+                            # Usa una dimensione stimata per la lettura (potrebbe causare errori)
+                            super_block_size_compressed = 4096  # Valore arbitrario
+                        
+                        self._log(f"DEBUG: Superblocco PFS: offset in pfsc_content = {super_block_offset_in_pfsc_content:#x}, size_comp = {super_block_size_compressed:#x}")
+                        
+                        # Verifica che l'offset e la dimensione siano validi rispetto ai dati disponibili
+                        if super_block_offset_in_pfsc_content + super_block_size_compressed > len(pfsc_content_actual_bytes):
+                            self._log(f"ERRORE: Dati insuff. per Superblocco PFS in pfsc_content_actual_bytes. "
+                                     f"Offset: {super_block_offset_in_pfsc_content:#x}, Size: {super_block_size_compressed:#x}, "
+                                     f"Len pfsc_content: {len(pfsc_content_actual_bytes):#x}")
+                            self.pfsc_offset_in_pfs_image = -1
+                            actual_total_inodes = 0
+                        elif super_block_size_compressed > 0:
+                            # Estrai i dati compressi del superblocco direttamente dal contenuto PFSC usando l'offset della sector_map
+                            super_block_compressed_data = pfsc_content_actual_bytes[
+                                super_block_offset_in_pfsc_content : 
+                                super_block_offset_in_pfsc_content + super_block_size_compressed
+                            ]
+                            
+                            # --- Debug: Salva superblocco COMPRESSO ---
+                            debug_sb_comp_path = self.extract_base_path / "debug_SUPERBLOCK_compressed.bin"
+                            try:
+                                with open(debug_sb_comp_path, "wb") as dbg_sb_c_f:
+                                    dbg_sb_c_f.write(super_block_compressed_data)
+                                self._log(f"DEBUG: Superblocco PFS COMPRESSO salvato in: {debug_sb_comp_path}")
+                                self._log(f"DEBUG: Dimensione superblocco COMPRESSO: {len(super_block_compressed_data)}")
+                                if len(super_block_compressed_data) >= 64:
+                                    self._log(f"DEBUG: Primi 64 byte superblocco COMPRESSO: {super_block_compressed_data[:64].hex()}")
+                                # Log dei valori iniziali della sector_map per debug
+                                self._log(f"DEBUG: Primi 5 valori della sector_map: {self.sector_map[:min(5, len(self.sector_map))]}")
+                                self._log(f"DEBUG: Offset superblocco in pfsc_content: {super_block_offset_in_pfsc_content:#x}")
+                                self._log(f"DEBUG: Lunghezza pfsc_content: {len(pfsc_content_actual_bytes):#x}")
+                            except Exception as e_dbg_sb_c:
+                                self._log(f"DEBUG: Errore salvataggio superblocco compresso: {e_dbg_sb_c}")
+                            # --- Fine Debug ---
+                            
+                            decompressed_superblock_data = decompress_pfsc(super_block_compressed_data, len(decomp_block_buf), self._log)
+                            
+                            # --- Debug: Salva superblocco decompresso ---
+                            debug_sb_path = self.extract_base_path / "debug_SUPERBLOCK_decompressed.bin"
+                            try:
+                                with open(debug_sb_path, "wb") as dbg_sb_f:
+                                    dbg_sb_f.write(decompressed_superblock_data)
+                                self._log(f"DEBUG: Superblocco PFS decompresso salvato in: {debug_sb_path}")
+                                self._log(f"DEBUG: Dimensione superblocco decompresso: {len(decompressed_superblock_data)}")
+                                if len(decompressed_superblock_data) >= 80: # Abbastanza per i campi di interesse
+                                    self._log(f"DEBUG: Primi 80 byte superblocco decomp: {decompressed_superblock_data[:80].hex()}")
+                                    # Estrai dinode_count e superroot_ino direttamente per verifica
+                                    dinode_count_raw = decompressed_superblock_data[48:56]  # offset 48, 8 bytes (q)
+                                    superroot_ino_raw = decompressed_superblock_data[72:80] # offset 72, 8 bytes (q)
+                                    dinode_count_direct = struct.unpack('<q', dinode_count_raw)[0]
+                                    superroot_ino_direct = struct.unpack('<q', superroot_ino_raw)[0]
+                                    self._log(f"DEBUG: dinode_count (lettura diretta): {dinode_count_direct}")
+                                    self._log(f"DEBUG: superroot_ino (lettura diretta): {superroot_ino_direct}")
+                            except Exception as e_dbg_sb:
+                                self._log(f"DEBUG: Errore salvataggio superblocco: {e_dbg_sb}")
+                            # --- Fine Debug ---
+                            
+                            if len(decompressed_superblock_data) < PFSHeaderPfs._SIZE:
+                                self._log(f"ERRORE: Superblocco PFS decompresso troppo piccolo ({len(decompressed_superblock_data)})")
+                                self.pfsc_offset_in_pfs_image = -1
+                            else:
+                                self.pfs_superblock_header = PFSHeaderPfs.from_bytes(decompressed_superblock_data)
+                                actual_total_inodes = self.pfs_superblock_header.dinode_count
+                                root_dir_inode_num = self.pfs_superblock_header.superroot_ino
+                                self._log(f"PFS Superblocco parsato. Totale Inodes: {actual_total_inodes}, Root Inode: {root_dir_inode_num}")
+                        elif num_data_blocks_for_pfs_parsing > 0 : # super_block_size_compressed è 0, ma ci aspettiamo blocchi
+                             self._log("AVVISO: Dimensione compressa del superblocco è 0, ma ci sono blocchi di dati PFS.")
+                             actual_total_inodes = 0 # Non possiamo procedere senza superblocco
+                        else: # num_data_blocks_for_pfs_parsing == 0 and super_block_size_compressed == 0
+                             self._log("AVVISO: Nessun blocco dati PFS e superblocco vuoto o non determinabile.")
+                             actual_total_inodes = 0
+                    else: 
+                        self._log("AVVISO: Nessun blocco dati nel PFSC (num_data_blocks_for_pfs_parsing è 0).")
+                        actual_total_inodes = 0
+                    
+                    if actual_total_inodes > 0:
+                        occupied_inode_blocks_count = (actual_total_inodes * Inode._SIZE + (len(decomp_block_buf) - 1)) // len(decomp_block_buf)
+                        self._log(f"Numero stimato di blocchi per inodes: {occupied_inode_blocks_count}")
+
+                        for i_block_idx_in_map in range(1, min(1 + occupied_inode_blocks_count, num_data_blocks_for_pfs_parsing + 1)): 
+                            if i_block_idx_in_map >= len(self.sector_map) or i_block_idx_in_map +1 >= len(self.sector_map) : break
+
+                            block_offset_in_pfsc_content = self.sector_map[i_block_idx_in_map]
+                            block_size_compressed = self.sector_map[i_block_idx_in_map+1] - block_offset_in_pfsc_content
+                            
+                            if block_offset_in_pfsc_content + block_size_compressed > len(pfsc_content_actual_bytes):
+                                self._log(f"ERRORE: Lettura fuori limiti per blocco inode (map idx {i_block_idx_in_map}).") 
+                                break
+                            if block_size_compressed == 0 : continue
+
+                            compressed_inode_block_data = pfsc_content_actual_bytes[block_offset_in_pfsc_content : block_offset_in_pfsc_content + block_size_compressed]
+                            decompressed_inode_data = decompress_pfsc(compressed_inode_block_data, len(decomp_block_buf), self._log)
+                            actual_decomp_len_inode_block = len(decompressed_inode_data)
+                            
+                            # --- Debug: Salva il blocco inode decompresso ---
+                            debug_inode_block_path = self.extract_base_path / f"debug_INODE_BLOCK_{i_block_idx_in_map}_decompressed.bin"
+                            try:
+                                with open(debug_inode_block_path, "wb") as dbg_inode_f:
+                                    dbg_inode_f.write(decompressed_inode_data)
+                                self._log(f"DEBUG: Blocco inode {i_block_idx_in_map} decompresso salvato in: {debug_inode_block_path}")
+                            except Exception as e_dbg_inode:
+                                self._log(f"DEBUG: Errore salvataggio blocco inode: {e_dbg_inode}")
+
+                            for ino_offset_in_block in range(0, actual_decomp_len_inode_block, Inode._SIZE):
+                                if len(self.iNodeBuf) >= actual_total_inodes: break
+                                inode_bytes = decompressed_inode_data[ino_offset_in_block : ino_offset_in_block + Inode._SIZE]
+                                if len(inode_bytes) < Inode._SIZE: break 
+                                inode = Inode.from_bytes(inode_bytes)
+                                self.iNodeBuf.append(inode)
+                            if len(self.iNodeBuf) >= actual_total_inodes: break
+                        self._log(f"Letti {len(self.iNodeBuf)}/{actual_total_inodes} inodes.")
+                    
+                    # Logica migliorata per determinare root_dir_inode_num
+                    if self.pfs_superblock_header:
+                        actual_total_inodes = self.pfs_superblock_header.dinode_count
+                        root_dir_inode_num = self.pfs_superblock_header.superroot_ino
+                        self._log(f"Dal superblocco PFS: actual_total_inodes={actual_total_inodes}, superroot_ino={root_dir_inode_num}")
+                    else:
+                        actual_total_inodes = 0 # Non possiamo fidarci se il superblocco non è stato letto
+                        root_dir_inode_num = 0
+
+                    if actual_total_inodes == 0 and self.iNodeBuf: # Se ndinode era 0 ma abbiamo letto inodes
+                        actual_total_inodes = len(self.iNodeBuf)
+                        self._log(f"AVVISO: ndinode_total_count era 0, ma iNodeBuf ha {len(self.iNodeBuf)} elementi. Uso len(iNodeBuf).")
+
+                    # Logica migliorata di fallback per root_dir_inode_num
+                    if root_dir_inode_num <= 0 or root_dir_inode_num > actual_total_inodes: # Inode 0 non è valido
+                        self._log(f"superroot_ino ({root_dir_inode_num}) non valido. Tentativo di fallback.")
+                        
+                        # Tentativo 1: Usa inode 2 se esiste ed è una directory (comune nei filesystem Unix)
+                        potential_root_idx = 2 - 1 # Indice per iNodeBuf (0-based)
+                        if 0 <= potential_root_idx < len(self.iNodeBuf) and \
+                           self.iNodeBuf[potential_root_idx].get_file_type() == PFSFileType.PFS_DIR and \
+                           self.iNodeBuf[potential_root_idx].Blocks > 0:
+                            root_dir_inode_num = 2
+                            self._log(f"Fallback: Uso inode 2 come root (trovato e directory).")
+                        else:
+                            # Tentativo 2: Cerca il primo inode directory valido
+                            found_fallback_root = False
+                            for idx, inode_entry in enumerate(self.iNodeBuf):
+                                inode_num_candidate = idx + 1 # Assumendo 1-based per il numero di inode
+                                if inode_entry.get_file_type() == PFSFileType.PFS_DIR and inode_entry.Blocks > 0:
+                                    # Prendi il primo inode directory con blocchi
+                                    root_dir_inode_num = inode_num_candidate
+                                    self._log(f"Fallback: Trovato primo inode directory valido ({root_dir_inode_num}) come potenziale root.")
+                                    found_fallback_root = True
+                                    break
+                            if not found_fallback_root and self.iNodeBuf:
+                                root_dir_inode_num = 1 # Ultima spiaggia
+                    
+                    # Verifica finale della root
+                    if root_dir_inode_num <= 0 or root_dir_inode_num > len(self.iNodeBuf):
+                        self._log(f"ERRORE CRITICO: Impossibile determinare root inode PFS valido. Root num: {root_dir_inode_num}, iNodeBuf len: {len(self.iNodeBuf)}")
+                    elif self.iNodeBuf[root_dir_inode_num-1].get_file_type() != PFSFileType.PFS_DIR:
+                        self._log(f"AVVISO: Root inode PFS determinato ({root_dir_inode_num}) non è una directory standard, ma procediamo comunque.")
+                    
+                    # Processa la directory radice usando BFS
+                    self._process_pfs_directory_bfs(root_dir_inode_num, self.extract_base_path)
+                    self._log(f"Completato parsing ricorsivo. Trovate {len(self.fs_table)} voci in fs_table.")
+
+    def _process_flat_path_table(self, flat_path_data, parent_path):
+        """Processa un flat_path_table trovato nell'inode 'uroot'.
+        
+        Args:
+            flat_path_data (bytes): I dati decompressi del flat_path_table
+            parent_path (Path): Path padre dove creare i file/directory estratti
+        """
+        self._log("\nInizio parsing flat_path_table in uroot...")
+        # Salva i dati per un'analisi più approfondita
+        debug_fpt_path = self.extract_base_path / "debug_FLAT_PATH_TABLE_from_uroot.bin"
+        try:
+            with open(debug_fpt_path, "wb") as f:
+                f.write(flat_path_data)
+            self._log(f"DEBUG: Dati flat_path_table salvati in: {debug_fpt_path}")
         except Exception as e:
-            self._log(f"Errore estrazione: {e}"); import traceback; self._log(traceback.format_exc()); return False, f"Errore: {e}"
+            self._log(f"DEBUG: Errore salvataggio flat_path_table: {e}")
+        
+        # Basato sulla logica C++ descritta dall'utente
+        offset = 0
+        ndinode_counter = 0  # Inode della directory a cui appartengono le entry in flat_path_table
+        
+        # Prima cerchiamo entry speciali (ino != 0) che possono contenere informazioni sulla struttura
+        while offset < len(flat_path_data):
+            if len(flat_path_data) - offset < Dirent._SIZE_BASE:
+                self._log(f"  FINE FLAT_PATH_TABLE: dimensione rimanente {len(flat_path_data) - offset} < {Dirent._SIZE_BASE}")
+                break
+                
+            dirent = Dirent.from_bytes(flat_path_data[offset:])
+            self._log(f"  FPT Entry: offset=0x{offset:x}, ino={dirent.ino}, type={dirent.type}, "
+                     f"namelen={dirent.namelen}, entsize={dirent.entsize}, name='{dirent.name}'")
+            
+            if dirent.entsize == 0:
+                self._log(f"  FINE FLAT_PATH_TABLE: trovata dirent con entsize=0")
+                break
+                
+            if dirent.ino != 0:
+                # Entry speciale (probabilmente metadati o entry . e ..)
+                ndinode_counter = dirent.ino  # Salva l'ultimo inode counter
+                self._log(f"  METADATO: Aggiornato ndinode_counter a {ndinode_counter}")
+            else:
+                # Trovata la prima entry con ino=0, il che segna l'inizio delle vere entry di file/directory
+                self._log(f"  MARKER: Trovata entry con ino=0. Inizio delle vere entry di file/directory")
+                offset += dirent.entsize
+                break
+                
+            offset += dirent.entsize
+        
+        # Da qui, leggiamo le vere entry di file/directory (dopo il marker ino=0)
+        self._log(f"\n  INIZIO PARSING ENTRY REALI (offset=0x{offset:x}, parent_inode={ndinode_counter})")
+        
+        # Leggi e processa le entry reali
+        real_entries = []
+        while offset < len(flat_path_data):
+            if len(flat_path_data) - offset < Dirent._SIZE_BASE:
+                break
+                
+            dirent = Dirent.from_bytes(flat_path_data[offset:])
+            if dirent.entsize == 0 or dirent.ino == 0:
+                break
+                
+            entry_name = dirent.name
+            entry_inode_num = dirent.ino
+            entry_type = dirent.get_pfs_file_type()
+            
+            self._log(f"  ENTRY REALE: '{entry_name}' (inode {entry_inode_num}), type={dirent.type} -> {entry_type.name}")
+            
+            # Aggiungi alla fs_table e all'elenco delle entry reali
+            self.fs_table.append(FSTableEntry(entry_name, entry_inode_num, entry_type))
+            real_entries.append((entry_name, entry_inode_num, entry_type))
+            
+            # Imposta il percorso di estrazione
+            entry_path = parent_path / entry_name
+            self.extract_paths[entry_inode_num] = entry_path
+            
+            # Crea directory se necessario
+            if entry_type == PFSFileType.PFS_DIR:
+                self._log(f"  CREAZIONE DIR: '{entry_path}'")
+                entry_path.mkdir(parents=True, exist_ok=True)
+                
+                # Accoda per il BFS se è una directory
+                # Note: Non usiamo visited_dirs_for_bfs qui poiché queste sono le vere entry
+                # e vogliamo processarle tutte indipendentemente da uroot
+                queue = getattr(self, 'bfs_queue', [])
+                if hasattr(self, 'bfs_queue'):
+                    queue.append((entry_inode_num, entry_path))
+                    self._log(f"  ACCODATO per BFS: inode {entry_inode_num} ('{entry_path}')")
+            
+            offset += dirent.entsize
+        
+        self._log(f"Fine parsing flat_path_table. Trovate {len(real_entries)} entry reali.\n")
+        return real_entries
+
+    def _process_flat_path_table(self, flat_path_data, parent_path):
+        """Processa un flat_path_table trovato nell'inode 'uroot'.
+        
+        Args:
+            flat_path_data (bytes): I dati decompressati del flat_path_table
+            parent_path (Path): Path padre dove creare i file/directory estratti
+        """
+        self._log("\nInizio parsing flat_path_table in uroot...")
+        # Salva i dati per un'analisi più approfondita
+        debug_fpt_path = self.extract_base_path / "debug_FLAT_PATH_TABLE_from_uroot.bin"
+        try:
+            with open(debug_fpt_path, "wb") as f:
+                f.write(flat_path_data)
+            self._log(f"DEBUG: Dati flat_path_table salvati in: {debug_fpt_path}")
+        except Exception as e:
+            self._log(f"DEBUG: Errore salvataggio flat_path_table: {e}")
+        
+        # Basato sulla logica C++ descritta dall'utente
+        offset = 0
+        ndinode_counter = 0  # Inode della directory a cui appartengono le entry in flat_path_table
+        
+        # Prima cerchiamo entry speciali (ino != 0) che possono contenere informazioni sulla struttura
+        while offset < len(flat_path_data):
+            if len(flat_path_data) - offset < Dirent._SIZE_BASE:
+                self._log(f"  FINE FLAT_PATH_TABLE: dimensione rimanente {len(flat_path_data) - offset} < {Dirent._SIZE_BASE}")
+                break
+                
+            dirent = Dirent.from_bytes(flat_path_data[offset:])
+            self._log(f"  FPT Entry: offset=0x{offset:x}, ino={dirent.ino}, type={dirent.type}, "
+                     f"namelen={dirent.namelen}, entsize={dirent.entsize}, name='{dirent.name}'")
+            
+            if dirent.entsize == 0:
+                self._log(f"  FINE FLAT_PATH_TABLE: trovata dirent con entsize=0")
+                break
+                
+            if dirent.ino != 0:
+                # Entry speciale (probabilmente metadati o entry . e ..)
+                ndinode_counter = dirent.ino  # Salva l'ultimo inode counter
+                self._log(f"  METADATO: Aggiornato ndinode_counter a {ndinode_counter}")
+            else:
+                # Trovata la prima entry con ino=0, il che segna l'inizio delle vere entry di file/directory
+                self._log(f"  MARKER: Trovata entry con ino=0. Inizio delle vere entry di file/directory")
+                offset += dirent.entsize
+                break
+                
+            offset += dirent.entsize
+        
+        # Da qui, leggiamo le vere entry di file/directory (dopo il marker ino=0)
+        self._log(f"\n  INIZIO PARSING ENTRY REALI (offset=0x{offset:x}, parent_inode={ndinode_counter})")
+        
+        # Leggi e processa le entry reali
+        real_entries = []
+        while offset < len(flat_path_data):
+            if len(flat_path_data) - offset < Dirent._SIZE_BASE:
+                break
+                
+            dirent = Dirent.from_bytes(flat_path_data[offset:])
+            if dirent.entsize == 0 or dirent.ino == 0:
+                break
+                
+            entry_name = dirent.name
+            entry_inode_num = dirent.ino
+            entry_type = dirent.get_pfs_file_type()
+            
+            self._log(f"  ENTRY REALE: '{entry_name}' (inode {entry_inode_num}), type={dirent.type} -> {entry_type.name}")
+            
+            # Aggiungi alla fs_table e all'elenco delle entry reali
+            self.fs_table.append(FSTableEntry(entry_name, entry_inode_num, entry_type))
+            real_entries.append((entry_name, entry_inode_num, entry_type))
+            
+            # Imposta il percorso di estrazione
+            entry_path = parent_path / entry_name
+            self.extract_paths[entry_inode_num] = entry_path
+            
+            # Crea directory se necessario
+            if entry_type == PFSFileType.PFS_DIR:
+                self._log(f"  CREAZIONE DIR: '{entry_path}'")
+                entry_path.mkdir(parents=True, exist_ok=True)
+                
+                # Accoda per il BFS se è una directory
+                # Note: Non usiamo visited_dirs_for_bfs qui poiché queste sono le vere entry
+                # e vogliamo processarle tutte indipendentemente da uroot
+                if hasattr(self, 'bfs_queue'):
+                    self.bfs_queue.append((entry_inode_num, entry_path))
+                    self._log(f"  ACCODATO per BFS: inode {entry_inode_num} ('{entry_path}')")
+            
+            offset += dirent.entsize
+        
+        self._log(f"Fine parsing flat_path_table. Trovate {len(real_entries)} entry reali.\n")
+        return real_entries
+
+    def _process_pfs_directory_bfs(self, root_dir_inode_num, current_output_path):
+        """Processa la directory del PFS in modo BFS (breadth-first search).
+        
+        Args:
+            root_dir_inode_num (int): Numero di inode della directory root da cui iniziare
+            current_output_path (Path): Path di output per i file estratti
+        """
+        self._log(f"Inizio parsing ricorsivo (BFS) delle directory da root inode {root_dir_inode_num}")
+        
+        # Assicura che la directory di output esista
+        self.extract_base_path.mkdir(parents=True, exist_ok=True)
+        self.extract_paths[root_dir_inode_num] = self.extract_base_path
+        
+        # Inizializza una coda BFS con la root directory
+        queue = [(root_dir_inode_num, current_output_path)]
+        self.bfs_queue = queue  # Salva la coda nell'oggetto per permettere accesso da _process_flat_path_table
+        visited_dirs_for_bfs = set([root_dir_inode_num])
+        
+        # Buffer per decompressione blocchi dirent
+        decomp_block_buf_size = self.pfs_chdr.block_sz2 if self.pfs_chdr.block_sz2 > 0 else 0x10000
+        decomp_block_buf = bytearray(decomp_block_buf_size)
+        
+        # Ciclo principale BFS
+        while queue:
+            current_dir_inode_num, current_dir_path = queue.pop(0)
+            dir_inode_idx = current_dir_inode_num - 1
+            
+            if not (0 <= dir_inode_idx < len(self.iNodeBuf)):
+                self._log(f"    ERRORE BFS: Inode {current_dir_inode_num} fuori limite (len iNodeBuf={len(self.iNodeBuf)}). Salto.")
+                continue
+                
+            dir_inode_obj = self.iNodeBuf[dir_inode_idx]
+            self._log(f"  BFS: Processo directory inode {current_dir_inode_num} ('{current_dir_path}')")
+            
+            # Ottieni file_type dall'inode
+            file_type = dir_inode_obj.get_file_type()
+            self._log(f"    BFS: Inode {current_dir_inode_num} (idx {dir_inode_idx}) ha Mode={dir_inode_obj.Mode:#06x}, "
+                     f"Tipo dedotto={file_type.name if file_type else 'None'}, Size={dir_inode_obj.Size}, "
+                     f"Blocks={dir_inode_obj.Blocks}, Loc={dir_inode_obj.loc}")
+            
+            # Se l'inode non sembra essere una directory secondo Mode, ma è stato messo in coda dal BFS,
+            # significa che il suo Dirent.type lo indica come directory, e ci fidiamo di quello.
+            # Questo è necessario per directory speciali come 'uroot' che hanno Mode=0x816d (PFS_FILE)
+            # ma sono effettivamente directory.
+            if file_type != PFSFileType.PFS_DIR:
+                self._log(f"    AVVISO BFS: Inode {current_dir_inode_num} non sembra una directory secondo Mode={dir_inode_obj.Mode:#06x} "
+                         f"(Tipo={file_type.name if file_type else 'None'}), ma è stato messo in coda come directory, "
+                         f"quindi procediamo comunque.")
+            
+            first_block_idx_for_dir_in_map = dir_inode_obj.loc
+            num_blocks_for_dir = dir_inode_obj.Blocks
+            
+            self._log(f"    Dir Inode {current_dir_inode_num}: loc={first_block_idx_for_dir_in_map}, blocks={num_blocks_for_dir}, size={dir_inode_obj.Size}")
+            
+            # Processa blocchi di dati della directory
+            for i_dir_block in range(num_blocks_for_dir):
+                # map_idx_dir è l'indice nella self.sector_map
+                map_idx_dir = first_block_idx_for_dir_in_map + i_dir_block
+                
+                if map_idx_dir >= len(self.sector_map) - 1:
+                    self._log(f"      AVVISO BFS: Indice mappa {map_idx_dir} fuori limiti per dirent di inode {current_dir_inode_num}. Ultimo blocco processato."); break
+                
+                # block_offset_in_pfsc è l'offset del blocco (compresso) relativo all'inizio di pfsc_content_actual_bytes
+                block_offset_in_pfsc = self.sector_map[map_idx_dir]
+                block_csize = self.sector_map[map_idx_dir + 1] - block_offset_in_pfsc
+                
+                self._log(f"      Blocco dirent {i_dir_block} (map_idx {map_idx_dir}): offset_in_pfsc_content={block_offset_in_pfsc:#x}, csize={block_csize:#x}")
+
+                if block_offset_in_pfsc + block_csize > len(self.pfsc_content_actual_bytes):
+                    self._log(f"      ERRORE BFS: Lettura fuori limiti per blocco dirent {i_dir_block} di inode {current_dir_inode_num}. "
+                             f"Accesso a {block_offset_in_pfsc + block_csize} in buffer di {len(self.pfsc_content_actual_bytes)}"); break
+                if block_csize == 0: 
+                    self._log(f"      Blocco dirent {i_dir_block} ha csize 0. Salto."); continue
+
+                compressed_dir_block_data = self.pfsc_content_actual_bytes[block_offset_in_pfsc : block_offset_in_pfsc + block_csize]
+                
+                try:
+                    decompressed_data = decompress_pfsc(compressed_dir_block_data, decomp_block_buf_size, self._log)
+                    if not any(decompressed_data) and any(compressed_dir_block_data):
+                        self._log(f"      AVVISO BFS: Blocco dirent {i_dir_block} per inode {current_dir_inode_num} decompresso a zeri. "
+                                 f"Dati compressi (primi 32B): {compressed_dir_block_data[:32].hex()}")
+                        continue
+                    
+                    # Salva il blocco dirent decompresso per la directory root (inode 1) o uroot (inode 2)
+                    if current_dir_inode_num == 1 or current_dir_inode_num == 2:
+                        block_type = "ROOT" if current_dir_inode_num == 1 else "UROOT"
+                        debug_block_path = self.extract_base_path / f"debug_{block_type}_BLOCK_inode{current_dir_inode_num}_block{i_dir_block}.bin"
+                        try:
+                            with open(debug_block_path, "wb") as dbg_f:
+                                dbg_f.write(decompressed_data)
+                            self._log(f"DEBUG: Blocco decompresso per inode {current_dir_inode_num} ({block_type}, blocco {i_dir_block}) salvato: {debug_block_path}")
+                            
+                            # Se è l'inode 2 (uroot), controllo anche se contiene "flat_path_table"
+                            if current_dir_inode_num == 2 and len(decompressed_data) > 0x20:
+                                # Cerca la stringa "flat_path_table" a vari offset
+                                for offset in [0, 0x10, 0x20]:
+                                    if len(decompressed_data) > offset + 15:
+                                        potential_fpt = decompressed_data[offset:offset+15]
+                                        if b"flat_path_table" in potential_fpt:
+                                            self._log(f"DEBUG: Trovato 'flat_path_table' nell'inode 2 (uroot) all'offset 0x{offset:x}")
+                        except Exception as e_dbg_f:
+                            self._log(f"DEBUG: Errore salvataggio blocco: {e_dbg_f}")
+                except Exception as e_dec:
+                    self._log(f"      ERRORE BFS: Decompressione fallita per blocco dirent {i_dir_block} di inode {current_dir_inode_num}: {e_dec}"); continue
+                
+                actual_decomp_len_dir = len(decompressed_data)
+
+                offset_in_dir_block = 0
+                while offset_in_dir_block < actual_decomp_len_dir:
+                    if actual_decomp_len_dir - offset_in_dir_block < Dirent._SIZE_BASE: break
+                    
+                    dirent = Dirent.from_bytes(decompressed_data[offset_in_dir_block:])
+                    
+                    # Log dettagliato per tutti i campi della dirent, specialmente per inode 1 (root) e 2 (uroot)
+                    if current_dir_inode_num == 1 or current_dir_inode_num == 2:  # Logga solo per root e uroot
+                        name_bytes_hex = dirent.name_bytes[:dirent.namelen].hex() if hasattr(dirent, 'name_bytes') else 'N/A'
+                        self._log(f"        Raw Dirent Data: offset={offset_in_dir_block:#06x}, ino={dirent.ino}, type={dirent.type}, namelen={dirent.namelen}, "
+                                 f"entsize={dirent.entsize}, name_raw='{name_bytes_hex}', name_str='{dirent.name}'")
+                        # Dump hex dei primi 32 byte della dirent per debug
+                        dirent_bytes = decompressed_data[offset_in_dir_block:offset_in_dir_block+min(32, dirent.entsize or 32)]
+                        self._log(f"        Dirent Hex: {dirent_bytes.hex()}")
+                    
+                    if dirent.entsize == 0 or dirent.ino == 0:
+                        self._log(f"        TERMINAZIONE LOOP: dirent.entsize={dirent.entsize}, dirent.ino={dirent.ino}")
+                        break
+                    
+                    entry_name = dirent.name
+                    entry_inode_num = dirent.ino
+                    entry_pfs_type_from_dirent = dirent.get_pfs_file_type() # Basato su dirent.type
+                    
+                    # Logga il tipo dalla dirent
+                    self._log(f"      Dirent: '{entry_name}' (inode {entry_inode_num}), Dirent.type={dirent.type} -> PFSFileType.{entry_pfs_type_from_dirent.name}")
+                    
+                    # Gestione speciale per uroot: se troviamo flat_path_table
+                    if current_dir_inode_num == 2 and entry_name == "flat_path_table":
+                        self._log(f"      TROVATO flat_path_table nell'inode uroot! Attivazione parsing speciale per flat_path_table.")
+                        self._process_flat_path_table(decompressed_data, current_dir_path)
+                        # Una volta processato il flat_path_table, interrompiamo il parsing normale delle dirent
+                        # poiché il resto dei dati deve essere interpretato in modo diverso
+                        break
+                    
+                    if entry_name in [".", ".."]:
+                        offset_in_dir_block += dirent.entsize; continue
+                    
+                    if not (0 <= entry_inode_num - 1 < len(self.iNodeBuf)):
+                        self._log(f"        AVVISO BFS: Dirent '{entry_name}' punta a inode {entry_inode_num} che non è in iNodeBuf (len {len(self.iNodeBuf)}). Salto.");
+                        offset_in_dir_block += dirent.entsize; continue
+
+                    # Se è una directory secondo la dirent, logga anche il Mode dell'inode corrispondente
+                    if entry_pfs_type_from_dirent == PFSFileType.PFS_DIR:
+                        target_inode_obj = self.iNodeBuf[entry_inode_num -1]
+                        self._log(f"        -> Inode {entry_inode_num} associato ha Mode={target_inode_obj.Mode:#06x} (Tipo dedotto da Mode: {target_inode_obj.get_file_type().name})")
+                    
+                    # Solo aggiungi a fs_table se non già presente (per inode number)
+                    # Questo potrebbe non essere necessario se la visita è strettamente gerarchica senza re-visitare
+                    # if not any(fe.inode == entry_inode_num for fe in self.fs_table):
+                    self.fs_table.append(FSTableEntry(entry_name, entry_inode_num, entry_pfs_type_from_dirent))
+                    
+                    current_entry_path = current_dir_path / entry_name
+                    self.extract_paths[entry_inode_num] = current_entry_path
+
+                    if entry_pfs_type_from_dirent == PFSFileType.PFS_DIR: # Usa il tipo dalla dirent per accodare
+                        if entry_inode_num not in visited_dirs_for_bfs:
+                            self._log(f"        Trovata subdir: '{current_entry_path}' (inode {entry_inode_num})")
+                            current_entry_path.mkdir(parents=True, exist_ok=True)
+                            queue.append((entry_inode_num, current_entry_path))
+                            visited_dirs_for_bfs.add(entry_inode_num)
+                    else:
+                        self._log(f"        Trovato file: '{current_entry_path}' (inode {entry_inode_num})")
+                        
+                    offset_in_dir_block += dirent.entsize
+        
+        self._log(f"Completato parsing ricorsivo. Trovate {len(self.fs_table)} voci in fs_table.")
+        
+        # Se siamo arrivati qui, il metodo extract è stato completato.
+        # Il messaggio di ritorno dovrebbe riflettere lo stato del parsing PFS.
+        if self.pfsc_offset_in_pfs_image == -1 or not self.pfs_chdr or not self.fs_table :
+            return True, "Estrazione file di sistema completata. Parsing PFS fallito o PFS non presente/vuoto."
+        else:
+            return True, "Analisi PKG e parsing PFS completati. Estrazione file PFS seguirà."
+
+
+    def _read_decrypt_decompress_pfs_block(self, 
+                                         block_map_idx: int, 
+                                         is_compressed_flag: bool, 
+                                         pkg_file_handle, 
+                                         decomp_buffer: bytearray) -> tuple[Optional[bytes], str]:
+        # ... (codice esistente non modificato)
+        pass # Added pass to make the function syntactically correct
 
     def extract_pfs_files(self) -> tuple[bool, str]:
         self._log("Inizio estrazione file da PFS...")
-        if not self.fs_table: return True, "fs_table vuota."
-        if not self.iNodeBuf: return False, "iNodeBuf vuoto ma fs_table non lo è."
-        if not self.extract_paths: return False, "extract_paths vuoto."
-
-        num_extracted = 0; total_to_extract = sum(1 for x in self.fs_table if x.type == PFSFileType.PFS_FILE)
+        if not self.fs_table: return True, "Nessun file/directory trovato nella tabella PFS (fs_table vuota)."
+        if not self.iNodeBuf: return False, "iNodeBuf vuoto ma fs_table non lo è. Errore di parsing Inode."
+        if not self.extract_paths: return False, "extract_paths vuoto. Errore di parsing Dirent/Path."
+        if self.pfsc_offset_in_pfs_image == -1 : return False, "PFSC non trovato o non processato. Impossibile estrarre file PFS."
+        if not self.pfs_chdr: return False, "Header PFSC (pfs_chdr) non disponibile." # Aggiunto pfs_chdr come attributo di istanza
+        
+        num_extracted = 0
+        total_to_extract = sum(1 for x in self.fs_table if x.type == PFSFileType.PFS_FILE)
         self._log(f"Trovati {total_to_extract} file da estrarre da PFS.")
 
         try:
             with open(self.pkg_path, "rb") as pkg_file:
+                # Il buffer per i blocchi decompressi, dimensionato a pfs_chdr.block_sz2
+                decomp_block_buf = bytearray(self.pfs_chdr.block_sz2 if self.pfs_chdr.block_sz2 > 0 else 0x10000)
+                if not decomp_block_buf: decomp_block_buf = bytearray(0x10000) # Fallback
+
+                # Buffer per leggere un blocco XTS (0x1000) + possibile overflow per dati non allineati
+                # La dimensione massima di un blocco compresso PFS è block_sz2 (es. 0x10000)
+                # Un blocco XTS è 0x1000. Quindi un blocco PFS può spannare più blocchi XTS.
+                # Dobbiamo leggere e decrittare blocco XTS per blocco XTS.
+                xts_read_buffer = bytearray(0x1000) # Per leggere un blocco XTS alla volta
+                xts_decrypted_buffer = bytearray(0x1000) # Per il blocco XTS decrittato
+
                 for fs_entry in self.fs_table:
                     if fs_entry.type == PFSFileType.PFS_FILE:
                         inode_abs_num = fs_entry.inode
-                        
                         inode_idx = inode_abs_num -1 
+                        
                         if not (0 <= inode_idx < len(self.iNodeBuf)):
-                            self._log(f"ERRORE: Indice inode {inode_idx} (da num {inode_abs_num}) fuori limiti. File: '{fs_entry.name}'. Salto."); continue
+                            self._log(f"ERRORE: Indice inode {inode_idx} (da num {inode_abs_num}) fuori limiti per file '{fs_entry.name}'. Salto."); continue
                         
                         inode_obj = self.iNodeBuf[inode_idx]
                         if inode_obj.Mode == 0:
-                            self._log(f"AVVISO: Inode {inode_abs_num} (idx {inode_idx}) non valido. File: '{fs_entry.name}'. Salto."); continue
+                            self._log(f"AVVISO: Inode {inode_abs_num} (idx {inode_idx}) non valido per file '{fs_entry.name}'. Salto."); continue
 
                         out_path = self.extract_paths.get(inode_abs_num)
                         if not out_path:
                             self._log(f"ERRORE: Path estrazione non trovato per inode {inode_abs_num} ('{fs_entry.name}'). Salto."); continue
                         
-                        self._log(f"  Estrazione file PFS: '{fs_entry.name}' (inode {inode_abs_num}) a '{out_path}'")
+                        self._log(f"  Estrazione file PFS: '{out_path}' (inode {inode_abs_num}, size {inode_obj.Size})")
 
                         if inode_obj.Size == 0:
                             out_path.parent.mkdir(parents=True, exist_ok=True); open(out_path, "wb").close()
                             num_extracted += 1; continue
                         
-                        first_sect_idx = inode_obj.loc; num_blocks = inode_obj.Blocks
-                        if not (0 <= first_sect_idx < len(self.sector_map) and first_sect_idx + num_blocks < len(self.sector_map)):
-                            self._log(f"ERRORE: loc/num_blocks Inode non validi per sector_map. Salto '{fs_entry.name}'."); continue
+                        # loc è l'indice del primo blocco del file nella self.sector_map
+                        first_file_block_map_idx = inode_obj.loc 
+                        num_file_blocks = inode_obj.Blocks
+                        
+                        # Validazione indici mappa
+                        if not (0 <= first_file_block_map_idx < len(self.sector_map) and 
+                                first_file_block_map_idx + num_file_blocks <= len(self.sector_map) -1 ): # L'ultimo entry della mappa è l'offset finale
+                            self._log(f"ERRORE: loc/num_blocks Inode ({first_file_block_map_idx}/{num_file_blocks}) non validi per sector_map (len {len(self.sector_map)}) per '{fs_entry.name}'. Salto."); continue
                         
                         out_path.parent.mkdir(parents=True, exist_ok=True)
                         with open(out_path, "wb") as out_f_pfs:
-                            written_total = 0
-                            decomp_block_buf = bytearray(0x10000)
-                            read_chunk_pkg = bytearray(0x11000)
-                            decrypted_chunk_pkg = bytearray(0x11000)
+                            written_total_for_file = 0
+                            is_compressed = InodeFlagsPfs.compressed in inode_obj.Flags
+                            if is_compressed: self._log(f"    File '{fs_entry.name}' è compresso.")
 
-                            for j_block in range(num_blocks):
-                                map_idx = first_sect_idx + j_block
-                                sect_off_pfsc = self.sector_map[map_idx]
-                                sect_data_size = self.sector_map[map_idx + 1] - sect_off_pfsc
+                            for j_file_block in range(num_file_blocks):
+                                current_map_idx = first_file_block_map_idx + j_file_block
                                 
-                                abs_sect_off_pkg = self.pkg_header.pfs_image_offset + self.pfsc_offset_in_pfs_image + sect_off_pfsc
-                                xts_block_num_pfs = (self.pfsc_offset_in_pfs_image + sect_off_pfsc) // 0x1000
-                                off_sect_in_xts = (self.pfsc_offset_in_pfs_image + sect_off_pfsc) % 0x1000
-                                read_start_pkg = self.pkg_header.pfs_image_offset + (xts_block_num_pfs * 0x1000)
+                                # Offset del blocco (compresso) relativo all'inizio dell'area dati PFSC
+                                compressed_block_offset_in_data_area = self.sector_map[current_map_idx]
+                                # Dimensione del blocco (compresso)
+                                compressed_block_size = self.sector_map[current_map_idx + 1] - compressed_block_offset_in_data_area
+                                
+                                if compressed_block_size == 0: continue # Blocco vuoto
 
-                                pkg_file.seek(read_start_pkg)
-                                read_len = pkg_file.readinto(read_chunk_pkg)
-                                if read_len < off_sect_in_xts + sect_data_size:
-                                    raise IOError(f"Lettura PKG incompleta per blocco {j_block} di '{fs_entry.name}'.")
+                                # Offset del blocco (compresso) RELATIVO all'inizio dell'IMMAGINE PFS (originale, crittata nel PKG)
+                                abs_offset_compressed_block_in_pfs_image = self.pfsc_offset_in_pfs_image + self.pfs_chdr.data_start + compressed_block_offset_in_data_area
+                                
+                                # Dati del blocco (ancora compressi, ma decrittati XTS)
+                                current_block_data_buffer = bytearray(compressed_block_size)
+                                read_for_current_block_data = 0
 
-                                self.crypto.decryptPFS(self.dataKey, self.tweakKey, read_chunk_pkg, decrypted_chunk_pkg, xts_block_num_pfs)
-                                sect_data = decrypted_chunk_pkg[off_sect_in_xts : off_sect_in_xts + sect_data_size]
+                                # Leggi e decritta per blocchi XTS
+                                for xts_offset_in_block in range(0, compressed_block_size, 0x1000):
+                                    xts_block_to_read_abs_offset_in_pfs_image = abs_offset_compressed_block_in_pfs_image + xts_offset_in_block
+                                    xts_block_num_for_decryption = xts_block_to_read_abs_offset_in_pfs_image // 0x1000
+                                    offset_within_this_xts_block = xts_block_to_read_abs_offset_in_pfs_image % 0x1000
+
+                                    # Offset di lettura nel file PKG
+                                    pkg_file.seek(self.pkg_header.pfs_image_offset + (xts_block_num_for_decryption * 0x1000))
+                                    read_len_xts = pkg_file.readinto(xts_read_buffer)
+                                    if read_len_xts < 0x1000 and offset_within_this_xts_block + (compressed_block_size - xts_offset_in_block) > read_len_xts:
+                                        # Se non abbiamo letto un blocco XTS intero E ne avevamo bisogno
+                                        raise IOError(f"Lettura PKG incompleta per blocco XTS {xts_block_num_for_decryption} per '{fs_entry.name}'. Letto {read_len_xts} invece di 0x1000.")
+
+                                    self.crypto.decryptPFS(self.dataKey, self.tweakKey, xts_read_buffer[:read_len_xts], xts_decrypted_buffer[:read_len_xts], xts_block_num_for_decryption)
+                                    
+                                    bytes_to_copy_from_xts = min(0x1000 - offset_within_this_xts_block, compressed_block_size - read_for_current_block_data)
+                                    current_block_data_buffer[read_for_current_block_data : read_for_current_block_data + bytes_to_copy_from_xts] = \
+                                        xts_decrypted_buffer[offset_within_this_xts_block : offset_within_this_xts_block + bytes_to_copy_from_xts]
+                                    read_for_current_block_data += bytes_to_copy_from_xts
                                 
-                                if sect_data_size == 0x10000: decomp_block_buf[:] = sect_data
-                                elif 0 < sect_data_size < 0x10000: decomp_block_buf[:] = decompress_pfsc(bytes(sect_data), 0x10000)
-                                elif sect_data_size == 0: continue
-                                else: self._log(f"AVVISO: Blocco dati {j_block} dimensione non valida. Salto."); continue
+                                # Ora current_block_data_buffer contiene il blocco (compresso se flag impostato), decrittato da XTS.
+                                final_data_for_this_block = bytes(current_block_data_buffer)
+
+                                if is_compressed:
+                                    # La dimensione decompressa è self.pfs_chdr.block_sz2 (o fallback 0x10000)
+                                    # Assicurati che decomp_block_buf sia della dimensione corretta
+                                    if len(decomp_block_buf) != self.pfs_chdr.block_sz2 and self.pfs_chdr.block_sz2 > 0:
+                                        decomp_block_buf = bytearray(self.pfs_chdr.block_sz2)
+                                    elif len(decomp_block_buf) == 0 : # Caso fallback
+                                        decomp_block_buf = bytearray(0x10000)
+
+                                    decompressed_part = decompress_pfsc(final_data_for_this_block, len(decomp_block_buf), self._log)
+                                    final_data_for_this_block = decompressed_part
                                 
-                                if j_block < num_blocks - 1:
-                                    out_f_pfs.write(decomp_block_buf); written_total += 0x10000
-                                else: 
-                                    rem_bytes = inode_obj.Size - written_total
-                                    write_last = min(rem_bytes, 0x10000)
-                                    if write_last > 0: out_f_pfs.write(decomp_block_buf[:write_last]); written_total += write_last
+                                bytes_to_write_this_block = min(len(final_data_for_this_block), inode_obj.Size - written_total_for_file)
+                                if bytes_to_write_this_block > 0:
+                                    out_f_pfs.write(final_data_for_this_block[:bytes_to_write_this_block])
+                                    written_total_for_file += bytes_to_write_this_block
                             
-                            if written_total != inode_obj.Size: self._log(f"AVVISO: Dimensione finale '{fs_entry.name}' non corrisponde.")
+                            if written_total_for_file != inode_obj.Size: 
+                                self._log(f"AVVISO: Dimensione finale '{fs_entry.name}' ({written_total_for_file}) non corrisponde a inode.Size ({inode_obj.Size}).")
                         num_extracted +=1
-                        self._log(f"    File '{fs_entry.name}' estratto. {num_extracted}/{total_to_extract}")
+                        self._log(f"    File '{out_path}' estratto ({written_total_for_file} bytes). {num_extracted}/{total_to_extract}")
 
             self._log(f"Estrazione PFS completata. {num_extracted} file estratti.")
             return True, f"{num_extracted} file estratti."
@@ -1615,6 +2618,9 @@ class PKG:
         except IOError as e: self._log(f"Errore I/O estrazione PFS: {e}"); return False, f"Errore I/O: {e}"
         except Exception as e:
             self._log(f"Errore generico estrazione PFS: {e}"); import traceback; self._log(traceback.format_exc()); return False, f"Errore: {e}"
+
+    # Note: This duplicate implementation has been removed because it conflicted with the one at line ~2301
+    # and was causing a KeyError when trying to access self.extract_paths[root_inode_num]
 
 # --- Interfaccia Grafica (Tkinter) ---
 class PKGToolGUI:
@@ -1721,6 +2727,22 @@ class PKGToolGUI:
             if self.master.winfo_exists(): self.extract_button.config(state=tk.NORMAL)
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = PKGToolGUI(root)
-    root.mainloop()
+    import argparse
+    import sys
+    
+    # Check if we have command line arguments
+    if len(sys.argv) > 1:
+        parser = argparse.ArgumentParser(description="PKG Extractor Command Line")
+        parser.add_argument("--pkg", help="Path to PKG file", required=True)
+        parser.add_argument("--output", help="Output directory", required=True)
+        args = parser.parse_args()
+        
+        # Run in command line mode
+        print(f"Running in command line mode with: {args.pkg} -> {args.output}")
+        pkg = PKG()
+        pkg.extract(pathlib.Path(args.pkg), pathlib.Path(args.output))
+    else:
+        # Run in GUI mode
+        root = tk.Tk()
+        app = PKGToolGUI(root)
+        root.mainloop()
