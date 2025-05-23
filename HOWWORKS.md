@@ -4,7 +4,7 @@
 
 **Analysis Author:** SeregonWar
 
-**Primary Source:** C++ source code fragments (presumably from the shadPS4 Emulator project) and associated header files (`pkg.h`, `pfs.h`, `crypto.h`, `keys.h`, etc.).
+**Primary Source:** C++ source code fragments (from the shadPS4 Emulator project) and associated header files (`pkg.h`, `pfs.h`, `crypto.h`, `keys.h`, etc.).
 
 ## Abstract
 
