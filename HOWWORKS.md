@@ -1,7 +1,9 @@
 # Technical Analysis of the Decryption Process for PlayStation 4 PKG and PFS File Formats
 
 **Date:** May 23, 2025
+
 **Analysis Author:** SeregonWar
+
 **Primary Source:** C++ source code fragments (presumably from the shadPS4 Emulator project) and associated header files (`pkg.h`, `pfs.h`, `crypto.h`, `keys.h`, etc.).
 
 ## Abstract
