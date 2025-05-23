@@ -833,7 +833,7 @@ PKG_ENTRY_ID_TO_NAME = {
 
 }
 # Funzione per caricare dinamicamente PkgEntries da pkg_type.cpp (o hardcodarla)
-def _load_pkg_entry_names():
+""" def _load_pkg_entry_names():
     # Questo è solo un esempio, in pratica dovresti parsare pkg_type.cpp
     # o copiare l'array PkgEntries qui.
     # Per ora, uso una versione ridotta.
@@ -1455,7 +1455,7 @@ def _load_pkg_entry_names():
     return _pkg_entries_raw
 
 PKG_ENTRY_ID_TO_NAME_FULL = _load_pkg_entry_names()
-
+"""
 
 class PKGContentFlag(Flag): # Da pkg.h
     FIRST_PATCH = 0x100000
