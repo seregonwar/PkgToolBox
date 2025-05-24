@@ -10,6 +10,7 @@ import struct
 import zlib
 import os
 import pathlib
+from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
 import hashlib # Per SHA256 (usato in HMAC)
@@ -615,115 +616,105 @@ def get_pfsc_offset(data: bytes, logger_func=print) -> int:
     return -1
 
 def decompress_pfsc(compressed_data: bytes, decompressed_size: int, logger_func=print) -> bytes:
-    """Optimized PFSC decompression function with reduced logging for performance."""
+    """Optimized PFSC decompression function with support for multiple compression methods."""
     compressed_data_len = len(compressed_data)
     
-    # Only log for smaller compressed data to reduce I/O overhead in performance-critical paths
-    is_verbose = compressed_data_len < 1000000  # Only verbose logging for smaller files
+    # Only log for smaller compressed data to reduce I/O overhead
+    is_verbose = compressed_data_len < 1000000
     
     if is_verbose:
-        logger_func(f"DEBUG decompress_pfsc: Dati compressi: {compressed_data_len} bytes, decompressed_size atteso: {decompressed_size} bytes")
+        logger_func(f"DEBUG decompress_pfsc: Dati compressi: {compressed_data_len} bytes, decompressione attesa: {decompressed_size} bytes")
     
     if compressed_data_len == 0:
         if is_verbose:
-            logger_func("DEBUG decompress_pfsc: ERRORE - I dati compressi sono vuoti (0 bytes)")
+            logger_func("DEBUG decompress_pfsc: ERRORE - Dati compressi vuoti (0 bytes)")
         return b'\0' * decompressed_size
     
-    # Check first few bytes only in verbose mode
+    # Check first few bytes for debugging
     if is_verbose:
         sample_size = min(32, compressed_data_len)
-        logger_func(f"DEBUG decompress_pfsc: Primi {sample_size} bytes dati compressi: {compressed_data[:sample_size].hex()}")
-        
-        # Check if data seems to be all zeros
+        logger_func(f"DEBUG decompress_pfsc: Primi {sample_size} bytes: {compressed_data[:sample_size].hex()}")
         if all(b == 0 for b in compressed_data[:min(100, compressed_data_len)]):
-            logger_func("DEBUG decompress_pfsc: AVVISO - I dati compressi sembrano essere tutti zeri")
+            logger_func("DEBUG decompress_pfsc: AVVISO - Dati compressi sembrano essere tutti zeri")
     
-    # Cache the result of common decompression sizes
-    # This significantly improves performance for repeated decompression of same-sized blocks
+    # Cache for performance
     global _pfsc_decompress_cache
     cache_key = None
     
-    try:
-        # Use the cache for blocks under 1MB to avoid memory issues
-        if compressed_data_len < 1024*1024:
-            if '_pfsc_decompress_cache' not in globals():
-                _pfsc_decompress_cache = {}
-                
-            # Generate a cache key based on the compressed data
-            if compressed_data_len > 64:
-                # Use first and last 32 bytes as a fingerprint for cache key
-                cache_key = (compressed_data[:32], compressed_data[-32:], compressed_data_len, decompressed_size)
-                if cache_key in _pfsc_decompress_cache:
-                    return _pfsc_decompress_cache[cache_key]
-        
-        # For performance, use a raw decompressobj
-        decompressor = zlib.decompressobj(-zlib.MAX_WBITS)  # Raw deflate
-        decompressed = decompressor.decompress(compressed_data)
-        decompressed += decompressor.flush()
-        
-        if is_verbose:
-            actual_decompressed_len = len(decompressed)
-            logger_func(f"DEBUG decompress_pfsc: Decompressione RIUSCITA. Dimensione effettiva: {actual_decompressed_len} bytes")
-        
-        # Handle size adjustments
-        if len(decompressed) < decompressed_size:
-            if is_verbose:
-                logger_func(f"DEBUG decompress_pfsc: Padding aggiunto: {decompressed_size - len(decompressed)} bytes")
-            decompressed += b'\0' * (decompressed_size - len(decompressed))
-        elif len(decompressed) > decompressed_size:
-            if is_verbose:
-                logger_func(f"DEBUG decompress_pfsc: Troncamento: {len(decompressed) - decompressed_size} bytes rimossi")
-            decompressed = decompressed[:decompressed_size]
-        
-        # Only log in verbose mode
-        if is_verbose:
-            sample_size_output = min(32, len(decompressed))
-            logger_func(f"DEBUG decompress_pfsc: Primi {sample_size_output} bytes decompressione: {decompressed[:sample_size_output].hex()}")
-        
-        # Save to cache if we have a cache key
-        if cache_key is not None and '_pfsc_decompress_cache' in globals():
-            # Limit cache size
-            if len(_pfsc_decompress_cache) > 100:  # Don't let cache grow too large
-                _pfsc_decompress_cache.clear()
-            _pfsc_decompress_cache[cache_key] = decompressed
-        
-        return decompressed
-        
-    except zlib.error as e:
-        if is_verbose:
-            logger_func(f"DEBUG decompress_pfsc: ERRORE Zlib durante la decompressione: {e}")
-        
-        # Try alternative approach with standard zlib
+    # Try multiple decompression methods
+    methods = [
+        # Method 1: Raw deflate (no header)
+        {'name': 'raw deflate (-MAX_WBITS)', 'wbits': -zlib.MAX_WBITS, 'offset': 0},
+        # Method 2: Standard zlib
+        {'name': 'standard zlib (15)', 'wbits': zlib.MAX_WBITS, 'offset': 0},
+        # Method 3: Raw deflate with 2-byte header
+        {'name': 'raw deflate with 2-byte header', 'wbits': -zlib.MAX_WBITS, 'offset': 2},
+        # Method 4: Gzip
+        {'name': 'gzip (16+MAX_WBITS)', 'wbits': 16 + zlib.MAX_WBITS, 'offset': 0},
+    ]
+    
+    for method in methods:
         try:
+            if method['offset'] > 0 and compressed_data_len > method['offset']:
+                data_to_decompress = compressed_data[method['offset']:]
+                if is_verbose:
+                    logger_func(f"DEBUG decompress_pfsc: Provo metodo '{method['name']}' con offset {method['offset']}")
+            else:
+                data_to_decompress = compressed_data
+                if is_verbose:
+                    logger_func(f"DEBUG decompress_pfsc: Provo metodo '{method['name']}'")            
+            
+            decompressor = zlib.decompressobj(method['wbits'])
+            decompressed = decompressor.decompress(data_to_decompress)
+            decompressed += decompressor.flush()
+            
             if is_verbose:
-                logger_func("DEBUG decompress_pfsc: Tentativo con wbits=15 (standard zlib)...")
+                logger_func(f"DEBUG decompress_pfsc: Successo con {method['name']}! Dimensione: {len(decompressed)} bytes")
             
-            decompressor_alt = zlib.decompressobj(15)
-            decompressed_alt = decompressor_alt.decompress(compressed_data)
-            decompressed_alt += decompressor_alt.flush()
+            # Handle size adjustments
+            if len(decompressed) < decompressed_size:
+                if is_verbose:
+                    logger_func(f"DEBUG decompress_pfsc: Aggiungo padding: {decompressed_size - len(decompressed)} bytes")
+                decompressed += b'\0' * (decompressed_size - len(decompressed))
+            elif len(decompressed) > decompressed_size:
+                if is_verbose:
+                    logger_func(f"DEBUG decompress_pfsc: Troncamento: {len(decompressed) - decompressed_size} bytes")
+                decompressed = decompressed[:decompressed_size]
             
-            if is_verbose:
-                logger_func(f"DEBUG decompress_pfsc: Alternativa riuscita! Dimensione: {len(decompressed_alt)} bytes")
-            
-            if len(decompressed_alt) < decompressed_size:
-                decompressed_alt += b'\0' * (decompressed_size - len(decompressed_alt))
-            elif len(decompressed_alt) > decompressed_size:
-                decompressed_alt = decompressed_alt[:decompressed_size]
-            
-            # Save to cache if we have a cache key
-            if cache_key is not None and '_pfsc_decompress_cache' in globals():
-                _pfsc_decompress_cache[cache_key] = decompressed_alt
+            # Cache the result if we have a cache key
+            if '_pfsc_decompress_cache' in globals():
+                if cache_key is None and compressed_data_len > 64:
+                    # Assicuriamoci che compressed_data sia sempre bytes e non bytearray
+                    data_bytes = bytes(compressed_data)
+                    # Utilizza i primi e ultimi 32 byte come parte della chiave di cache
+                    cache_key = (bytes(data_bytes[:32]), bytes(data_bytes[-32:]), compressed_data_len, decompressed_size)
                 
-            return decompressed_alt
+                if cache_key is not None:
+                    try:
+                        if len(_pfsc_decompress_cache) > 100:  # Limit cache size
+                            _pfsc_decompress_cache.clear()
+                        _pfsc_decompress_cache[cache_key] = decompressed
+                    except TypeError as cache_error:
+                        # Se si verifica un errore di tipo con la cache, lo logghiamo ma continuiamo
+                        if is_verbose:
+                            logger_func(f"DEBUG decompress_pfsc: Errore cache: {cache_error}. Tipo di cache_key: {type(cache_key)}")
             
-        except zlib.error as e2:
             if is_verbose:
-                logger_func(f"DEBUG decompress_pfsc: Anche approccio alternativo fallito: {e2}")
-        
-        # Return a zero buffer
-        if is_verbose:
-            logger_func(f"DEBUG decompress_pfsc: Restituzione buffer di zeri ({decompressed_size} bytes)")
-        return b'\0' * decompressed_size
+                sample_size = min(32, len(decompressed))
+                logger_func(f"DEBUG decompress_pfsc: Primi {sample_size} bytes: {decompressed[:sample_size].hex()}")
+            
+            return decompressed
+            
+        except zlib.error as e:
+            if is_verbose:
+                logger_func(f"DEBUG decompress_pfsc: Fallito metodo '{method['name']}': {str(e)}")
+            continue
+    
+    # If we get here, all decompression methods failed
+    if is_verbose:
+        logger_func(f"DEBUG decompress_pfsc: Tutti i metodi di decompressione falliti. Restituisco buffer di zeri ({decompressed_size} bytes)")
+    
+    return b'\0' * decompressed_size
 
 @dataclass
 class PKGHeader:
@@ -1009,8 +1000,11 @@ class Inode: # Da pfs.h struct Inode
 
 
 class PFSFileType(IntEnum):
-    PFS_INVALID = 0; PFS_FILE = 2; PFS_DIR = 3
-    PFS_CURRENT_DIR = 4; PFS_PARENT_DIR = 5
+    PFS_INVALID = 0
+    PFS_FILE = 2
+    PFS_DIR = 3
+    PFS_CURRENT_DIR = 4
+    PFS_PARENT_DIR = 5
 
 @dataclass
 class Dirent: # Da pfs.h
@@ -1072,186 +1066,10 @@ class Dirent: # Da pfs.h
 
 @dataclass
 class FSTableEntry:
-    name: str; inode: int; type: PFSFileType
+    name: str
+    inode: int
+    type: PFSFileType
 
-
-# --- Implementazione Crypto Reale ---
-"""class RealCrypto:
-    def __init__(self, logger_func=print):
-        self.logger = logger_func
-        self.logger("Crypto Reale: Inizializzazione...")
-        try:
-            self._key_pkg_derived_key3 = RSA.construct((
-                int.from_bytes(PkgDerivedKey3Keyset.Modulus, 'big'),
-                int.from_bytes(PkgDerivedKey3Keyset.PublicExponent, 'big'),
-                int.from_bytes(PkgDerivedKey3Keyset.PrivateExponent, 'big'),
-                int.from_bytes(PkgDerivedKey3Keyset.Prime1, 'big'),
-                int.from_bytes(PkgDerivedKey3Keyset.Prime2, 'big'),
-                # PyCryptodome calcola 'u' (coefficient) se p e q sono forniti e u è None.
-                # Per usare i valori da keys.h, passiamo anche Exponent1 (dP), Exponent2 (dQ)
-                # e Coefficient (u). Tuttavia, RSA.construct accetta (n,e,d,p,q,u) oppure (n,e,d,p,q,dP,dQ,u).
-                # Per semplicità e dato che abbiamo tutti i componenti CRT:
-                # Usiamo dP=Exponent1, dQ=Exponent2, u=Coefficient
-                # Ma la tupla base (n,e,d,p,q,u) è sufficiente.
-                # Per usare dP, dQ: RSA.construct((n,e,d,p,q,dP,dQ,u))
-                # Se dP, dQ, u non sono noti, RSA.construct((n,e,d,p,q)) li calcola.
-                # Poiché abbiamo 'u' (Coefficient), lo usiamo.
-                 int.from_bytes(PkgDerivedKey3Keyset.Coefficient, 'big')
-            ))
-            self._key_fake = RSA.construct((
-                int.from_bytes(FakeKeyset.Modulus, 'big'),
-                int.from_bytes(FakeKeyset.PublicExponent, 'big'),
-                int.from_bytes(FakeKeyset.PrivateExponent, 'big'),
-                int.from_bytes(FakeKeyset.Prime1, 'big'),
-                int.from_bytes(FakeKeyset.Prime2, 'big'),
-                int.from_bytes(FakeKeyset.Coefficient, 'big')
-            ))
-            self.logger("Chiavi RSA caricate con successo.")
-        except Exception as e:
-            self.logger(f"ERRORE CRITICO nel caricamento chiavi RSA: {e}")
-            import traceback
-            self.logger(traceback.format_exc()); raise
-
-    def RSA2048Decrypt(self, output_key_buffer: bytearray, ciphertext: bytes, is_dk3: bool):
-        # ... (implementazione come prima, assicurarsi che sia corretta) ...
-        # Nota: il messaggio decrittato da RSA PKCS#1v1.5 è più corto della dimensione della chiave.
-        # Il C++ copia i primi N byte (es. 32) nel buffer di output.
-        self.logger(f"Crypto: RSA2048Decrypt. is_dk3={is_dk3}, input len={len(ciphertext)}")
-        if len(ciphertext) != 256:
-            self.logger(f"Errore RSA: ciphertext len non è 256 (è {len(ciphertext)})")
-            output_key_buffer[:] = b'\0' * len(output_key_buffer); return
-        key_to_use = self._key_pkg_derived_key3 if is_dk3 else self._key_fake
-        cipher_rsa = Cipher_PKCS1_v1_5.new(key_to_use)
-        try:
-            decrypted_data = cipher_rsa.decrypt(ciphertext, sentinel=None) 
-            bytes_to_copy = min(len(output_key_buffer), len(decrypted_data))
-            output_key_buffer[:bytes_to_copy] = decrypted_data[:bytes_to_copy]
-            if len(output_key_buffer) > bytes_to_copy:
-                output_key_buffer[bytes_to_copy:] = b'\0' * (len(output_key_buffer) - bytes_to_copy)
-            # self.logger(f"Crypto: RSA Decrypt OK. Output (primi {min(8, len(output_key_buffer))} byte): {output_key_buffer[:min(8, len(output_key_buffer))].hex()}")
-        except Exception as e:
-            self.logger(f"Errore RSA Decrypt: {e}. Ciphertext: {ciphertext[:16].hex()}...");
-            output_key_buffer[:] = b'\0' * len(output_key_buffer)
-
-
-    def ivKeyHASH256(self, cipher_input: bytes, ivkey_result_buffer: bytearray):
-        # ... (implementazione come prima) ...
-        if len(cipher_input) != 64 or len(ivkey_result_buffer) != 32:
-             self.logger(f"Errore ivKeyHASH256: dimensioni non valide."); return
-        h = SHA256.new(); h.update(cipher_input); ivkey_result_buffer[:] = h.digest()
-        # self.logger(f"Crypto: ivKeyHASH256 OK.")
-
-    def aesCbcCfb128Decrypt(self, ivkey: bytes, ciphertext: bytes, decrypted_buffer: bytearray):
-        # ... (implementazione come prima) ...
-        if len(ivkey) != 32 or len(ciphertext) != 256 or len(decrypted_buffer) != 256:
-            self.logger("Errore aesCbcCfb128Decrypt: dimensioni non valide."); return
-        key = ivkey[16:32]; iv = ivkey[0:16]
-        cipher_aes = AES.new(key, AES.MODE_CBC, iv)
-        decrypted_buffer[:] = cipher_aes.decrypt(ciphertext)
-        # self.logger(f"Crypto: aesCbcCfb128Decrypt OK.")
-
-    def aesCbcCfb128DecryptEntry(self, ivkey: bytes, ciphertext: bytes, decrypted_buffer: bytearray):
-        # ... (implementazione come prima) ...
-        if len(ivkey) != 32 or len(ciphertext) % AES.block_size != 0 or len(decrypted_buffer) != len(ciphertext):
-            self.logger("Errore aesCbcCfb128DecryptEntry: dimensioni non valide."); return
-        key = ivkey[16:32]; iv = ivkey[0:16]
-        cipher_aes = AES.new(key, AES.MODE_CBC, iv)
-        decrypted_buffer[:] = cipher_aes.decrypt(ciphertext)
-        # self.logger(f"Crypto: aesCbcCfb128DecryptEntry OK.")
-
-    def PfsGenCryptoKey(self, ekpfs: bytes, seed: bytes, dataKey_buffer: bytearray, tweakKey_buffer: bytearray):
-        # ... (implementazione come prima) ...
-        if len(ekpfs) != 32 or len(seed) != 16 or len(dataKey_buffer) != 16 or len(tweakKey_buffer) != 16:
-            self.logger("Errore PfsGenCryptoKey: dimensioni non valide."); return
-        hmac_sha256 = HMAC.new(ekpfs, digestmod=SHA256)
-        d_payload = struct.pack("<I", 1) + seed
-        hmac_sha256.update(d_payload)
-        digest = hmac_sha256.digest()
-        tweakKey_buffer[:] = digest[0:16]; dataKey_buffer[:] = digest[16:32]
-        # self.logger(f"Crypto: PfsGenCryptoKey OK.")
-
-    def _xts_mult(self, tweak_block: bytearray):
-        # ... (implementazione come prima) ...
-        feedback = 0;
-        for k in range(16):
-            tmp = (tweak_block[k] >> 7) & 1
-            tweak_block[k] = ((tweak_block[k] << 1) + feedback) & 0xFF
-            feedback = tmp
-        if feedback != 0: tweak_block[0] ^= 0x87
-
-
-    def decryptPFS(self, dataKey: bytes, tweakKey: bytes, src_image_block: bytes, dst_image_buffer: bytearray, sector_num: int):
-        # dataKey: 16 bytes
-        # tweakKey: 16 bytes
-        # src_image_block: 0x1000 bytes (un settore PFS criptato)
-        # dst_image_buffer: 0x1000 bytes (per il settore PFS decrittato)
-        # sector_num: numero del settore (per il calcolo del tweak iniziale)
-        # La logica C++ itera su src_image (potenzialmente grande) in blocchi di 0x1000.
-        # Questa funzione Python dovrebbe essere chiamata per ogni blocco di 0x1000.
-
-        if len(dataKey)!=16 or len(tweakKey)!=16 or len(src_image_block)!=0x1000 or len(dst_image_buffer)!=0x1000:
-            self.logger("Errore decryptPFS: dimensioni input/output non valide.")
-            dst_image_buffer[:] = b'\0' * len(dst_image_buffer)
-            return
-
-        # AES-ECB per la chiave dati (per decrittare blocco xorato col tweak)
-        cipher_data = AES.new(dataKey, AES.MODE_ECB)
-        # AES-ECB per la chiave tweak (per criptare il numero di settore)
-        cipher_tweak = AES.new(tweakKey, AES.MODE_ECB)
-
-        # Calcola il tweak iniziale per questo settore
-        # current_sector è sector_num
-        # C++: std::memcpy(tweak.data(), &current_sector, sizeof(u64)); // il resto di tweak è 0
-        tweak_initial_val = bytearray(16)
-        tweak_initial_val[0:8] = struct.pack("<Q", sector_num) # Little Endian u64
-
-        encrypted_tweak = bytearray(cipher_tweak.encrypt(bytes(tweak_initial_val))) # T_j per il primo blocco del settore
-
-        for i in range(0, 0x1000, 16): # Itera sui 16-byte AES blocks all'interno del settore di 0x1000 byte
-            ciphertext_sub_block = src_image_block[i : i+16]
-            
-            # XOR ciphertext con tweak crittato: C_i ^ T_j
-            xor_buffer = bytes(a ^ b for a, b in zip(ciphertext_sub_block, encrypted_tweak))
-            
-            # Decritta con la chiave dati: D_K(C_i ^ T_j)
-            decrypted_sub_block_intermediate = cipher_data.decrypt(xor_buffer)
-            
-            # XOR di nuovo con tweak crittato per ottenere plaintext: P_i = D_K(C_i ^ T_j) ^ T_j
-            plaintext_sub_block = bytes(a ^ b for a, b in zip(decrypted_sub_block_intermediate, encrypted_tweak))
-            
-            dst_image_buffer[i : i+16] = plaintext_sub_block
-            
-            # Aggiorna il tweak per il prossimo blocco AES: T_{j+1} = T_j * alpha
-            if i + 16 < 0x1000: # Non aggiornare dopo l'ultimo blocco
-                self._xts_mult(encrypted_tweak)
-        # self.logger(f"Crypto: decryptPFS OK per settore {sector_num}.")
-
-    def decryptEFSM(self, trophyKey: bytes, NPcommID: bytes, efsmIv: bytes, ciphertext: bytes, decrypted_buffer: bytearray):
-        # trophyKey: 16 bytes
-        # NPcommID: 16 bytes (C++ usa std::array<u8,16> np_comm_id, ma legge 12 e padda a 0)
-        # efsmIv: 16 bytes
-        # ciphertext: lunghezza variabile
-        # decrypted_buffer: stessa lunghezza di ciphertext
-        
-        if not (len(trophyKey) == 16 and len(NPcommID) == 16 and len(efsmIv) == 16 and \
-                len(ciphertext) % AES.block_size == 0 and len(decrypted_buffer) == len(ciphertext)):
-            self.logger("Errore decryptEFSM: dimensioni input/output non valide.")
-            decrypted_buffer[:] = b'\0' * len(decrypted_buffer)
-            return
-
-        # Step 1: Encrypt NPcommID con trophyKey e IV di zeri per ottenere trpKey
-        trophy_iv_zeros = b'\0' * 16
-        cipher_step1 = AES.new(trophyKey, AES.MODE_CBC, trophy_iv_zeros)
-        trpKey = cipher_step1.encrypt(NPcommID) # trpKey è 16 bytes
-
-        # Step 2: Decrypt EFSM (ciphertext) con trpKey e efsmIv
-        cipher_step2 = AES.new(trpKey, AES.MODE_CBC, efsmIv)
-        decrypted_data = cipher_step2.decrypt(ciphertext)
-        decrypted_buffer[:] = decrypted_data
-
-        # removePadding è fatto esternamente nel codice C++
-        self.logger(f"Crypto: decryptEFSM OK per {len(ciphertext)} bytes.")
-"""
 # --- PKG Class (iniziata la revisione) ---
 class RealCrypto:
     def __init__(self, logger_func=print):
@@ -1589,11 +1407,15 @@ class PKG:
             self._log(f"Errore apertura PKG: {e}"); import traceback; self._log(traceback.format_exc()); return False, f"Errore: {e}"
 
     def extract(self, filepath: pathlib.Path, extract_base_path_gui: pathlib.Path) -> tuple[bool, str]:
+        # Initialize variables outside the try block
         self.pkg_path = filepath
         self._log(f"Inizio estrazione da: {filepath} a GUI base: {extract_base_path_gui}")
         pfsc_content_actual_bytes = b'' # Initialize to ensure it's always defined
-        # Removing problematic try block and using with statement's own error handling
-        with open(filepath, "rb") as f:
+        
+        # Main try block for the extract method
+        try:
+            # Using with statement for file handling
+            with open(filepath, "rb") as f:
                 if not self.pkg_header: 
                     f.seek(0)
                     if not self._read_pkg_header(f): return False, "Fallimento rilettura header."
@@ -1991,7 +1813,20 @@ class PKG:
                                 self._log(f"DEBUG: Errore salvataggio superblocco compresso: {e_dbg_sb_c}")
                             # --- Fine Debug ---
                             
-                            decompressed_superblock_data = decompress_pfsc(super_block_compressed_data, len(decomp_block_buf), self._log)
+                            # --- LOGICA DECISIONALE PER COMPRESSIONE ---
+                            if super_block_size_compressed == len(decomp_block_buf):
+                                self._log(f"DEBUG: Superblocco PFS (size {super_block_size_compressed}) non compresso. Copia diretta.")
+                                decompressed_superblock_data = super_block_compressed_data  # Copia diretta
+                            elif 0 < super_block_size_compressed < len(decomp_block_buf):
+                                self._log(f"DEBUG: Superblocco PFS compresso (size {super_block_size_compressed}). Decompressione...")
+                                # Decompressione tramite zlib
+                                decompressed_superblock_data = decompress_pfsc(super_block_compressed_data, len(decomp_block_buf), self._log)
+                            else:
+                                self._log(f"AVVISO: Dimensione compressa superblocco ({super_block_size_compressed}) anomala. Considero come non compresso.")
+                                # Fallback: copiamo direttamente la porzione attesa
+                                bytes_to_copy = min(super_block_size_compressed, len(decomp_block_buf))
+                                decompressed_superblock_data = super_block_compressed_data[:bytes_to_copy]
+                            # --- FINE LOGICA DECISIONALE ---
                             
                             # --- Debug: Salva superblocco decompresso ---
                             debug_sb_path = self.extract_base_path / "debug_SUPERBLOCK_decompressed.bin"
@@ -2047,7 +1882,22 @@ class PKG:
                             if block_size_compressed == 0 : continue
 
                             compressed_inode_block_data = pfsc_content_actual_bytes[block_offset_in_pfsc_content : block_offset_in_pfsc_content + block_size_compressed]
-                            decompressed_inode_data = decompress_pfsc(compressed_inode_block_data, len(decomp_block_buf), self._log)
+                            
+                            # --- LOGICA DECISIONALE PER COMPRESSIONE DEI BLOCCHI INODE ---
+                            if block_size_compressed == len(decomp_block_buf):
+                                self._log(f"DEBUG: Blocco inode {i_block_idx_in_map} (size {block_size_compressed}) non compresso. Copia diretta.")
+                                decompressed_inode_data = compressed_inode_block_data  # Copia diretta
+                            elif 0 < block_size_compressed < len(decomp_block_buf):
+                                self._log(f"DEBUG: Blocco inode {i_block_idx_in_map} compresso (size {block_size_compressed}). Decompressione...")
+                                # Decompressione tramite zlib
+                                decompressed_inode_data = decompress_pfsc(compressed_inode_block_data, len(decomp_block_buf), self._log)
+                            else:
+                                self._log(f"AVVISO: Dimensione compressa blocco inode {i_block_idx_in_map} ({block_size_compressed}) anomala. Considero come non compresso.")
+                                # Fallback: copiamo direttamente la porzione attesa
+                                bytes_to_copy = min(block_size_compressed, len(decomp_block_buf))
+                                decompressed_inode_data = compressed_inode_block_data[:bytes_to_copy]
+                            # --- FINE LOGICA DECISIONALE ---
+                            
                             actual_decomp_len_inode_block = len(decompressed_inode_data)
                             
                             # --- Debug: Salva il blocco inode decompresso ---
@@ -2068,53 +1918,94 @@ class PKG:
                             if len(self.iNodeBuf) >= actual_total_inodes: break
                         self._log(f"Letti {len(self.iNodeBuf)}/{actual_total_inodes} inodes.")
                     
+                    # Debug info per inodes iniziali
+                    if self.iNodeBuf: # Se iNodeBuf non è vuoto
+                        self._log(f"DEBUG: Inode 1 (iNodeBuf[0]): Mode={self.iNodeBuf[0].Mode:#06x}, Tipo={self.iNodeBuf[0].get_file_type().name}")
+                        if len(self.iNodeBuf) > 1: # Se esiste anche l'inode 2
+                            self._log(f"DEBUG: Inode 2 (iNodeBuf[1]): Mode={self.iNodeBuf[1].Mode:#06x}, Tipo={self.iNodeBuf[1].get_file_type().name}")
+                        if len(self.iNodeBuf) > 2: # Se esiste anche l'inode 3
+                            self._log(f"DEBUG: Inode 3 (iNodeBuf[2]): Mode={self.iNodeBuf[2].Mode:#06x}, Tipo={self.iNodeBuf[2].get_file_type().name}")
+                    
                     # Logica migliorata per determinare root_dir_inode_num
                     if self.pfs_superblock_header:
                         actual_total_inodes = self.pfs_superblock_header.dinode_count
                         root_dir_inode_num = self.pfs_superblock_header.superroot_ino
                         self._log(f"Dal superblocco PFS: actual_total_inodes={actual_total_inodes}, superroot_ino={root_dir_inode_num}")
                     else:
-                        actual_total_inodes = 0 # Non possiamo fidarci se il superblocco non è stato letto
-                        root_dir_inode_num = 0
+                        actual_total_inodes = len(self.iNodeBuf) if self.iNodeBuf else 0
+                        root_dir_inode_num = 0  # Lo cambieremo nel fallback qui sotto
+                        self._log(f"Superblocco PFS non disponibile. Usando actual_total_inodes={actual_total_inodes} da len(iNodeBuf)")
 
-                    if actual_total_inodes == 0 and self.iNodeBuf: # Se ndinode era 0 ma abbiamo letto inodes
-                        actual_total_inodes = len(self.iNodeBuf)
-                        self._log(f"AVVISO: ndinode_total_count era 0, ma iNodeBuf ha {len(self.iNodeBuf)} elementi. Uso len(iNodeBuf).")
-
-                    # Logica migliorata di fallback per root_dir_inode_num
-                    if root_dir_inode_num <= 0 or root_dir_inode_num > actual_total_inodes: # Inode 0 non è valido
-                        self._log(f"superroot_ino ({root_dir_inode_num}) non valido. Tentativo di fallback.")
+                    # Assicuriamoci che root_dir_inode_num sia valido (> 0 e <= len(iNodeBuf))
+                    if root_dir_inode_num <= 0 or root_dir_inode_num > len(self.iNodeBuf) or len(self.iNodeBuf) == 0:
+                        self._log(f"superroot_ino ({root_dir_inode_num}) non valido o iNodeBuf vuoto. Tentativo di fallback.")
                         
-                        # Tentativo 1: Usa inode 2 se esiste ed è una directory (comune nei filesystem Unix)
-                        potential_root_idx = 2 - 1 # Indice per iNodeBuf (0-based)
-                        if 0 <= potential_root_idx < len(self.iNodeBuf) and \
-                           self.iNodeBuf[potential_root_idx].get_file_type() == PFSFileType.PFS_DIR and \
-                           self.iNodeBuf[potential_root_idx].Blocks > 0:
-                            root_dir_inode_num = 2
-                            self._log(f"Fallback: Uso inode 2 come root (trovato e directory).")
+                        # Logica di fallback migliorata
+                        if len(self.iNodeBuf) > 0:
+                            # Tentativo 1: Inode 2 (comune per root PFS)
+                            potential_root_idx = 2 - 1 
+                            if 0 <= potential_root_idx < len(self.iNodeBuf) and \
+                               self.iNodeBuf[potential_root_idx].get_file_type() == PFSFileType.PFS_DIR and \
+                               self.iNodeBuf[potential_root_idx].Blocks > 0:
+                                root_dir_inode_num = 2
+                                self._log(f"Fallback: Uso inode 2 come root.")
+                            else:
+                                # Tentativo 2: Inode 1
+                                potential_root_idx = 1 - 1
+                                if 0 <= potential_root_idx < len(self.iNodeBuf) and \
+                                   self.iNodeBuf[potential_root_idx].get_file_type() == PFSFileType.PFS_DIR and \
+                                   self.iNodeBuf[potential_root_idx].Blocks > 0:
+                                    root_dir_inode_num = 1
+                                    self._log(f"Fallback: Uso inode 1 come root.")
+                                else:
+                                    # Tentativo 3: Primo inode directory trovato
+                                    found_fallback_root = False
+                                    for idx, inode_entry in enumerate(self.iNodeBuf):
+                                        inode_num_candidate = idx + 1
+                                        if inode_entry.get_file_type() == PFSFileType.PFS_DIR and inode_entry.Blocks > 0:
+                                            root_dir_inode_num = inode_num_candidate
+                                            self._log(f"Fallback: Trovato primo inode directory valido ({root_dir_inode_num}) come root.")
+                                            found_fallback_root = True
+                                            break
+                                    if not found_fallback_root:
+                                        self._log(f"Fallback fallito: Nessun inode directory valido trovato in iNodeBuf.")
+                                        root_dir_inode_num = -1 # Indica fallimento chiaro
                         else:
-                            # Tentativo 2: Cerca il primo inode directory valido
-                            found_fallback_root = False
-                            for idx, inode_entry in enumerate(self.iNodeBuf):
-                                inode_num_candidate = idx + 1 # Assumendo 1-based per il numero di inode
-                                if inode_entry.get_file_type() == PFSFileType.PFS_DIR and inode_entry.Blocks > 0:
-                                    # Prendi il primo inode directory con blocchi
-                                    root_dir_inode_num = inode_num_candidate
-                                    self._log(f"Fallback: Trovato primo inode directory valido ({root_dir_inode_num}) come potenziale root.")
-                                    found_fallback_root = True
-                                    break
-                            if not found_fallback_root and self.iNodeBuf:
-                                root_dir_inode_num = 1 # Ultima spiaggia
+                            self._log("ERRORE CRITICO: iNodeBuf è vuoto. Impossibile determinare un root inode valido.")
+                            return False, "Estrazione fallita: iNodeBuf vuoto, impossibile trovare un root inode valido."
                     
                     # Verifica finale della root
                     if root_dir_inode_num <= 0 or root_dir_inode_num > len(self.iNodeBuf):
                         self._log(f"ERRORE CRITICO: Impossibile determinare root inode PFS valido. Root num: {root_dir_inode_num}, iNodeBuf len: {len(self.iNodeBuf)}")
                     elif self.iNodeBuf[root_dir_inode_num-1].get_file_type() != PFSFileType.PFS_DIR:
-                        self._log(f"AVVISO: Root inode PFS determinato ({root_dir_inode_num}) non è una directory standard, ma procediamo comunque.")
+                        self._log(f"AVVISO: Root inode PFS determinato ({root_dir_inode_num}) non è una directory standard, ma procediamo comunque per tentare BFS.")
+                        self._log(f"DEBUG: Inode {root_dir_inode_num} Mode: {self.iNodeBuf[root_dir_inode_num-1].Mode:#06x}, Type: {self.iNodeBuf[root_dir_inode_num-1].get_file_type().name}, Blocks: {self.iNodeBuf[root_dir_inode_num-1].Blocks}")
+                    else:
+                        self._log(f"Inode root {root_dir_inode_num} confermato come directory con Mode: {self.iNodeBuf[root_dir_inode_num-1].Mode:#06x}")
                     
-                    # Processa la directory radice usando BFS
-                    self._process_pfs_directory_bfs(root_dir_inode_num, self.extract_base_path)
-                    self._log(f"Completato parsing ricorsivo. Trovate {len(self.fs_table)} voci in fs_table.")
+                    # Processa la directory radice usando BFS solo se root_dir_inode_num è valido
+                    if root_dir_inode_num > 0 and root_dir_inode_num <= len(self.iNodeBuf):
+                        self._process_pfs_directory_bfs(root_dir_inode_num, self.extract_base_path)
+                        self._log(f"Completato parsing ricorsivo. Trovate {len(self.fs_table)} voci in fs_table.")
+                    elif self.pkg_header and self.pkg_header.pfs_image_size > 0: # Solo se PFS era atteso
+                        self._log(f"ERRORE: Impossibile procedere con BFS, root_dir_inode_num ({root_dir_inode_num}) non valido o iNodeBuf (len {len(self.iNodeBuf)}) problematico.")
+
+            # Determine return value for the extract method based on success
+            if self.pfsc_offset_in_pfs_image == -1 and self.pkg_header and self.pkg_header.pfs_image_size > 0:
+                 # This implies PFS was expected but failed to parse properly before BFS
+                 return False, "Estrazione metadati completata, ma parsing PFS fallito."
+            elif not self.fs_table and self.pkg_header and self.pkg_header.pfs_image_size > 0:
+                 return True, "Estrazione metadati e parsing PFS completati. fs_table è vuota (PFS potrebbe essere vuoto o errore di parsing dirent)."
+            elif not self.pkg_header or self.pkg_header.pfs_image_size == 0:
+                 return True, "Estrazione metadati completata. Nessuna immagine PFS da processare."
+            else:
+                 return True, "Estrazione metadati e parsing PFS (inclusa tabella file) completati. Procedere con extract_pfs_files."
+
+        except Exception as e: # This is the missing except block for the extract method's try
+            self._log(f"ERRORE CRITICO durante l'estrazione dei metadati o parsing PFS iniziale: {e}")
+            import traceback
+            self._log(traceback.format_exc())
+            return False, f"Errore critico durante estrazione/PFS parsing: {e}"
 
     def _process_flat_path_table(self, flat_path_data, parent_path):
         """Processa un flat_path_table trovato nell'inode 'uroot'.
@@ -2299,186 +2190,447 @@ class PKG:
         self._log(f"Fine parsing flat_path_table. Trovate {len(real_entries)} entry reali.\n")
         return real_entries
 
-    def _process_pfs_directory_bfs(self, root_dir_inode_num, current_output_path):
+    def _process_pfs_directory_bfs(self, root_dir_inode_num, current_output_path: Path):
         """Processa la directory del PFS in modo BFS (breadth-first search).
         
         Args:
             root_dir_inode_num (int): Numero di inode della directory root da cui iniziare
             current_output_path (Path): Path di output per i file estratti
         """
-        self._log(f"Inizio parsing ricorsivo (BFS) delle directory da root inode {root_dir_inode_num}")
-        
-        # Assicura che la directory di output esista
-        self.extract_base_path.mkdir(parents=True, exist_ok=True)
-        self.extract_paths[root_dir_inode_num] = self.extract_base_path
-        
-        # Inizializza una coda BFS con la root directory
-        queue = [(root_dir_inode_num, current_output_path)]
-        self.bfs_queue = queue  # Salva la coda nell'oggetto per permettere accesso da _process_flat_path_table
-        visited_dirs_for_bfs = set([root_dir_inode_num])
-        
-        # Buffer per decompressione blocchi dirent
-        decomp_block_buf_size = self.pfs_chdr.block_sz2 if self.pfs_chdr.block_sz2 > 0 else 0x10000
-        decomp_block_buf = bytearray(decomp_block_buf_size)
-        
-        # Ciclo principale BFS
-        while queue:
-            current_dir_inode_num, current_dir_path = queue.pop(0)
-            dir_inode_idx = current_dir_inode_num - 1
+        try:
+            self._log(f"Inizio parsing ricorsivo (BFS) delle directory da root inode {root_dir_inode_num}")
             
-            if not (0 <= dir_inode_idx < len(self.iNodeBuf)):
-                self._log(f"    ERRORE BFS: Inode {current_dir_inode_num} fuori limite (len iNodeBuf={len(self.iNodeBuf)}). Salto.")
-                continue
-                
-            dir_inode_obj = self.iNodeBuf[dir_inode_idx]
-            self._log(f"  BFS: Processo directory inode {current_dir_inode_num} ('{current_dir_path}')")
-            
-            # Ottieni file_type dall'inode
-            file_type = dir_inode_obj.get_file_type()
-            self._log(f"    BFS: Inode {current_dir_inode_num} (idx {dir_inode_idx}) ha Mode={dir_inode_obj.Mode:#06x}, "
-                     f"Tipo dedotto={file_type.name if file_type else 'None'}, Size={dir_inode_obj.Size}, "
-                     f"Blocks={dir_inode_obj.Blocks}, Loc={dir_inode_obj.loc}")
-            
-            # Se l'inode non sembra essere una directory secondo Mode, ma è stato messo in coda dal BFS,
-            # significa che il suo Dirent.type lo indica come directory, e ci fidiamo di quello.
-            # Questo è necessario per directory speciali come 'uroot' che hanno Mode=0x816d (PFS_FILE)
-            # ma sono effettivamente directory.
-            if file_type != PFSFileType.PFS_DIR:
-                self._log(f"    AVVISO BFS: Inode {current_dir_inode_num} non sembra una directory secondo Mode={dir_inode_obj.Mode:#06x} "
-                         f"(Tipo={file_type.name if file_type else 'None'}), ma è stato messo in coda come directory, "
-                         f"quindi procediamo comunque.")
-            
-            first_block_idx_for_dir_in_map = dir_inode_obj.loc
-            num_blocks_for_dir = dir_inode_obj.Blocks
-            
-            self._log(f"    Dir Inode {current_dir_inode_num}: loc={first_block_idx_for_dir_in_map}, blocks={num_blocks_for_dir}, size={dir_inode_obj.Size}")
-            
-            # Processa blocchi di dati della directory
-            for i_dir_block in range(num_blocks_for_dir):
-                # map_idx_dir è l'indice nella self.sector_map
-                map_idx_dir = first_block_idx_for_dir_in_map + i_dir_block
-                
-                if map_idx_dir >= len(self.sector_map) - 1:
-                    self._log(f"      AVVISO BFS: Indice mappa {map_idx_dir} fuori limiti per dirent di inode {current_dir_inode_num}. Ultimo blocco processato."); break
-                
-                # block_offset_in_pfsc è l'offset del blocco (compresso) relativo all'inizio di pfsc_content_actual_bytes
-                block_offset_in_pfsc = self.sector_map[map_idx_dir]
-                block_csize = self.sector_map[map_idx_dir + 1] - block_offset_in_pfsc
-                
-                self._log(f"      Blocco dirent {i_dir_block} (map_idx {map_idx_dir}): offset_in_pfsc_content={block_offset_in_pfsc:#x}, csize={block_csize:#x}")
+            if not (self.pfs_chdr and self.sector_map and self.iNodeBuf):
+                self._log("ERRORE BFS: Strutture PFS non inizializzate."); return
 
-                if block_offset_in_pfsc + block_csize > len(self.pfsc_content_actual_bytes):
-                    self._log(f"      ERRORE BFS: Lettura fuori limiti per blocco dirent {i_dir_block} di inode {current_dir_inode_num}. "
-                             f"Accesso a {block_offset_in_pfsc + block_csize} in buffer di {len(self.pfsc_content_actual_bytes)}"); break
-                if block_csize == 0: 
-                    self._log(f"      Blocco dirent {i_dir_block} ha csize 0. Salto."); continue
+            # extract_paths[root_dir_inode_num] deve essere già stato impostato in extract()
+            self.extract_base_path.mkdir(parents=True, exist_ok=True)
+            self.extract_paths[root_dir_inode_num] = current_output_path
 
-                compressed_dir_block_data = self.pfsc_content_actual_bytes[block_offset_in_pfsc : block_offset_in_pfsc + block_csize]
+            # Inizializza una coda BFS con la root directory
+            queue = [(root_dir_inode_num, current_output_path)]
+            visited_dirs_for_bfs = {root_dir_inode_num}
+            head = 0
+
+            decomp_block_buf_size = self.pfs_chdr.block_sz2 if self.pfs_chdr.block_sz2 > 0 else 0x10000
+            
+            # Ciclo principale BFS
+            while head < len(queue):
+                current_dir_inode_num, current_dir_path = queue[head]; head += 1
                 
-                try:
-                    decompressed_data = decompress_pfsc(compressed_dir_block_data, decomp_block_buf_size, self._log)
-                    if not any(decompressed_data) and any(compressed_dir_block_data):
-                        self._log(f"      AVVISO BFS: Blocco dirent {i_dir_block} per inode {current_dir_inode_num} decompresso a zeri. "
-                                 f"Dati compressi (primi 32B): {compressed_dir_block_data[:32].hex()}")
-                        continue
-                    
-                    # Salva il blocco dirent decompresso per la directory root (inode 1) o uroot (inode 2)
-                    if current_dir_inode_num == 1 or current_dir_inode_num == 2:
-                        block_type = "ROOT" if current_dir_inode_num == 1 else "UROOT"
-                        debug_block_path = self.extract_base_path / f"debug_{block_type}_BLOCK_inode{current_dir_inode_num}_block{i_dir_block}.bin"
-                        try:
-                            with open(debug_block_path, "wb") as dbg_f:
-                                dbg_f.write(decompressed_data)
-                            self._log(f"DEBUG: Blocco decompresso per inode {current_dir_inode_num} ({block_type}, blocco {i_dir_block}) salvato: {debug_block_path}")
-                            
-                            # Se è l'inode 2 (uroot), controllo anche se contiene "flat_path_table"
-                            if current_dir_inode_num == 2 and len(decompressed_data) > 0x20:
-                                # Cerca la stringa "flat_path_table" a vari offset
-                                for offset in [0, 0x10, 0x20]:
-                                    if len(decompressed_data) > offset + 15:
-                                        potential_fpt = decompressed_data[offset:offset+15]
-                                        if b"flat_path_table" in potential_fpt:
-                                            self._log(f"DEBUG: Trovato 'flat_path_table' nell'inode 2 (uroot) all'offset 0x{offset:x}")
-                        except Exception as e_dbg_f:
-                            self._log(f"DEBUG: Errore salvataggio blocco: {e_dbg_f}")
-                except Exception as e_dec:
-                    self._log(f"      ERRORE BFS: Decompressione fallita per blocco dirent {i_dir_block} di inode {current_dir_inode_num}: {e_dec}"); continue
+                self._log(f"  BFS: Processo directory inode {current_dir_inode_num} ('{current_dir_path}')")
                 
-                actual_decomp_len_dir = len(decompressed_data)
+                dir_inode_idx = current_dir_inode_num - 1
+                if not (0 <= dir_inode_idx < len(self.iNodeBuf)):
+                    self._log(f"    ERRORE BFS: Indice inode dir {dir_inode_idx} non valido. Salto."); continue
+                
+                dir_inode_obj = self.iNodeBuf[dir_inode_idx]
+                self._log(f"    BFS: Inode {current_dir_inode_num} (idx {dir_inode_idx}) ha Mode={dir_inode_obj.Mode:#06x}, Tipo={dir_inode_obj.get_file_type().name}, Size={dir_inode_obj.Size}, Blocks={dir_inode_obj.Blocks}, Loc={dir_inode_obj.loc}")
 
-                offset_in_dir_block = 0
-                while offset_in_dir_block < actual_decomp_len_dir:
-                    if actual_decomp_len_dir - offset_in_dir_block < Dirent._SIZE_BASE: break
-                    
-                    dirent = Dirent.from_bytes(decompressed_data[offset_in_dir_block:])
-                    
-                    # Log dettagliato per tutti i campi della dirent, specialmente per inode 1 (root) e 2 (uroot)
-                    if current_dir_inode_num == 1 or current_dir_inode_num == 2:  # Logga solo per root e uroot
-                        name_bytes_hex = dirent.name_bytes[:dirent.namelen].hex() if hasattr(dirent, 'name_bytes') else 'N/A'
-                        self._log(f"        Raw Dirent Data: offset={offset_in_dir_block:#06x}, ino={dirent.ino}, type={dirent.type}, namelen={dirent.namelen}, "
-                                 f"entsize={dirent.entsize}, name_raw='{name_bytes_hex}', name_str='{dirent.name}'")
-                        # Dump hex dei primi 32 byte della dirent per debug
-                        dirent_bytes = decompressed_data[offset_in_dir_block:offset_in_dir_block+min(32, dirent.entsize or 32)]
-                        self._log(f"        Dirent Hex: {dirent_bytes.hex()}")
-                    
-                    if dirent.entsize == 0 or dirent.ino == 0:
-                        self._log(f"        TERMINAZIONE LOOP: dirent.entsize={dirent.entsize}, dirent.ino={dirent.ino}")
-                        break
-                    
-                    entry_name = dirent.name
-                    entry_inode_num = dirent.ino
-                    entry_pfs_type_from_dirent = dirent.get_pfs_file_type() # Basato su dirent.type
-                    
-                    # Logga il tipo dalla dirent
-                    self._log(f"      Dirent: '{entry_name}' (inode {entry_inode_num}), Dirent.type={dirent.type} -> PFSFileType.{entry_pfs_type_from_dirent.name}")
-                    
-                    # Gestione speciale per uroot: se troviamo flat_path_table
-                    if current_dir_inode_num == 2 and entry_name == "flat_path_table":
-                        self._log(f"      TROVATO flat_path_table nell'inode uroot! Attivazione parsing speciale per flat_path_table.")
-                        self._process_flat_path_table(decompressed_data, current_dir_path)
-                        # Una volta processato il flat_path_table, interrompiamo il parsing normale delle dirent
-                        # poiché il resto dei dati deve essere interpretato in modo diverso
-                        break
-                    
-                    if entry_name in [".", ".."]:
-                        offset_in_dir_block += dirent.entsize; continue
-                    
-                    if not (0 <= entry_inode_num - 1 < len(self.iNodeBuf)):
-                        self._log(f"        AVVISO BFS: Dirent '{entry_name}' punta a inode {entry_inode_num} che non è in iNodeBuf (len {len(self.iNodeBuf)}). Salto.");
-                        offset_in_dir_block += dirent.entsize; continue
+                if dir_inode_obj.get_file_type() != PFSFileType.PFS_DIR:
+                     original_dirent_type_for_this_inode = next((fe.type for fe in self.fs_table if fe.inode == current_dir_inode_num), PFSFileType.PFS_INVALID)
+                     if original_dirent_type_for_this_inode == PFSFileType.PFS_DIR:
+                         self._log(f"    AVVISO BFS: Inode {current_dir_inode_num} Mode non è DIR, ma Dirent.type lo era. Procedo.")
+                     else:
+                        self._log(f"    AVVISO BFS: Inode {current_dir_inode_num} non è una directory. Salto."); continue
+                
+                first_block_idx_for_dir_in_map = dir_inode_obj.loc 
+                num_blocks_for_dir = dir_inode_obj.Blocks
 
-                    # Se è una directory secondo la dirent, logga anche il Mode dell'inode corrispondente
-                    if entry_pfs_type_from_dirent == PFSFileType.PFS_DIR:
-                        target_inode_obj = self.iNodeBuf[entry_inode_num -1]
-                        self._log(f"        -> Inode {entry_inode_num} associato ha Mode={target_inode_obj.Mode:#06x} (Tipo dedotto da Mode: {target_inode_obj.get_file_type().name})")
-                    
-                    # Solo aggiungi a fs_table se non già presente (per inode number)
-                    # Questo potrebbe non essere necessario se la visita è strettamente gerarchica senza re-visitare
-                    # if not any(fe.inode == entry_inode_num for fe in self.fs_table):
-                    self.fs_table.append(FSTableEntry(entry_name, entry_inode_num, entry_pfs_type_from_dirent))
-                    
-                    current_entry_path = current_dir_path / entry_name
-                    self.extract_paths[entry_inode_num] = current_entry_path
+                self._log(f"    Dir Inode {current_dir_inode_num}: loc={first_block_idx_for_dir_in_map}, blocks={num_blocks_for_dir}, size={dir_inode_obj.Size}")
 
-                    if entry_pfs_type_from_dirent == PFSFileType.PFS_DIR: # Usa il tipo dalla dirent per accodare
-                        if entry_inode_num not in visited_dirs_for_bfs:
-                            self._log(f"        Trovata subdir: '{current_entry_path}' (inode {entry_inode_num})")
-                            current_entry_path.mkdir(parents=True, exist_ok=True)
-                            queue.append((entry_inode_num, current_entry_path))
-                            visited_dirs_for_bfs.add(entry_inode_num)
-                    else:
-                        self._log(f"        Trovato file: '{current_entry_path}' (inode {entry_inode_num})")
+                
+                # Processa blocchi di dati della directory
+                for i_dir_block in range(num_blocks_for_dir):
+                    map_idx_dir = first_block_idx_for_dir_in_map + i_dir_block
+                    
+                    if map_idx_dir >= len(self.sector_map) - 1:
+                        self._log(f"      AVVISO BFS: Indice mappa {map_idx_dir} fuori limiti per dirent di inode {current_dir_inode_num}. Ultimo blocco processato.")
+                        break # Break from for i_dir_block loop
+                    
+                    block_offset_in_pfsc = self.sector_map[map_idx_dir]
+                    block_csize = self.sector_map[map_idx_dir + 1] - block_offset_in_pfsc
+                    
+                    self._log(f"      Blocco dirent {i_dir_block} (map_idx {map_idx_dir}): offset_in_pfsc_content={block_offset_in_pfsc:#x}, csize={block_csize:#x}")
+
+                    if block_offset_in_pfsc + block_csize > len(self.pfsc_content_actual_bytes):
+                        self._log(f"      ERRORE BFS: Lettura fuori limiti per blocco dirent {i_dir_block} di inode {current_dir_inode_num}. "
+                                 f"Accesso a {block_offset_in_pfsc + block_csize} in buffer di {len(self.pfsc_content_actual_bytes)}")
+                        break # Break from for i_dir_block loop
+                    if block_csize == 0: 
+                        self._log(f"      Blocco dirent {i_dir_block} ha csize 0. Salto.")
+                        continue # To next i_dir_block
+
+                    compressed_dir_block_data = self.pfsc_content_actual_bytes[block_offset_in_pfsc : block_offset_in_pfsc + block_csize]
+                    
+                    # Decompressione blocco dati directory
+                    decompressed_data = bytearray(decomp_block_buf_size)
+                    if block_csize == decomp_block_buf_size:
+                        self._log(f"      DEBUG: Blocco dirent {i_dir_block} (size {block_csize}) non compresso. Copia diretta.")
+                        decompressed_data[:] = compressed_dir_block_data
+                    else: # Assumiamo compresso se non di dimensione piena
+                        self._log(f"      DEBUG: Blocco dirent {i_dir_block} compresso (size {block_csize}). Decompressione...")
+                        decompressed_data[:] = decompress_pfsc(bytes(compressed_dir_block_data), decomp_block_buf_size, self._log)
+                    
+                    actual_decomp_len_dir = len(decompressed_data)
+                    
+                    # Salva il blocco decompresso per debug
+                    debug_dirent_block_path = self.extract_base_path / f"debug_DIRENT_BLOCK_inode{current_dir_inode_num}_block{i_dir_block}.bin"
+                    try:
+                        with open(debug_dirent_block_path, "wb") as dbg_df: 
+                            dbg_df.write(decompressed_data)
+                        self._log(f"DEBUG: Blocco dirent decompresso per inode {current_dir_inode_num} (blocco {i_dir_block}) salvato: {debug_dirent_block_path}")
+                        if actual_decomp_len_dir >= 64 : 
+                            self._log(f"DEBUG: Primi 64B di questo blocco: {decompressed_data[:64].hex()}")
+                    except Exception as e_dbg_df: 
+                        self._log(f"DEBUG: Errore salvataggio blocco dirent: {e_dbg_df}")
+
+                    offset_in_dir_block = 0
+                    is_first_entry_in_block = True # Per la logica di salto "." e ".." se non è FPT
+                    
+                    # Controlla se è una flat_path_table (solo per log, il parsing resta generico per ora)
+                    is_fpt_like = False
+                    if actual_decomp_len_dir >= 0x10 + 15 and decompressed_data[0x10 : 0x10+15] == b"flat_path_table":
+                        self._log(f"        Blocco per inode {current_dir_inode_num} contiene 'flat_path_table' a 0x10.")
+                        is_fpt_like = True
+                    elif actual_decomp_len_dir >= 24 and decompressed_data[0:1] == b'.' and decompressed_data[0x18:0x18+2] == b'..':
+                         self._log(f"        Blocco per inode {current_dir_inode_num} sembra una dir standard (trovati '.' e '..').")                 
+
+                    # Loop principale per leggere le Dirent nel blocco
+                    while offset_in_dir_block < actual_decomp_len_dir:
+                        if actual_decomp_len_dir - offset_in_dir_block < Dirent._SIZE_BASE: 
+                            self._log(f"          TERMINAZIONE LOOP Dirent: Spazio insufficiente per Dirent base. Rimanenti: {actual_decomp_len_dir - offset_in_dir_block}")
+                            break
                         
-                    offset_in_dir_block += dirent.entsize
+                        dirent_data_segment = decompressed_data[offset_in_dir_block:]
+                        dirent = Dirent.from_bytes(dirent_data_segment)
+                        
+                        if dirent.entsize == 0: 
+                            self._log(f"          TERMINAZIONE LOOP Dirent: entsize=0"); 
+                            break
+                        # Un ino=0 con entsize!=0 può essere un terminatore di FPT meta-entry, 
+                        # o una dirent corrotta. Trattalo come terminatore per ora.
+                        if dirent.ino == 0: 
+                            self._log(f"          TERMINAZIONE LOOP Dirent: ino=0"); 
+                            break 
+                        
+                        entry_name = dirent.name
+                        entry_inode_num = dirent.ino
+                        entry_pfs_type_from_dirent = dirent.get_pfs_file_type()
+                        
+                        self._log(f"          Trovata Dirent: '{entry_name}' (inode {entry_inode_num}), Dirent.type={dirent.type} -> {entry_pfs_type_from_dirent.name}, Entsize: {dirent.entsize}")
+
+                        # Salta "." e ".." per tutte le directory, inclusa "uroot" (flat_path_table).
+                        # Il C++ salta le prime due entry del loop j=0 e j=1 se dinode_reached.
+                        if entry_name == ".":
+                            if entry_inode_num != current_dir_inode_num:
+                                self._log(f"            AVVISO: Dirent '.' punta a inode {entry_inode_num}, ma dir corrente è {current_dir_inode_num}.")
+                            self.extract_paths[entry_inode_num] = current_dir_path # Assicura che il path per . sia corretto
+                            offset_in_dir_block += dirent.entsize
+                            continue
+                        if entry_name == "..":
+                            # Trova il path del genitore del genitore
+                            # current_dir_path è il path dell'inode corrente (parent_ino).
+                            # Il genitore di current_dir_path è il path dell'inode a cui ".." dovrebbe puntare.
+                            if current_dir_path != self.extract_base_path: # Non c'è genitore per la root
+                                self.extract_paths[entry_inode_num] = current_dir_path.parent
+                            # else: .. della root potrebbe puntare a sé stessa o a un inode speciale
+                            offset_in_dir_block += dirent.entsize
+                            continue
+                        
+                        # Processa l'entry corrente (file o directory)
+                        if (current_dir_inode_num == 1 and
+                                (entry_name == "uroot" or (entry_inode_num == 2 and is_fpt_like))):
+                            self._log(f"            SPECIALE: trovato uroot (ino={entry_inode_num}) nella root!")
+                            
+                            # Aggiungi alla coda BFS se è una directory e non è già visitata
+                            uroot_path = current_dir_path / 'uroot'
+                            uroot_path.mkdir(parents=True, exist_ok=True)
+                            self.extract_paths[entry_inode_num] = uroot_path
+                            
+                            # Crea e aggiungi l'entry per uroot
+                            fs_entry = FSTableEntry(
+                                name='uroot',
+                                inode=entry_inode_num,
+                                type=PFSFileType.PFS_DIR
+                            )
+                            self.fs_table.append(fs_entry)
+                            
+                            # Aggiungi alla coda BFS se non è già stata visitata
+                            entry_inode_idx = entry_inode_num - 1
+                            if (entry_inode_num not in visited_dirs_for_bfs and
+                                    0 <= entry_inode_idx < len(self.iNodeBuf)):
+                                queue.append((entry_inode_num, uroot_path))
+                                visited_dirs_for_bfs.add(entry_inode_num)
+                                self._log(f"            ACCODATO uroot (ino={entry_inode_num}) per BFS")
+                            
+                            # Passa alla prossima entry
+                            offset_in_dir_block += dirent.entsize
+                            continue
+                        
+                        # Se è un'entry che si chiama "flat_path_table", aggiungi alla fs_table ma non estrarre
+                        if entry_name == "flat_path_table":
+                            fs_entry = FSTableEntry('flat_path_table', entry_inode_num, entry_pfs_type_from_dirent)
+                            self.fs_table.append(fs_entry)
+                            offset_in_dir_block += dirent.entsize
+                            continue
+                        
+                        # Controlla se abbiamo un inode valido per questa entry
+                        entry_inode_idx = entry_inode_num - 1
+                        has_valid_inode = 0 <= entry_inode_idx < len(self.iNodeBuf)
+                        
+                        # Determina se è un file o una directory
+                        is_dir_from_dirent = entry_pfs_type_from_dirent == PFSFileType.PFS_DIR
+                        is_dir = is_dir_from_dirent  # Default: usa il tipo del dirent
+                        
+                        # Se l'inode è valido, controlla anche il suo Mode per determinare il tipo
+                        if has_valid_inode:
+                            entry_inode = self.iNodeBuf[entry_inode_idx]
+                            inode_file_type = entry_inode.get_file_type()
+                            is_dir_from_inode = inode_file_type == PFSFileType.PFS_DIR
+                            
+                            if is_dir_from_dirent != is_dir_from_inode:
+                                self._log(f"            ATTENZIONE: Tipo di '{entry_name}' differisce: Dirent={is_dir_from_dirent}, Inode={is_dir_from_inode}. Uso Inode.")
+                                is_dir = is_dir_from_inode  # Priorità al tipo dell'inode
+                        
+                        # Aggiungi entry all'fs_table
+                        fs_type = PFSFileType.PFS_DIR if is_dir else PFSFileType.PFS_FILE
+                        fs_entry = FSTableEntry(entry_name, entry_inode_num, fs_type)
+                        self.fs_table.append(fs_entry)
+                        
+                        # Costruisci il path di output per questo file/directory
+                        entry_output_path = current_dir_path / entry_name
+                        self.extract_paths[entry_inode_num] = entry_output_path
+                        
+                        # Se è una directory, creala e accodala per BFS
+                        if is_dir:
+                            try:
+                                entry_output_path.mkdir(parents=True, exist_ok=True)
+                                
+                                if entry_inode_num not in visited_dirs_for_bfs and has_valid_inode:
+                                    queue.append((entry_inode_num, entry_output_path))
+                                    visited_dirs_for_bfs.add(entry_inode_num)
+                                    self._log(f"            Aggiunta directory '{entry_name}' (ino={entry_inode_num}) alla coda BFS")
+                            except OSError as e_mkdir:
+                                self._log(f"            ERRORE: Impossibile creare directory '{entry_output_path}': {e_mkdir}")
+                            except Exception as e_dec:
+                                self._log(f"      ERRORE BFS: Decompressione o parsing fallito per blocco dirent {i_dir_block} di inode {current_dir_inode_num}: {e_dec}")
+                                continue  # To next i_dir_block
+                        
+                        # Debug per root/uroot
+                        if current_dir_inode_num == 1 or current_dir_inode_num == 2:
+                            block_type_str = "ROOT" if current_dir_inode_num == 1 else "UROOT"
+                            self._log(f"            DEBUG {block_type_str}: Aggiunta entry '{entry_name}' (inode {entry_inode_num}, type={fs_type.name})")
+                        
+                        # Avanza alla prossima dirent
+                        offset_in_dir_block += dirent.entsize
+                    
+                    actual_decomp_len_dir = len(decompressed_data)
+                    
+                    if is_fpt_like:
+                        self._log(f"        Blocco per inode {current_dir_inode_num} è una flat_path_table (riconferma per parsing).")
+
+                        # Reset offset per il parsing della flat_path_table
+                        offset_in_dir_block = 0
+                        
+                        self._log(f"PROCESSAMENTO SPECIALE: Blocco flat_path_table per inode {current_dir_inode_num}")
+                        
+                        # --- FASE 1: Loop per trovare il terminatore delle meta-entry ---
+                        # Questo è il loop iniziale per saltare le meta-entry come 'flat_path_table' e 'uroot'
+                        # fino a trovare il terminatore (ino=0) che segna l'inizio delle vere entry
+                        meta_offset = 0
+                        found_fpt_terminator_at = -1
+                        ndinode_counter = 0  # Questo viene incrementato per ogni meta-entry (come fa il codice C++)
+                        
+                        while meta_offset < actual_decomp_len_dir:
+                            if actual_decomp_len_dir - meta_offset < Dirent._SIZE_BASE:
+                                self._log(f"Meta-entry loop: Spazio insufficiente per Dirent base. Rimanenti: {actual_decomp_len_dir - meta_offset}")
+                                break
+                            
+                            dirent_data_segment_meta = decompressed_data[meta_offset:]
+                            dirent_meta = Dirent.from_bytes(dirent_data_segment_meta)
+                            
+                            self._log(f"Raw Meta Dirent Hex (offset {meta_offset:#x}): {dirent_data_segment_meta[:max(32,dirent_meta.entsize if dirent_meta.entsize > 0 else 32)].hex()}")
+                            self._log(f"Parsed Meta Dirent: ino={dirent_meta.ino}, type={dirent_meta.type}, namelen={dirent_meta.namelen}, entsize={dirent_meta.entsize}, name='{dirent_meta.name}'")
+                            
+                            if dirent_meta.entsize == 0:
+                                self._log("TERMINAZIONE LOOP META: dirent.entsize=0")
+                                break
+                            
+                            if dirent_meta.ino != 0:
+                                # Entry speciale (probabilmente metadati o entry . e ..)
+                                ndinode_counter = dirent_meta.ino  # Salva l'ultimo inode counter
+                                self._log(f"  METADATO: Aggiornato ndinode_counter a {ndinode_counter}")
+                            else:
+                                # Trovata la prima entry con ino=0, il che segna l'inizio delle vere entry di file/directory
+                                self._log(f"  MARKER: Trovata entry con ino=0. Inizio delle vere entry di file/directory")
+                                found_fpt_terminator_at = meta_offset + dirent_meta.entsize
+                                self._log(f"  Terminatore FPT trovato. Vere entry dovrebbero iniziare a offset {found_fpt_terminator_at:#x}")
+                                meta_offset += dirent_meta.entsize
+                                break
+                                
+                            meta_offset += dirent_meta.entsize
+                        
+                        # --- FASE 2: Parsare le vere entry dopo il terminatore ---
+                        # Se troviamo un terminatore, partiamo da quel punto, altrimenti facciamo come il codice C++
+                        # e ripartiamo da offset 0
+                        if found_fpt_terminator_at > 0:
+                            self._log(f"Uso offset {found_fpt_terminator_at:#x} per le entry reali (dopo terminatore)")
+                            offset_in_dir_block = found_fpt_terminator_at
+                        else:
+                            self._log("RIPARTO DA OFFSET 0 PER LEGGERE LE ENTRY REALI COME FA IL CODICE C++")
+                            offset_in_dir_block = 0
+                        
+                        # Check aggiuntivo per '.' e '..' (solo per debugging)
+                        if actual_decomp_len_dir >= 0x28 + 2: 
+                            try:
+                                dot_check = chr(decompressed_data[0x10]) if len(decompressed_data) > 0x10 else ""
+                                dotdot_check = decompressed_data[0x28:0x28+2].decode('utf-8', errors='ignore') if len(decompressed_data) > 0x28+1 else ""
+                                if dot_check == '.' and dotdot_check == "..":
+                                    self._log(f"Trovati '.' e '..' all'inizio del blocco flat_path_table come atteso")
+                                else:
+                                    self._log(f"Non trovati '.' e '..' all'inizio: dot_check='{dot_check}', dotdot_check='{dotdot_check}'")
+                            except Exception as e_dot_check:
+                                self._log(f"Errore nel check di '.' e '..': {e_dot_check}")
+                        
+                        # Crea la cartella uroot se ndinode_counter è stato aggiornato
+                        if ndinode_counter > 0 and current_dir_inode_num == 1:  # Solo se siamo nella directory root
+                            self._log(f"Preparazione directory per ndinode_counter={ndinode_counter}")
+                            uroot_path = current_dir_path / 'uroot'  # Nome fisso, come nel codice C++
+                            uroot_path.mkdir(parents=True, exist_ok=True)
+                            self.extract_paths[ndinode_counter] = uroot_path  # Collega l'inode al path
+                            self.fs_table.append(FSTableEntry('uroot', ndinode_counter, PFSFileType.PFS_DIR))
+                            
+                            if ndinode_counter not in visited_dirs_for_bfs:
+                                self._log(f"Accodamento di ndinode_counter={ndinode_counter} per BFS")
+                                queue.append((ndinode_counter, uroot_path))
+                                visited_dirs_for_bfs.add(ndinode_counter)
+                    
+                    # Process all directory entries in this block
+                    while offset_in_dir_block < actual_decomp_len_dir:
+                        # Check if we have enough data for a minimal dirent
+                        if actual_decomp_len_dir - offset_in_dir_block < Dirent._SIZE_BASE:
+                            self._log(f"          INSUFFICIENT DATA: Need at least {Dirent._SIZE_BASE} bytes, got {actual_decomp_len_dir - offset_in_dir_block}")
+                            break
+                        
+                        # Parse the dirent
+                        dirent_data_segment = decompressed_data[offset_in_dir_block:]
+                        try:
+                            dirent = Dirent.from_bytes(dirent_data_segment)
+                            self._log(f"          [DIRENT @ {offset_in_dir_block:#x}] ino={dirent.ino}, type={dirent.type}, "
+                                    f"namelen={dirent.namelen}, entsize={dirent.entsize}, name='{dirent.name}'")
+                            
+                            # Log raw data for debugging
+                            if dirent.entsize > 0:
+                                raw_hex = dirent_data_segment[:min(32, dirent.entsize)].hex()
+                                self._log(f"          Raw Hex: {raw_hex}")
+                        except Exception as e:
+                            self._log(f"          ERROR parsing dirent at offset {offset_in_dir_block:#x}: {e}")
+                            break
+                        
+                        # Check for termination conditions
+                        if dirent.entsize == 0:
+                            self._log("          TERMINATION: dirent.entsize = 0")
+                            break
+                            
+                        if dirent.ino == 0:
+                            self._log("          TERMINATION: dirent.ino = 0")
+                            # In flat path tables, ino=0 marks the end of meta-entries
+                            if is_fpt_like:
+                                offset_in_dir_block += dirent.entsize  # Skip the terminator
+                            break
+                            
+                        # Skip invalid entries
+                        if dirent.entsize < Dirent._SIZE_BASE:
+                            self._log(f"          INVALID ENTRY: entsize ({dirent.entsize}) < minimum size ({Dirent._SIZE_BASE})")
+                            break
+                            
+                        # Skip empty names
+                        if not dirent.name or dirent.namelen == 0:
+                            self._log("          SKIPPING: Empty name")
+                            offset_in_dir_block += dirent.entsize
+                            continue
+                            
+                        # Skip special entries that were already processed
+                        if dirent.name in ('.', '..'):
+                            offset_in_dir_block += dirent.entsize
+                            continue
+
+                        # Determine entry type from dirent
+                        entry_name = dirent.name
+                        entry_inode_num = dirent.ino
+                        entry_pfs_type = dirent.get_pfs_file_type()
+                        
+                        # Get inode information if available
+                        entry_inode = None
+                        has_valid_inode = False
+                        is_dir_from_inode = False
+                        
+                        if 0 < entry_inode_num <= len(self.iNodeBuf):
+                            entry_inode = self.iNodeBuf[entry_inode_num - 1]
+                            has_valid_inode = True
+                            inode_file_type = entry_inode.get_file_type()
+                            is_dir_from_inode = inode_file_type == PFSFileType.PFS_DIR
+                            
+                            # Log inode details for debugging
+                            inode_debug = (
+                                f"          INODE[{entry_inode_num}]: type={inode_file_type.name}, "
+                                f"size={entry_inode.Size}, blocks={entry_inode.Blocks}, "
+                                f"mode={entry_inode.Mode:04o}, flags={entry_inode.Flags}"
+                            )
+                            self._log(inode_debug)
+                        
+                        # Determine final type (prefer inode type if available)
+                        is_dir = is_dir_from_inode if has_valid_inode else (entry_pfs_type == PFSFileType.PFS_DIR)
+                        
+                        # Log type resolution
+                        if has_valid_inode and (entry_pfs_type == PFSFileType.PFS_DIR) != is_dir_from_inode:
+                            type_mismatch_msg = (
+                                f"          TYPE MISMATCH for '{entry_name}': "
+                                f"dirent_type={entry_pfs_type.name}, inode_type={inode_file_type.name}"
+                            )
+                            self._log(type_mismatch_msg)
+                        
+                        # Add to filesystem table
+                        fs_entry = FSTableEntry(entry_name, entry_inode_num, 
+                                             PFSFileType.PFS_DIR if is_dir else PFSFileType.PFS_FILE)
+                        self.fs_table.append(fs_entry)
+                        
+                        # Build output path and add to BFS queue if directory
+                        entry_output_path = current_dir_path / entry_name
+                        self.extract_paths[entry_inode_num] = entry_output_path
+                        
+                        if is_dir:
+                            try:
+                                entry_output_path.mkdir(parents=True, exist_ok=True)
+                                if entry_inode_num not in visited_dirs_for_bfs:
+                                    queue.append((entry_inode_num, entry_output_path))
+                                    visited_dirs_for_bfs.add(entry_inode_num)
+                                    self._log(f"          QUEUED: Directory '{entry_name}' (inode {entry_inode_num})")
+                            except OSError as e:
+                                self._log(f"          ERROR creating directory '{entry_output_path}': {e}")
+                        else:
+                            self._log(f"          FILE: '{entry_name}' (inode {entry_inode_num}, size={entry_inode.Size if has_valid_inode else '?'})")
+                        
+                        # Move to next entry
+                        offset_in_dir_block += dirent.entsize
+                        
+                        if dirent.entsize < Dirent._SIZE_BASE and dirent.entsize != 0: 
+                            self._log(f"AVVISO BFS: Dirent.entsize ({dirent.entsize}) anomalo per '{entry_name}'. Interruzione parsing blocco.")
+                            break 
+            
+            self._log(f"Completato parsing ricorsivo. Trovate {len(self.fs_table)} voci in fs_table.")
+            
+            if self.pfsc_offset_in_pfs_image == -1 or not self.pfs_chdr or not self.fs_table:
+                return True, "Estrazione file di sistema completata. Parsing PFS fallito o PFS non presente/vuoto."
+            else:
+                return True, "Analisi PKG e parsing PFS completati. Estrazione file PFS seguirà."
         
-        self._log(f"Completato parsing ricorsivo. Trovate {len(self.fs_table)} voci in fs_table.")
-        
-        # Se siamo arrivati qui, il metodo extract è stato completato.
-        # Il messaggio di ritorno dovrebbe riflettere lo stato del parsing PFS.
-        if self.pfsc_offset_in_pfs_image == -1 or not self.pfs_chdr or not self.fs_table :
-            return True, "Estrazione file di sistema completata. Parsing PFS fallito o PFS non presente/vuoto."
-        else:
-            return True, "Analisi PKG e parsing PFS completati. Estrazione file PFS seguirà."
+        except Exception as e:
+            self._log(f"ERRORE CRITICO durante l'estrazione BFS: {e}")
+            import traceback
+            self._log(traceback.format_exc())
+            return False, f"Errore durante l'estrazione BFS: {e}"
 
 
     def _read_decrypt_decompress_pfs_block(self, 
@@ -2614,10 +2766,14 @@ class PKG:
 
             self._log(f"Estrazione PFS completata. {num_extracted} file estratti.")
             return True, f"{num_extracted} file estratti."
-        
-        except IOError as e: self._log(f"Errore I/O estrazione PFS: {e}"); return False, f"Errore I/O: {e}"
+        except IOError as e: 
+            self._log(f"Errore I/O estrazione PFS: {e}")
+            return False, f"Errore I/O: {e}"
         except Exception as e:
-            self._log(f"Errore generico estrazione PFS: {e}"); import traceback; self._log(traceback.format_exc()); return False, f"Errore: {e}"
+            self._log(f"Errore generico estrazione PFS: {e}")
+            import traceback
+            self._log(traceback.format_exc())
+            return False, f"Errore: {e}"
 
     # Note: This duplicate implementation has been removed because it conflicted with the one at line ~2301
     # and was causing a KeyError when trying to access self.extract_paths[root_inode_num]
