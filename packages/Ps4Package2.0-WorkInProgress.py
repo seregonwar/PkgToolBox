@@ -24,481 +24,18 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES, PKCS1_v1_5 as Cipher_PKCS1_v1_5 # Per RSA PKCS#1 v1.5
 from Crypto.Hash import SHA256, HMAC # Per PfsGenCryptoKey
 
-# --- Definizioni da keys.h ---
-# Queste verranno usate nella classe Crypto
+from pkg_entry import PKG_ENTRY_ID_TO_NAME_FULL
+from key import FakeKeyset, PkgDerivedKey3Keyset
 
-class FakeKeyset:
-    Exponent1 = bytes([
-        0x6D, 0x48, 0xE0, 0x54, 0x40, 0x25, 0xC8, 0x41, 0x29, 0x52, 0x42, 0x27, 0xEB, 0xD2, 0xC7,
-        0xAB, 0x6B, 0x9C, 0x27, 0x0A, 0xB4, 0x1F, 0x94, 0x4E, 0xFA, 0x42, 0x1D, 0xB7, 0xBC, 0xB9,
-        0xAE, 0xBC, 0x04, 0x6F, 0x75, 0x8F, 0x10, 0x5F, 0x89, 0xAC, 0xAB, 0x9C, 0xD2, 0xFA, 0xE6,
-        0xA4, 0x13, 0x83, 0x68, 0xD4, 0x56, 0x38, 0xFE, 0xE5, 0x2B, 0x78, 0x44, 0x9C, 0x34, 0xE6,
-        0x5A, 0xA0, 0xBE, 0x05, 0x70, 0xAD, 0x15, 0xC3, 0x2D, 0x31, 0xAC, 0x97, 0x5D, 0x88, 0xFC,
-        0xC1, 0x62, 0x3D, 0xE2, 0xED, 0x11, 0xDB, 0xB6, 0x9E, 0xFC, 0x5A, 0x5A, 0x03, 0xF6, 0xCF,
-        0x08, 0xD4, 0x5D, 0x90, 0xC9, 0x2A, 0xB9, 0x9B, 0xCF, 0xC8, 0x1A, 0x65, 0xF3, 0x5B, 0xE8,
-        0x7F, 0xCF, 0xA5, 0xA6, 0x4C, 0x5C, 0x2A, 0x12, 0x0F, 0x92, 0xA5, 0xE3, 0xF0, 0x17, 0x1E,
-        0x9A, 0x97, 0x45, 0x86, 0xFD, 0xDB, 0x54, 0x25])
-    Exponent2 = bytes([
-        0x2A, 0x51, 0xCE, 0x02, 0x44, 0x28, 0x50, 0xE8, 0x30, 0x20, 0x7C, 0x9C, 0x55, 0xBF, 0x60,
-        0x39, 0xBC, 0xD1, 0xF0, 0xE7, 0x68, 0xF8, 0x08, 0x5B, 0x61, 0x1F, 0xA7, 0xBF, 0xD0, 0xE8,
-        0x8B, 0xB5, 0xB1, 0xD5, 0xD9, 0x16, 0xAC, 0x75, 0x0C, 0x6D, 0xF2, 0xE0, 0xB5, 0x97, 0x75,
-        0xD2, 0x68, 0x16, 0x1F, 0x00, 0x7D, 0x8B, 0x17, 0xE8, 0x78, 0x48, 0x41, 0x71, 0x2B, 0x18,
-        0x96, 0x80, 0x11, 0xDB, 0x68, 0x39, 0x9C, 0xD6, 0xE0, 0x72, 0x42, 0x86, 0xF0, 0x1B, 0x16,
-        0x0D, 0x3E, 0x12, 0x94, 0x3D, 0x25, 0xA8, 0xA9, 0x30, 0x9E, 0x54, 0x5A, 0xD6, 0x36, 0x6C,
-        0xD6, 0x8C, 0x20, 0x62, 0x8F, 0xA1, 0x6B, 0x1F, 0x7C, 0x6D, 0xB2, 0xB1, 0xC1, 0x2E, 0xAD,
-        0x36, 0x02, 0x9C, 0x3A, 0xCA, 0x2F, 0x09, 0xD2, 0x45, 0x9E, 0xEB, 0xF2, 0xBC, 0x6C, 0xAA,
-        0x3B, 0x3E, 0x90, 0xBC, 0x38, 0x67, 0x35, 0x4D])
-    PublicExponent = bytes([0, 1, 0, 1]) # e = 65537
-    Coefficient = bytes([
-        0x0B, 0x67, 0x1C, 0x0D, 0x6C, 0x57, 0xD3, 0xE7, 0x05, 0x65, 0x94, 0x31, 0x56, 0x55, 0xFD,
-        0x28, 0x08, 0xFA, 0x05, 0x8A, 0xCC, 0x55, 0x39, 0x61, 0x97, 0x63, 0xA0, 0x16, 0x27, 0x3D,
-        0xED, 0xC1, 0x16, 0x40, 0x2A, 0x12, 0xEA, 0x6F, 0xD9, 0xD8, 0x58, 0x56, 0xA8, 0x56, 0x8B,
-        0x0D, 0x38, 0x5E, 0x1E, 0x80, 0x3B, 0x5F, 0x40, 0x80, 0x6F, 0x62, 0x4F, 0x28, 0xA2, 0x69,
-        0xF3, 0xD3, 0xF7, 0xFD, 0xB2, 0xC3, 0x52, 0x43, 0x20, 0x92, 0x9D, 0x97, 0x8D, 0xA0, 0x15,
-        0x07, 0x15, 0x6E, 0xA4, 0x0D, 0x56, 0xD3, 0x37, 0x1A, 0xC4, 0x9E, 0xDF, 0x02, 0x49, 0xB8,
-        0x0A, 0x84, 0x62, 0xF5, 0xFA, 0xB9, 0x3F, 0xA4, 0x09, 0x76, 0xCC, 0xAA, 0xB9, 0x9B, 0xA6,
-        0x4F, 0xC1, 0x6A, 0x64, 0xCE, 0xD8, 0x77, 0xAB, 0x4B, 0xF9, 0xA0, 0xAE, 0xDA, 0xF1, 0x67,
-        0x87, 0x7C, 0x98, 0x5C, 0x7E, 0xB8, 0x73, 0xF5])
-    Modulus = bytes([
-        0xC6, 0xCF, 0x71, 0xE7, 0xE5, 0x9A, 0xF0, 0xD1, 0x2A, 0x2C, 0x45, 0x8B, 0xF9, 0x2A, 0x0E,
-        0xC1, 0x43, 0x05, 0x8B, 0xC3, 0x71, 0x17, 0x80, 0x1D, 0xCD, 0x49, 0x7D, 0xDE, 0x35, 0x9D,
-        0x25, 0x9B, 0xA0, 0xD7, 0xA0, 0xF2, 0x7D, 0x6C, 0x08, 0x7E, 0xAA, 0x55, 0x02, 0x68, 0x2B,
-        0x23, 0xC6, 0x44, 0xB8, 0x44, 0x18, 0xEB, 0x56, 0xCF, 0x16, 0xA2, 0x48, 0x03, 0xC9, 0xE7,
-        0x4F, 0x87, 0xEB, 0x3D, 0x30, 0xC3, 0x15, 0x88, 0xBF, 0x20, 0xE7, 0x9D, 0xFF, 0x77, 0x0C,
-        0xDE, 0x1D, 0x24, 0x1E, 0x63, 0xA9, 0x4F, 0x8A, 0xBF, 0x5B, 0xBE, 0x60, 0x19, 0x68, 0x33,
-        0x3B, 0xFC, 0xED, 0x9F, 0x47, 0x4E, 0x5F, 0xF8, 0xEA, 0xCB, 0x3D, 0x00, 0xBD, 0x67, 0x01,
-        0xF9, 0x2C, 0x6D, 0xC6, 0xAC, 0x13, 0x64, 0xE7, 0x67, 0x14, 0xF3, 0xDC, 0x52, 0x69, 0x6A,
-        0xB9, 0x83, 0x2C, 0x42, 0x30, 0x13, 0x1B, 0xB2, 0xD8, 0xA5, 0x02, 0x0D, 0x79, 0xED, 0x96,
-        0xB1, 0x0D, 0xF8, 0xCC, 0x0C, 0xDF, 0x81, 0x95, 0x4F, 0x03, 0x58, 0x09, 0x57, 0x0E, 0x80,
-        0x69, 0x2E, 0xFE, 0xFF, 0x52, 0x77, 0xEA, 0x75, 0x28, 0xA8, 0xFB, 0xC9, 0xBE, 0xBF, 0x9F,
-        0xBB, 0xB7, 0x79, 0x8E, 0x18, 0x05, 0xE1, 0x80, 0xBD, 0x50, 0x34, 0x94, 0x81, 0xD3, 0x53,
-        0xC2, 0x69, 0xA2, 0xD2, 0x4C, 0xCF, 0x6C, 0xF4, 0x57, 0x2C, 0x10, 0x4A, 0x3F, 0xFB, 0x22,
-        0xFD, 0x8B, 0x97, 0xE2, 0xC9, 0x5B, 0xA6, 0x2B, 0xCD, 0xD6, 0x1B, 0x6B, 0xDB, 0x68, 0x7F,
-        0x4B, 0xC2, 0xA0, 0x50, 0x34, 0xC0, 0x05, 0xE5, 0x8D, 0xEF, 0x24, 0x67, 0xFF, 0x93, 0x40,
-        0xCF, 0x2D, 0x62, 0xA2, 0xA0, 0x50, 0xB1, 0xF1, 0x3A, 0xA8, 0x3D, 0xFD, 0x80, 0xD1, 0xF9,
-        0xB8, 0x05, 0x22, 0xAF, 0xC8, 0x35, 0x45, 0x90, 0x58, 0x8E, 0xE3, 0x3A, 0x7C, 0xBD, 0x3E,
-        0x27])
-    Prime1 = bytes([
-        0xFE, 0xF6, 0xBF, 0x1D, 0x69, 0xAB, 0x16, 0x25, 0x08, 0x47, 0x55, 0x6B, 0x86, 0xE4, 0x35,
-        0x88, 0x72, 0x2A, 0xB1, 0x3D, 0xF8, 0xB6, 0x44, 0xCA, 0xB3, 0xAB, 0x19, 0xD1, 0x04, 0x24,
-        0x28, 0x0A, 0x74, 0x55, 0xB8, 0x15, 0x45, 0x09, 0xCC, 0x13, 0x1C, 0xF2, 0xBA, 0x37, 0xA9,
-        0x03, 0x90, 0x8F, 0x02, 0x10, 0xFF, 0x25, 0x79, 0x86, 0xCC, 0x18, 0x50, 0x9A, 0x10, 0x5F,
-        0x5B, 0x4C, 0x1C, 0x4E, 0xB0, 0xA7, 0xE3, 0x59, 0xB1, 0x2D, 0xA0, 0xC6, 0xB0, 0x20, 0x2C,
-        0x21, 0x33, 0x12, 0xB3, 0xAF, 0x72, 0x34, 0x83, 0xCD, 0x52, 0x2F, 0xAF, 0x0F, 0x20, 0x5A,
-        0x1B, 0xC0, 0xE2, 0xA3, 0x76, 0x34, 0x0F, 0xD7, 0xFC, 0xC1, 0x41, 0xC9, 0xF9, 0x79, 0x40,
-        0x17, 0x42, 0x21, 0x3E, 0x9D, 0xFD, 0xC7, 0xC1, 0x50, 0xDE, 0x44, 0x5A, 0xC9, 0x31, 0x89,
-        0x6A, 0x78, 0x05, 0xBE, 0x65, 0xB4, 0xE8, 0x2D])
-    Prime2 = bytes([
-        0xC7, 0x9E, 0x47, 0x58, 0x00, 0x7D, 0x62, 0x82, 0xB0, 0xD2, 0x22, 0x81, 0xD4, 0xA8, 0x97,
-        0x1B, 0x79, 0x0C, 0x3A, 0xB0, 0xD7, 0xC9, 0x30, 0xE3, 0xC3, 0x53, 0x8E, 0x57, 0xEF, 0xF0,
-        0x9B, 0x9F, 0xB3, 0x90, 0x52, 0xC6, 0x94, 0x22, 0x36, 0xAA, 0xE6, 0x4A, 0x5F, 0x72, 0x1D,
-        0x70, 0xE8, 0x76, 0x58, 0xC8, 0xB2, 0x91, 0xCE, 0x9C, 0xC3, 0xE9, 0x09, 0x7F, 0x2E, 0x47,
-        0x97, 0xCC, 0x90, 0x39, 0x15, 0x35, 0x31, 0xDE, 0x1F, 0x0C, 0x8C, 0x0D, 0xC1, 0xC2, 0x92,
-        0xBE, 0x97, 0xBF, 0x2F, 0x91, 0xA1, 0x8C, 0x7D, 0x50, 0xA8, 0x21, 0x2F, 0xD7, 0xA2, 0x9A,
-        0x7E, 0xB5, 0xA7, 0x2A, 0x90, 0x02, 0xD9, 0xF3, 0x3D, 0xD1, 0xEB, 0xB8, 0xE0, 0x5A, 0x79,
-        0x9E, 0x7D, 0x8D, 0xCA, 0x18, 0x6D, 0xBD, 0x9E, 0xA1, 0x80, 0x28, 0x6B, 0x2A, 0xFE, 0x51,
-        0x24, 0x9B, 0x6F, 0x4D, 0x84, 0x77, 0x80, 0x23])
-    PrivateExponent = bytes([ # d
-        0x7F, 0x76, 0xCD, 0x0E, 0xE2, 0xD4, 0xDE, 0x05, 0x1C, 0xC6, 0xD9, 0xA8, 0x0E, 0x8D, 0xFA,
-        0x7B, 0xCA, 0x1E, 0xAA, 0x27, 0x1A, 0x40, 0xF8, 0xF1, 0x22, 0x87, 0x35, 0xDD, 0xDB, 0xFD,
-        0xEE, 0xF8, 0xC2, 0xBC, 0xBD, 0x01, 0xFB, 0x8B, 0xE2, 0x3E, 0x63, 0xB2, 0xB1, 0x22, 0x5C,
-        0x56, 0x49, 0x6E, 0x11, 0xBE, 0x07, 0x44, 0x0B, 0x9A, 0x26, 0x66, 0xD1, 0x49, 0x2C, 0x8F,
-        0xD3, 0x1B, 0xCF, 0xA4, 0xA1, 0xB8, 0xD1, 0xFB, 0xA4, 0x9E, 0xD2, 0x21, 0x28, 0x83, 0x09,
-        0x8A, 0xF6, 0xA0, 0x0B, 0xA3, 0xD6, 0x0F, 0x9B, 0x63, 0x68, 0xCC, 0xBC, 0x0C, 0x4E, 0x14,
-        0x5B, 0x27, 0xA4, 0xA9, 0xF4, 0x2B, 0xB9, 0xB8, 0x7B, 0xC0, 0xE6, 0x51, 0xAD, 0x1D, 0x77,
-        0xD4, 0x6B, 0xB9, 0xCE, 0x20, 0xD1, 0x26, 0x66, 0x7E, 0x5E, 0x9E, 0xA2, 0xE9, 0x6B, 0x90,
-        0xF3, 0x73, 0xB8, 0x52, 0x8F, 0x44, 0x11, 0x03, 0x0C, 0x13, 0x97, 0x39, 0x3D, 0x13, 0x22,
-        0x58, 0xD5, 0x43, 0x82, 0x49, 0xDA, 0x6E, 0x7C, 0xA1, 0xC5, 0x8C, 0xA5, 0xB0, 0x09, 0xE0,
-        0xCE, 0x3D, 0xDF, 0xF4, 0x9D, 0x3C, 0x97, 0x15, 0xE2, 0x6A, 0xC7, 0x2B, 0x3C, 0x50, 0x93,
-        0x23, 0xDB, 0xBA, 0x4A, 0x22, 0x66, 0x44, 0xAC, 0x78, 0xBB, 0x0E, 0x1A, 0x27, 0x43, 0xB5,
-        0x71, 0x67, 0xAF, 0xF4, 0xAB, 0x48, 0x46, 0x93, 0x73, 0xD0, 0x42, 0xAB, 0x93, 0x63, 0xE5,
-        0x6C, 0x9A, 0xDE, 0x50, 0x24, 0xC0, 0x23, 0x7D, 0x99, 0x79, 0x3F, 0x22, 0x07, 0xE0, 0xC1,
-        0x48, 0x56, 0x1B, 0xDF, 0x83, 0x09, 0x12, 0xB4, 0x2D, 0x45, 0x6B, 0xC9, 0xC0, 0x68, 0x85,
-        0x99, 0x90, 0x79, 0x96, 0x1A, 0xD7, 0xF5, 0x4D, 0x1F, 0x37, 0x83, 0x40, 0x4A, 0xEC, 0x39,
-        0x37, 0xA6, 0x80, 0x92, 0x7D, 0xC5, 0x80, 0xC7, 0xD6, 0x6F, 0xFE, 0x8A, 0x79, 0x89, 0xC6,
-        0xB1])
 
-class PkgDerivedKey3Keyset:
-    Exponent1 = bytes([
-        0x52, 0xCC, 0x2D, 0xA0, 0x9C, 0x9E, 0x75, 0xE7, 0x28, 0xEE, 0x3D, 0xDE, 0xE3, 0x45, 0xD1,
-        0x4F, 0x94, 0x1C, 0xCC, 0xC8, 0x87, 0x29, 0x45, 0x3B, 0x8D, 0x6E, 0xAB, 0x6E, 0x2A, 0xA7,
-        0xC7, 0x15, 0x43, 0xA3, 0x04, 0x8F, 0x90, 0x5F, 0xEB, 0xF3, 0x38, 0x4A, 0x77, 0xFA, 0x36,
-        0xB7, 0x15, 0x76, 0xB6, 0x01, 0x1A, 0x8E, 0x25, 0x87, 0x82, 0xF1, 0x55, 0xD8, 0xC6, 0x43,
-        0x2A, 0xC0, 0xE5, 0x98, 0xC9, 0x32, 0xD1, 0x94, 0x6F, 0xD9, 0x01, 0xBA, 0x06, 0x81, 0xE0,
-        0x6D, 0x88, 0xF2, 0x24, 0x2A, 0x25, 0x01, 0x64, 0x5C, 0xBF, 0xF2, 0xD9, 0x99, 0x67, 0x3E,
-        0xF6, 0x72, 0xEE, 0xE4, 0xE2, 0x33, 0x5C, 0xF8, 0x00, 0x40, 0xE3, 0x2A, 0x9A, 0xF4, 0x3D,
-        0x22, 0x86, 0x44, 0x3C, 0xFB, 0x0A, 0xA5, 0x7C, 0x3F, 0xCC, 0xF5, 0xF1, 0x16, 0xC4, 0xAC,
-        0x88, 0xB4, 0xDE, 0x62, 0x94, 0x92, 0x6A, 0x13])
-    Exponent2 = bytes([
-        0x7C, 0x9D, 0xAD, 0x39, 0xE0, 0xD5, 0x60, 0x14, 0x94, 0x48, 0x19, 0x7F, 0x88, 0x95, 0xD5,
-        0x8B, 0x80, 0xAD, 0x85, 0x8A, 0x4B, 0x77, 0x37, 0x85, 0xD0, 0x77, 0xBB, 0xBF, 0x89, 0x71,
-        0x4A, 0x72, 0xCB, 0x72, 0x68, 0x38, 0xEC, 0x02, 0xC6, 0x7D, 0xC6, 0x44, 0x06, 0x33, 0x51,
-        0x1C, 0xC0, 0xFF, 0x95, 0x8F, 0x0D, 0x75, 0xDC, 0x25, 0xBB, 0x0B, 0x73, 0x91, 0xA9, 0x6D,
-        0x42, 0xD8, 0x03, 0xB7, 0x68, 0xD4, 0x1E, 0x75, 0x62, 0xA3, 0x70, 0x35, 0x79, 0x78, 0x00,
-        0xC8, 0xF5, 0xEF, 0x15, 0xB9, 0xFC, 0x4E, 0x47, 0x5A, 0xC8, 0x70, 0x70, 0x5B, 0x52, 0x98,
-        0xC0, 0xC2, 0x58, 0x4A, 0x70, 0x96, 0xCC, 0xB8, 0x10, 0xE1, 0x2F, 0x78, 0x8B, 0x2B, 0xA1,
-        0x7F, 0xF9, 0xAC, 0xDE, 0xF0, 0xBB, 0x2B, 0xE2, 0x66, 0xE3, 0x22, 0x92, 0x31, 0x21, 0x57,
-        0x92, 0xC4, 0xB8, 0xF2, 0x3E, 0x76, 0x20, 0x37])
-    PublicExponent = bytes([0, 1, 0, 1])
-    Coefficient = bytes([
-        0x45, 0x97, 0x55, 0xD4, 0x22, 0x08, 0x5E, 0xF3, 0x5C, 0xB4, 0x05, 0x7A, 0xFD, 0xAA, 0x42,
-        0x42, 0xAD, 0x9A, 0x8C, 0xA0, 0x6C, 0xBB, 0x1D, 0x68, 0x54, 0x54, 0x6E, 0x3E, 0x32, 0xE3,
-        0x53, 0x73, 0x76, 0xF1, 0x3E, 0x01, 0xEA, 0xD3, 0xCF, 0xEB, 0xEB, 0x23, 0x3E, 0xC0, 0xBE,
-        0xCE, 0xEC, 0x2C, 0x89, 0x5F, 0xA8, 0x27, 0x3A, 0x4C, 0xB7, 0xE6, 0x74, 0xBC, 0x45, 0x4C,
-        0x26, 0xC8, 0x25, 0xFF, 0x34, 0x63, 0x25, 0x37, 0xE1, 0x48, 0x10, 0xC1, 0x93, 0xA6, 0xAF,
-        0xEB, 0xBA, 0xE3, 0xA2, 0xF1, 0x3D, 0xEF, 0x63, 0xD8, 0xF4, 0xFD, 0xD3, 0xEE, 0xE2, 0x5D,
-        0xE9, 0x33, 0xCC, 0xAD, 0xBA, 0x75, 0x5C, 0x85, 0xAF, 0xCE, 0xA9, 0x3D, 0xD1, 0xA2, 0x17,
-        0xF3, 0xF6, 0x98, 0xB3, 0x50, 0x8E, 0x5E, 0xF6, 0xEB, 0x02, 0x8E, 0xA1, 0x62, 0xA7, 0xD6,
-        0x2C, 0xEC, 0x91, 0xFF, 0x15, 0x40, 0xD2, 0xE3])
-    Modulus = bytes([
-        0xd2, 0x12, 0xfc, 0x33, 0x5f, 0x6d, 0xdb, 0x83, 0x16, 0x09, 0x62, 0x8b, 0x03, 0x56, 0x27,
-        0x37, 0x82, 0xd4, 0x77, 0x85, 0x35, 0x29, 0x39, 0x2d, 0x52, 0x6b, 0x8c, 0x4c, 0x8c, 0xfb,
-        0x06, 0xc1, 0x84, 0x5b, 0xe7, 0xd4, 0xf7, 0xbc, 0xd2, 0x4e, 0x62, 0x45, 0xcd, 0x2a, 0xbb,
-        0xd7, 0x77, 0x76, 0x45, 0x36, 0x55, 0x27, 0x3f, 0xb3, 0xf5, 0xf9, 0x8e, 0xda, 0x4b, 0xef,
-        0xaa, 0x59, 0xae, 0xb3, 0x9b, 0xea, 0x54, 0x98, 0xd2, 0x06, 0x32, 0x6a, 0x58, 0x31, 0x2a,
-        0xe0, 0xd4, 0x4f, 0x90, 0xb5, 0x0a, 0x7d, 0xec, 0xf4, 0x3a, 0x9c, 0x52, 0x67, 0x2d, 0x99,
-        0x31, 0x8e, 0x0c, 0x43, 0xe6, 0x82, 0xfe, 0x07, 0x46, 0xe1, 0x2e, 0x50, 0xd4, 0x1f, 0x2d,
-        0x2f, 0x7e, 0xd9, 0x08, 0xba, 0x06, 0xb3, 0xbf, 0x2e, 0x20, 0x3f, 0x4e, 0x3f, 0xfe, 0x44,
-        0xff, 0xaa, 0x50, 0x43, 0x57, 0x91, 0x69, 0x94, 0x49, 0x15, 0x82, 0x82, 0xe4, 0x0f, 0x4c,
-        0x8d, 0x9d, 0x2c, 0xc9, 0x5b, 0x1d, 0x64, 0xbf, 0x88, 0x8b, 0xd4, 0xc5, 0x94, 0xe7, 0x65,
-        0x47, 0x84, 0x1e, 0xe5, 0x79, 0x10, 0xfb, 0x98, 0x93, 0x47, 0xb9, 0x7d, 0x85, 0x12, 0xa6,
-        0x40, 0x98, 0x2c, 0xf7, 0x92, 0xbc, 0x95, 0x19, 0x32, 0xed, 0xe8, 0x90, 0x56, 0x0d, 0x65,
-        0xc1, 0xaa, 0x78, 0xc6, 0x2e, 0x54, 0xfd, 0x5f, 0x54, 0xa1, 0xf6, 0x7e, 0xe5, 0xe0, 0x5f,
-        0x61, 0xc1, 0x20, 0xb4, 0xb9, 0xb4, 0x33, 0x08, 0x70, 0xe4, 0xdf, 0x89, 0x56, 0xed, 0x01,
-        0x29, 0x46, 0x77, 0x5f, 0x8c, 0xb8, 0xa9, 0xf5, 0x1e, 0x2e, 0xb3, 0xb9, 0xbf, 0xe0, 0x09,
-        0xb7, 0x8d, 0x28, 0xd4, 0xa6, 0xc3, 0xb8, 0x1e, 0x1f, 0x07, 0xeb, 0xb4, 0x12, 0x0b, 0x95,
-        0xb8, 0x85, 0x30, 0xfd, 0xdc, 0x39, 0x13, 0xd0, 0x7c, 0xdc, 0x8f, 0xed, 0xf9, 0xc9, 0xa3,
-        0xc1])
-    Prime1 = bytes([
-        0xF9, 0x67, 0xAD, 0x99, 0x12, 0x31, 0x0C, 0x56, 0xA2, 0x2E, 0x16, 0x1C, 0x46, 0xB3, 0x4D,
-        0x5B, 0x43, 0xBE, 0x42, 0xA2, 0xF6, 0x86, 0x96, 0x80, 0x42, 0xC3, 0xC7, 0x3F, 0xC3, 0x42,
-        0xF5, 0x87, 0x49, 0x33, 0x9F, 0x07, 0x5D, 0x6E, 0x2C, 0x04, 0xFD, 0xE3, 0xE1, 0xB2, 0xAE,
-        0x0A, 0x0C, 0xF0, 0xC7, 0xA6, 0x1C, 0xA1, 0x63, 0x50, 0xC8, 0x09, 0x9C, 0x51, 0x24, 0x52,
-        0x6C, 0x5E, 0x5E, 0xBD, 0x1E, 0x27, 0x06, 0xBB, 0xBC, 0x9E, 0x94, 0xE1, 0x35, 0xD4, 0x6D,
-        0xB3, 0xCB, 0x3C, 0x68, 0xDD, 0x68, 0xB3, 0xFE, 0x6C, 0xCB, 0x8D, 0x82, 0x20, 0x76, 0x23,
-        0x63, 0xB7, 0xE9, 0x68, 0x10, 0x01, 0x4E, 0xDC, 0xBA, 0x27, 0x5D, 0x01, 0xC1, 0x2D, 0x80,
-        0x5E, 0x2B, 0xAF, 0x82, 0x6B, 0xD8, 0x84, 0xB6, 0x10, 0x52, 0x86, 0xA7, 0x89, 0x8E, 0xAE,
-        0x9A, 0xE2, 0x89, 0xC6, 0xF7, 0xD5, 0x87, 0xFB])
-    Prime2 = bytes([
-        0xD7, 0xA1, 0x0F, 0x9A, 0x8B, 0xF2, 0xC9, 0x11, 0x95, 0x32, 0x9A, 0x8C, 0xF0, 0xD9, 0x40,
-        0x47, 0xF5, 0x68, 0xA0, 0x0D, 0xBD, 0xC1, 0xFC, 0x43, 0x2F, 0x65, 0xF9, 0xC3, 0x61, 0x0F,
-        0x25, 0x77, 0x54, 0xAD, 0xD7, 0x58, 0xAC, 0x84, 0x40, 0x60, 0x8D, 0x3F, 0xF3, 0x65, 0x89,
-        0x75, 0xB5, 0xC6, 0x2C, 0x51, 0x1A, 0x2F, 0x1F, 0x22, 0xE4, 0x43, 0x11, 0x54, 0xBE, 0xC9,
-        0xB4, 0xC7, 0xB5, 0x1B, 0x05, 0x0B, 0xBC, 0x56, 0x9A, 0xCD, 0x4A, 0xD9, 0x73, 0x68, 0x5E,
-        0x5C, 0xFB, 0x92, 0xB7, 0x8B, 0x0D, 0xFF, 0xF5, 0x07, 0xCA, 0xB4, 0xC8, 0x9B, 0x96, 0x3C,
-        0x07, 0x9E, 0x3E, 0x6B, 0x2A, 0x11, 0xF2, 0x8A, 0xB1, 0x8A, 0xD7, 0x2E, 0x1B, 0xA5, 0x53,
-        0x24, 0x06, 0xED, 0x50, 0xB8, 0x90, 0x67, 0xB1, 0xE2, 0x41, 0xC6, 0x92, 0x01, 0xEE, 0x10,
-        0xF0, 0x61, 0xBB, 0xFB, 0xB2, 0x7D, 0x4A, 0x73])
-    PrivateExponent = bytes([
-        0x32, 0xD9, 0x03, 0x90, 0x8F, 0xBD, 0xB0, 0x8F, 0x57, 0x2B, 0x28, 0x5E, 0x0B, 0x8D, 0xB3,
-        0xEA, 0x5C, 0xD1, 0x7E, 0xA8, 0x90, 0x88, 0x8C, 0xDD, 0x6A, 0x80, 0xBB, 0xB1, 0xDF, 0xC1,
-        0xF7, 0x0D, 0xAA, 0x32, 0xF0, 0xB7, 0x7C, 0xCB, 0x88, 0x80, 0x0E, 0x8B, 0x64, 0xB0, 0xBE,
-        0x4C, 0xD6, 0x0E, 0x9B, 0x8C, 0x1E, 0x2A, 0x64, 0xE1, 0xF3, 0x5C, 0xD7, 0x76, 0x01, 0x41,
-        0x5E, 0x93, 0x5C, 0x94, 0xFE, 0xDD, 0x46, 0x62, 0xC3, 0x1B, 0x5A, 0xE2, 0xA0, 0xBC, 0x2D,
-        0xEB, 0xC3, 0x98, 0x0A, 0xA7, 0xB7, 0x85, 0x69, 0x70, 0x68, 0x2B, 0x64, 0x4A, 0xB3, 0x1F,
-        0xCC, 0x7D, 0xDC, 0x7C, 0x26, 0xF4, 0x77, 0xF6, 0x5C, 0xF2, 0xAE, 0x5A, 0x44, 0x2D, 0xD3,
-        0xAB, 0x16, 0x62, 0x04, 0x19, 0xBA, 0xFB, 0x90, 0xFF, 0xE2, 0x30, 0x50, 0x89, 0x6E, 0xCB,
-        0x56, 0xB2, 0xEB, 0xC0, 0x91, 0x16, 0x92, 0x5E, 0x30, 0x8E, 0xAE, 0xC7, 0x94, 0x5D, 0xFD,
-        0x35, 0xE1, 0x20, 0xF8, 0xAD, 0x3E, 0xBC, 0x08, 0xBF, 0xC0, 0x36, 0x74, 0x9F, 0xD5, 0xBB,
-        0x52, 0x08, 0xFD, 0x06, 0x66, 0xF3, 0x7A, 0xB3, 0x04, 0xF4, 0x75, 0x29, 0x5D, 0xE9, 0x5F,
-        0xAA, 0x10, 0x30, 0xB2, 0x0F, 0x5A, 0x1A, 0xC1, 0x2A, 0xB3, 0xFE, 0xCB, 0x21, 0xAD, 0x80,
-        0xEC, 0x8F, 0x20, 0x09, 0x1C, 0xDB, 0xC5, 0x58, 0x94, 0xC2, 0x9C, 0xC6, 0xCE, 0x82, 0x65,
-        0x3E, 0x57, 0x90, 0xBC, 0xA9, 0x8B, 0x06, 0xB4, 0xF0, 0x72, 0xF6, 0x77, 0xDF, 0x98, 0x64,
-        0xF1, 0xEC, 0xFE, 0x37, 0x2D, 0xBC, 0xAE, 0x8C, 0x08, 0x81, 0x1F, 0xC3, 0xC9, 0x89, 0x1A,
-        0xC7, 0x42, 0x82, 0x4B, 0x2E, 0xDC, 0x8E, 0x8D, 0x73, 0xCE, 0xB1, 0xCC, 0x01, 0xD9, 0x08,
-        0x70, 0x87, 0x3C, 0x44, 0x08, 0xEC, 0x49, 0x8F, 0x81, 0x5A, 0xE2, 0x40, 0xFF, 0x77, 0xFC,
-        0x0D])
+
 
 # --- Costanti e Definizioni Strutture (aggiornate da .h forniti) ---
 PFSC_MAGIC = 0x43534650  # "PFSC"
 PKG_MAGIC_BE = 0x7F434E54   # ".CNT" (Big Endian nel file)
 PKG_MAGIC_LE_VARIANT = 0x544E437F # "TNC\x7f" (Little Endian variant found in some files)
 
-# --- pkg_type.h / pkg_type.cpp ---
-# Questa mappatura è enorme, la includerò direttamente nella classe PKG o come costante globale.
-# Per ora, la lascio come l'avevo prima, ma la aggiornerò.
-PKG_ENTRY_ID_TO_NAME_FULL = { # Corretto
-    0x0001: "digests", 0x0010: "entry_keys", 0x0020: "image_key", 0x0080: "general_digests",
-    0x0100: "metas", 0x0200: "entry_names", 0x0400: "license.dat", 0x0401: "license.info",
-    0x0402: "nptitle.dat", 0x0403: "npbind.dat", 0x0404: "selfinfo.dat",
-    0x0406: "imageinfo.dat", 0x0407: "target-deltainfo.dat", 0x0408: "origin-deltainfo.dat",
-    0x0409: "psreserved.dat", 0x1000: "param.sfo", 0x1001: "playgo-chunk.dat",
-    0x1002: "playgo-chunk.sha", 0x1003: "playgo-manifest.xml", 0x1004: "pronunciation.xml",
-    0x1005: "pronunciation.sig", 0x1006: "pic1.png", 0x1007: "pubtoolinfo.dat",
-    0x1008: "app/playgo-chunk.dat", 0x1009: "app/playgo-chunk.sha", 0x100A: "app/playgo-manifest.xml",
-    0x100B: "shareparam.json", 0x100C: "shareoverlayimage.png", 0x100D: "save_data.png",
-    0x100E: "shareprivacyguardimage.png", 0x1200: "icon0.png",
-    0x1201: "icon0_00.png", 0x1202: "icon0_01.png", 0x1203: "icon0_02.png",
-    0x1204: "icon0_03.png", 0x1205: "icon0_04.png", 0x1206: "icon0_05.png",
-    0x1207: "icon0_06.png", 0x1208: "icon0_07.png", 0x1209: "icon0_08.png",
-    0x120A: "icon0_09.png", 0x120B: "icon0_10.png", 0x120C: "icon0_11.png",
-    0x120D: "icon0_12.png", 0x120E: "icon0_13.png", 0x120F: "icon0_14.png",
-    0x1210: "icon0_15.png", 0x1211: "icon0_16.png", 0x1212: "icon0_17.png",
-    0x1213: "icon0_18.png", 0x1214: "icon0_19.png", 0x1215: "icon0_20.png",
-    0x1216: "icon0_21.png", 0x1217: "icon0_22.png", 0x1218: "icon0_23.png",
-    0x1219: "icon0_24.png", 0x121A: "icon0_25.png", 0x121B: "icon0_26.png",
-    0x121C: "icon0_27.png", 0x121D: "icon0_28.png", 0x121E: "icon0_29.png",
-    0x121F: "icon0_30.png", 0x1220: "pic0.png", 0x1240: "snd0.at9",
-    0x1241: "pic1_00.png", 0x1242: "pic1_01.png", 0x1243: "pic1_02.png",
-    0x1244: "pic1_03.png", 0x1245: "pic1_04.png", 0x1246: "pic1_05.png",
-    0x1247: "pic1_06.png", 0x1248: "pic1_07.png", 0x1249: "pic1_08.png",
-    0x124A: "pic1_09.png", 0x124B: "pic1_10.png", 0x124C: "pic1_11.png",
-    0x124D: "pic1_12.png", 0x124E: "pic1_13.png", 0x124F: "pic1_14.png",
-    0x1250: "pic1_15.png", 0x1251: "pic1_16.png", 0x1252: "pic1_17.png",
-    0x1253: "pic1_18.png", 0x1254: "pic1_19.png", 0x1255: "pic1_20.png",
-    0x1256: "pic1_21.png", 0x1257: "pic1_22.png", 0x1258: "pic1_23.png",
-    0x1259: "pic1_24.png", 0x125A: "pic1_25.png", 0x125B: "pic1_26.png",
-    0x125C: "pic1_27.png", 0x125D: "pic1_28.png", 0x125E: "pic1_29.png",
-    0x125F: "pic1_30.png", 0x1260: "changeinfo/changeinfo.xml",
-    0x1261: "changeinfo/changeinfo_00.xml", 0x1262: "changeinfo/changeinfo_01.xml",
-    0x1263: "changeinfo/changeinfo_02.xml", 0x1264: "changeinfo/changeinfo_03.xml",
-    0x1265: "changeinfo/changeinfo_04.xml", 0x1266: "changeinfo/changeinfo_05.xml",
-    0x1267: "changeinfo/changeinfo_06.xml", 0x1268: "changeinfo/changeinfo_07.xml",
-    0x1269: "changeinfo/changeinfo_08.xml", 0x126A: "changeinfo/changeinfo_09.xml",
-    0x126B: "changeinfo/changeinfo_10.xml", 0x126C: "changeinfo/changeinfo_11.xml",
-    0x126D: "changeinfo/changeinfo_12.xml", 0x126E: "changeinfo/changeinfo_13.xml",
-    0x126F: "changeinfo/changeinfo_14.xml", 0x1270: "changeinfo/changeinfo_15.xml",
-    0x1271: "changeinfo/changeinfo_16.xml", 0x1272: "changeinfo/changeinfo_17.xml",
-    0x1273: "changeinfo/changeinfo_18.xml", 0x1274: "changeinfo/changeinfo_19.xml",
-    0x1275: "changeinfo/changeinfo_20.xml", 0x1276: "changeinfo/changeinfo_21.xml",
-    0x1277: "changeinfo/changeinfo_22.xml", 0x1278: "changeinfo/changeinfo_23.xml",
-    0x1279: "changeinfo/changeinfo_24.xml", 0x127A: "changeinfo/changeinfo_25.xml",
-    0x127B: "changeinfo/changeinfo_26.xml", 0x127C: "changeinfo/changeinfo_27.xml",
-    0x127D: "changeinfo/changeinfo_28.xml", 0x127E: "changeinfo/changeinfo_29.xml",
-    0x127F: "changeinfo/changeinfo_30.xml", 0x1280: "icon0.dds",
-    0x1281: "icon0_00.dds", 0x1282: "icon0_01.dds", 0x1283: "icon0_02.dds",
-    0x1284: "icon0_03.dds", 0x1285: "icon0_04.dds", 0x1286: "icon0_05.dds",
-    0x1287: "icon0_06.dds", 0x1288: "icon0_07.dds", 0x1289: "icon0_08.dds",
-    0x128A: "icon0_09.dds", 0x128B: "icon0_10.dds", 0x128C: "icon0_11.dds",
-    0x128D: "icon0_12.dds", 0x128E: "icon0_13.dds", 0x128F: "icon0_14.dds",
-    0x1290: "icon0_15.dds", 0x1291: "icon0_16.dds", 0x1292: "icon0_17.dds",
-    0x1293: "icon0_18.dds", 0x1294: "icon0_19.dds", 0x1295: "icon0_20.dds",
-    0x1296: "icon0_21.dds", 0x1297: "icon0_22.dds", 0x1298: "icon0_23.dds",
-    0x1299: "icon0_24.dds", 0x129A: "icon0_25.dds", 0x129B: "icon0_26.dds",
-    0x129C: "icon0_27.dds", 0x129D: "icon0_28.dds", 0x129E: "icon0_29.dds",
-    0x129F: "icon0_30.dds", 0x12A0: "pic0.dds", 0x12C0: "pic1.dds",
-    0x12C1: "pic1_00.dds", 0x12C2: "pic1_01.dds", 0x12C3: "pic1_02.dds",
-    0x12C4: "pic1_03.dds", 0x12C5: "pic1_04.dds", 0x12C6: "pic1_05.dds",
-    0x12C7: "pic1_06.dds", 0x12C8: "pic1_07.dds", 0x12C9: "pic1_08.dds",
-    0x12CA: "pic1_09.dds", 0x12CB: "pic1_10.dds", 0x12CC: "pic1_11.dds",
-    0x12CD: "pic1_12.dds", 0x12CE: "pic1_13.dds", 0x12CF: "pic1_14.dds",
-    0x12D0: "pic1_15.dds", 0x12D1: "pic1_16.dds", 0x12D2: "pic1_17.dds",
-    0x12D3: "pic1_18.dds", 0x12D4: "pic1_19.dds", 0x12D5: "pic1_20.dds",
-    0x12D6: "pic1_21.dds", 0x12D7: "pic1_22.dds", 0x12D8: "pic1_23.dds",
-    0x12D9: "pic1_24.dds", 0x12DA: "pic1_25.dds", 0x12DB: "pic1_26.dds",
-    0x12DC: "pic1_27.dds", 0x12DD: "pic1_28.dds", 0x12DE: "pic1_29.dds",
-    0x12DF: "pic1_30.dds", 0x1400: "trophy/trophy00.trp",
-    0x1401: "trophy/trophy01.trp", 0x1402: "trophy/trophy02.trp",
-    0x1403: "trophy/trophy03.trp", 0x1404: "trophy/trophy04.trp",
-    0x1405: "trophy/trophy05.trp", 0x1406: "trophy/trophy06.trp",
-    0x1407: "trophy/trophy07.trp", 0x1408: "trophy/trophy08.trp",
-    0x1409: "trophy/trophy09.trp", 0x140A: "trophy/trophy10.trp",
-    0x140B: "trophy/trophy11.trp", 0x140C: "trophy/trophy12.trp",
-    0x140D: "trophy/trophy13.trp", 0x140E: "trophy/trophy14.trp",
-    0x140F: "trophy/trophy15.trp", 0x1410: "trophy/trophy16.trp",
-    0x1411: "trophy/trophy17.trp", 0x1412: "trophy/trophy18.trp",
-    0x1413: "trophy/trophy19.trp", 0x1414: "trophy/trophy20.trp",
-    0x1415: "trophy/trophy21.trp", 0x1416: "trophy/trophy22.trp",
-    0x1417: "trophy/trophy23.trp", 0x1418: "trophy/trophy24.trp",
-    0x1419: "trophy/trophy25.trp", 0x141A: "trophy/trophy26.trp",
-    0x141B: "trophy/trophy27.trp", 0x141C: "trophy/trophy28.trp",
-    0x141D: "trophy/trophy29.trp", 0x141E: "trophy/trophy30.trp",
-    0x141F: "trophy/trophy31.trp", 0x1420: "trophy/trophy32.trp",
-    0x1421: "trophy/trophy33.trp", 0x1422: "trophy/trophy34.trp",
-    0x1423: "trophy/trophy35.trp", 0x1424: "trophy/trophy36.trp",
-    0x1425: "trophy/trophy37.trp", 0x1426: "trophy/trophy38.trp",
-    0x1427: "trophy/trophy39.trp", 0x1428: "trophy/trophy40.trp",
-    0x1429: "trophy/trophy41.trp", 0x142A: "trophy/trophy42.trp",
-    0x142B: "trophy/trophy43.trp", 0x142C: "trophy/trophy44.trp",
-    0x142D: "trophy/trophy45.trp", 0x142E: "trophy/trophy46.trp",
-    0x142F: "trophy/trophy47.trp", 0x1430: "trophy/trophy48.trp",
-    0x1431: "trophy/trophy49.trp", 0x1432: "trophy/trophy50.trp",
-    0x1433: "trophy/trophy51.trp", 0x1434: "trophy/trophy52.trp",
-    0x1435: "trophy/trophy53.trp", 0x1436: "trophy/trophy54.trp",
-    0x1437: "trophy/trophy55.trp", 0x1438: "trophy/trophy56.trp",
-    0x1439: "trophy/trophy57.trp", 0x143A: "trophy/trophy58.trp",
-    0x143B: "trophy/trophy59.trp", 0x143C: "trophy/trophy60.trp",
-    0x143D: "trophy/trophy61.trp", 0x143E: "trophy/trophy62.trp",
-    0x143F: "trophy/trophy63.trp", 0x1440: "trophy/trophy64.trp",
-    0x1441: "trophy/trophy65.trp", 0x1442: "trophy/trophy66.trp",
-    0x1443: "trophy/trophy67.trp", 0x1444: "trophy/trophy68.trp",
-    0x1445: "trophy/trophy69.trp", 0x1446: "trophy/trophy70.trp",
-    0x1447: "trophy/trophy71.trp", 0x1448: "trophy/trophy72.trp",
-    0x1449: "trophy/trophy73.trp", 0x144A: "trophy/trophy74.trp",
-    0x144B: "trophy/trophy75.trp", 0x144C: "trophy/trophy76.trp",
-    0x144D: "trophy/trophy77.trp", 0x144E: "trophy/trophy78.trp",
-    0x144F: "trophy/trophy79.trp", 0x1450: "trophy/trophy80.trp",
-    0x1451: "trophy/trophy81.trp", 0x1452: "trophy/trophy82.trp",
-    0x1453: "trophy/trophy83.trp", 0x1454: "trophy/trophy84.trp",
-    0x1455: "trophy/trophy85.trp", 0x1456: "trophy/trophy86.trp",
-    0x1457: "trophy/trophy87.trp", 0x1458: "trophy/trophy88.trp",
-    0x1459: "trophy/trophy89.trp", 0x145A: "trophy/trophy90.trp",
-    0x145B: "trophy/trophy91.trp", 0x145C: "trophy/trophy92.trp",
-    0x145D: "trophy/trophy93.trp", 0x145E: "trophy/trophy94.trp",
-    0x145F: "trophy/trophy95.trp", 0x1460: "trophy/trophy96.trp",
-    0x1461: "trophy/trophy97.trp", 0x1462: "trophy/trophy98.trp",
-    0x1463: "trophy/trophy99.trp",  0x1600: "keymap_rp/001.png",
-    0x1601: "keymap_rp/002.png",    0x1602: "keymap_rp/003.png",
-    0x1603: "keymap_rp/004.png",    0x1604: "keymap_rp/005.png",
-    0x1605: "keymap_rp/006.png",    0x1606: "keymap_rp/007.png",
-    0x1607: "keymap_rp/008.png",    0x1608: "keymap_rp/009.png",
-    0x1609: "keymap_rp/010.png",    0x1610: "keymap_rp/00/001.png",
-    0x1611: "keymap_rp/00/002.png", 0x1612: "keymap_rp/00/003.png",
-    0x1613: "keymap_rp/00/004.png", 0x1614: "keymap_rp/00/005.png",
-    0x1615: "keymap_rp/00/006.png", 0x1616: "keymap_rp/00/007.png",
-    0x1617: "keymap_rp/00/008.png", 0x1618: "keymap_rp/00/009.png",
-    0x1619: "keymap_rp/00/010.png", 0x1620: "keymap_rp/01/001.png",
-    0x1621: "keymap_rp/01/002.png", 0x1622: "keymap_rp/01/003.png",
-    0x1623: "keymap_rp/01/004.png", 0x1624: "keymap_rp/01/005.png",
-    0x1625: "keymap_rp/01/006.png", 0x1626: "keymap_rp/01/007.png",
-    0x1627: "keymap_rp/01/008.png", 0x1628: "keymap_rp/01/009.png",
-    0x1629: "keymap_rp/01/010.png", 0x1630: "keymap_rp/02/001.png",
-    0x1631: "keymap_rp/02/002.png", 0x1632: "keymap_rp/02/003.png",
-    0x1633: "keymap_rp/02/004.png", 0x1634: "keymap_rp/02/005.png",
-    0x1635: "keymap_rp/02/006.png", 0x1636: "keymap_rp/02/007.png",
-    0x1637: "keymap_rp/02/008.png", 0x1638: "keymap_rp/02/009.png",
-    0x1639: "keymap_rp/02/010.png", 0x1640: "keymap_rp/03/001.png",
-    0x1641: "keymap_rp/03/002.png", 0x1642: "keymap_rp/03/003.png",
-    0x1643: "keymap_rp/03/004.png", 0x1644: "keymap_rp/03/005.png",
-    0x1645: "keymap_rp/03/006.png", 0x1646: "keymap_rp/03/007.png",
-    0x1647: "keymap_rp/03/008.png", 0x1648: "keymap_rp/03/009.png", # Corretto il nome file da '0010' a '009'
-    0x1649: "keymap_rp/03/010.png", # Aggiunto per coerenza se 0x1648 era un errore di battitura per 009
-    0x1650: "keymap_rp/04/001.png", 0x1651: "keymap_rp/04/002.png",
-    0x1652: "keymap_rp/04/003.png", 0x1653: "keymap_rp/04/004.png",
-    0x1654: "keymap_rp/04/005.png", 0x1655: "keymap_rp/04/006.png",
-    0x1656: "keymap_rp/04/007.png", 0x1657: "keymap_rp/04/008.png",
-    0x1658: "keymap_rp/04/009.png", 0x1659: "keymap_rp/04/010.png",
-    0x1660: "keymap_rp/05/001.png", 0x1661: "keymap_rp/05/002.png",
-    0x1662: "keymap_rp/05/003.png", 0x1663: "keymap_rp/05/004.png",
-    0x1664: "keymap_rp/05/005.png", 0x1665: "keymap_rp/05/006.png",
-    0x1666: "keymap_rp/05/007.png", 0x1667: "keymap_rp/05/008.png",
-    0x1668: "keymap_rp/05/009.png", 0x1669: "keymap_rp/05/010.png",
-    0x1670: "keymap_rp/06/001.png", 0x1671: "keymap_rp/06/002.png",
-    0x1672: "keymap_rp/06/003.png", 0x1673: "keymap_rp/06/004.png",
-    0x1674: "keymap_rp/06/005.png", 0x1675: "keymap_rp/06/006.png",
-    0x1676: "keymap_rp/06/007.png", 0x1677: "keymap_rp/06/008.png",
-    0x1678: "keymap_rp/06/009.png", 0x1679: "keymap_rp/06/010.png",
-    0x1680: "keymap_rp/07/001.png", 0x1681: "keymap_rp/07/002.png",
-    0x1682: "keymap_rp/07/003.png", 0x1683: "keymap_rp/07/004.png",
-    0x1684: "keymap_rp/07/005.png", 0x1685: "keymap_rp/07/006.png",
-    0x1686: "keymap_rp/07/007.png", 0x1687: "keymap_rp/07/008.png",
-    0x1688: "keymap_rp/07/009.png", 0x1689: "keymap_rp/07/010.png",
-    0x1690: "keymap_rp/08/001.png", 0x1691: "keymap_rp/08/002.png",
-    0x1692: "keymap_rp/08/003.png", 0x1693: "keymap_rp/08/004.png",
-    0x1694: "keymap_rp/08/005.png", 0x1695: "keymap_rp/08/006.png",
-    0x1696: "keymap_rp/08/007.png", 0x1697: "keymap_rp/08/008.png",
-    0x1698: "keymap_rp/08/009.png", 0x1699: "keymap_rp/08/010.png",
-    0x16A0: "keymap_rp/09/001.png", 0x16A1: "keymap_rp/09/002.png",
-    0x16A2: "keymap_rp/09/003.png", 0x16A3: "keymap_rp/09/004.png",
-    0x16A4: "keymap_rp/09/005.png", 0x16A5: "keymap_rp/09/006.png",
-    0x16A6: "keymap_rp/09/007.png", 0x16A7: "keymap_rp/09/008.png",
-    0x16A8: "keymap_rp/09/009.png", 0x16A9: "keymap_rp/09/010.png",
-    0x16B0: "keymap_rp/10/001.png", 0x16B1: "keymap_rp/10/002.png",
-    0x16B2: "keymap_rp/10/003.png", 0x16B3: "keymap_rp/10/004.png",
-    0x16B4: "keymap_rp/10/005.png", 0x16B5: "keymap_rp/10/006.png",
-    0x16B6: "keymap_rp/10/007.png", 0x16B7: "keymap_rp/10/008.png",
-    0x16B8: "keymap_rp/10/009.png", 0x16B9: "keymap_rp/10/010.png",
-    0x16C0: "keymap_rp/11/001.png", 0x16C1: "keymap_rp/11/002.png",
-    0x16C2: "keymap_rp/11/003.png", 0x16C3: "keymap_rp/11/004.png",
-    0x16C4: "keymap_rp/11/005.png", 0x16C5: "keymap_rp/11/006.png",
-    0x16C6: "keymap_rp/11/007.png", 0x16C7: "keymap_rp/11/008.png",
-    0x16C8: "keymap_rp/11/009.png", 0x16C9: "keymap_rp/11/010.png",
-    0x16D0: "keymap_rp/12/001.png", 0x16D1: "keymap_rp/12/002.png",
-    0x16D2: "keymap_rp/12/003.png", 0x16D3: "keymap_rp/12/004.png",
-    0x16D4: "keymap_rp/12/005.png", 0x16D5: "keymap_rp/12/006.png",
-    0x16D6: "keymap_rp/12/007.png", 0x16D7: "keymap_rp/12/008.png",
-    0x16D8: "keymap_rp/12/009.png", 0x16D9: "keymap_rp/12/010.png",
-    0x16E0: "keymap_rp/13/001.png", 0x16E1: "keymap_rp/13/002.png",
-    0x16E2: "keymap_rp/13/003.png", 0x16E3: "keymap_rp/13/004.png",
-    0x16E4: "keymap_rp/13/005.png", 0x16E5: "keymap_rp/13/006.png",
-    0x16E6: "keymap_rp/13/007.png", 0x16E7: "keymap_rp/13/008.png",
-    0x16E8: "keymap_rp/13/009.png", 0x16E9: "keymap_rp/13/010.png",
-    0x16F0: "keymap_rp/14/001.png", 0x16F1: "keymap_rp/14/002.png",
-    0x16F2: "keymap_rp/14/003.png", 0x16F3: "keymap_rp/14/004.png",
-    0x16F4: "keymap_rp/14/005.png", 0x16F5: "keymap_rp/14/006.png",
-    0x16F6: "keymap_rp/14/007.png", 0x16F7: "keymap_rp/14/008.png",
-    0x16F8: "keymap_rp/14/009.png", 0x16F9: "keymap_rp/14/010.png",
-    0x1700: "keymap_rp/15/001.png", 0x1701: "keymap_rp/15/002.png",
-    0x1702: "keymap_rp/15/003.png", 0x1703: "keymap_rp/15/004.png",
-    0x1704: "keymap_rp/15/005.png", 0x1705: "keymap_rp/15/006.png",
-    0x1706: "keymap_rp/15/007.png", 0x1707: "keymap_rp/15/008.png",
-    0x1708: "keymap_rp/15/009.png", 0x1709: "keymap_rp/15/010.png",
-    0x1710: "keymap_rp/16/001.png", 0x1711: "keymap_rp/16/002.png",
-    0x1712: "keymap_rp/16/003.png", 0x1713: "keymap_rp/16/004.png",
-    0x1714: "keymap_rp/16/005.png", 0x1715: "keymap_rp/16/006.png",
-    0x1716: "keymap_rp/16/007.png", 0x1717: "keymap_rp/16/008.png",
-    0x1718: "keymap_rp/16/009.png", 0x1719: "keymap_rp/16/010.png",
-    0x1720: "keymap_rp/17/001.png", 0x1721: "keymap_rp/17/002.png",
-    0x1722: "keymap_rp/17/003.png", 0x1723: "keymap_rp/17/004.png",
-    0x1724: "keymap_rp/17/005.png", 0x1725: "keymap_rp/17/006.png",
-    0x1726: "keymap_rp/17/007.png", 0x1727: "keymap_rp/17/008.png",
-    0x1728: "keymap_rp/17/009.png", 0x1729: "keymap_rp/17/010.png",
-    0x1730: "keymap_rp/18/001.png", 0x1731: "keymap_rp/18/002.png",
-    0x1732: "keymap_rp/18/003.png", 0x1733: "keymap_rp/18/004.png",
-    0x1734: "keymap_rp/18/005.png", 0x1735: "keymap_rp/18/006.png",
-    0x1736: "keymap_rp/18/007.png", 0x1737: "keymap_rp/18/008.png",
-    0x1738: "keymap_rp/18/009.png", 0x1739: "keymap_rp/18/010.png",
-    0x1740: "keymap_rp/19/001.png", 0x1741: "keymap_rp/19/002.png",
-    0x1742: "keymap_rp/19/003.png", 0x1743: "keymap_rp/19/004.png",
-    0x1744: "keymap_rp/19/005.png", 0x1745: "keymap_rp/19/006.png",
-    0x1746: "keymap_rp/19/007.png", 0x1747: "keymap_rp/19/008.png",
-    0x1748: "keymap_rp/19/009.png", 0x1749: "keymap_rp/19/010.png",
-    0x1750: "keymap_rp/20/001.png", 0x1751: "keymap_rp/20/002.png",
-    0x1752: "keymap_rp/20/003.png", 0x1753: "keymap_rp/20/004.png",
-    0x1754: "keymap_rp/20/005.png", 0x1755: "keymap_rp/20/006.png",
-    0x1756: "keymap_rp/20/007.png", 0x1757: "keymap_rp/20/008.png",
-    0x1758: "keymap_rp/20/009.png", 0x1759: "keymap_rp/20/010.png",
-    0x1760: "keymap_rp/21/001.png", 0x1761: "keymap_rp/21/002.png",
-    0x1762: "keymap_rp/21/003.png", 0x1763: "keymap_rp/21/004.png",
-    0x1764: "keymap_rp/21/005.png", 0x1765: "keymap_rp/21/006.png",
-    0x1766: "keymap_rp/21/007.png", 0x1767: "keymap_rp/21/008.png",
-    0x1768: "keymap_rp/21/009.png", 0x1769: "keymap_rp/21/010.png",
-    0x1770: "keymap_rp/22/001.png", 0x1771: "keymap_rp/22/002.png",
-    0x1772: "keymap_rp/22/003.png", 0x1773: "keymap_rp/22/004.png",
-    0x1774: "keymap_rp/22/005.png", 0x1775: "keymap_rp/22/006.png",
-    0x1776: "keymap_rp/22/007.png", 0x1777: "keymap_rp/22/008.png",
-    0x1778: "keymap_rp/22/009.png", 0x1779: "keymap_rp/22/010.png",
-    0x1780: "keymap_rp/23/001.png", 0x1781: "keymap_rp/23/002.png",
-    0x1782: "keymap_rp/23/003.png", 0x1783: "keymap_rp/23/004.png",
-    0x1784: "keymap_rp/23/005.png", 0x1785: "keymap_rp/23/006.png",
-    0x1786: "keymap_rp/23/007.png", 0x1787: "keymap_rp/23/008.png",
-    0x1788: "keymap_rp/23/009.png", 0x1789: "keymap_rp/23/010.png",
-    0x1790: "keymap_rp/24/001.png", 0x1791: "keymap_rp/24/002.png",
-    0x1792: "keymap_rp/24/003.png", 0x1793: "keymap_rp/24/004.png",
-    0x1794: "keymap_rp/24/005.png", 0x1795: "keymap_rp/24/006.png",
-    0x1796: "keymap_rp/24/007.png", 0x1797: "keymap_rp/24/008.png",
-    0x1798: "keymap_rp/24/009.png", 0x1799: "keymap_rp/24/010.png",
-    0x17A0: "keymap_rp/25/001.png", 0x17A1: "keymap_rp/25/002.png",
-    0x17A2: "keymap_rp/25/003.png", 0x17A3: "keymap_rp/25/004.png",
-    0x17A4: "keymap_rp/25/005.png", 0x17A5: "keymap_rp/25/006.png",
-    0x17A6: "keymap_rp/25/007.png", 0x17A7: "keymap_rp/25/008.png",
-    0x17A8: "keymap_rp/25/009.png", 0x17A9: "keymap_rp/25/010.png",
-    0x17B0: "keymap_rp/26/001.png", 0x17B1: "keymap_rp/26/002.png",
-    0x17B2: "keymap_rp/26/003.png", 0x17B3: "keymap_rp/26/004.png",
-    0x17B4: "keymap_rp/26/005.png", 0x17B5: "keymap_rp/26/006.png",
-    0x17B6: "keymap_rp/26/007.png", 0x17B7: "keymap_rp/26/008.png",
-    0x17B8: "keymap_rp/26/009.png", 0x17B9: "keymap_rp/26/010.png",
-    0x17C0: "keymap_rp/27/001.png", 0x17C1: "keymap_rp/27/002.png",
-    0x17C2: "keymap_rp/27/003.png", 0x17C3: "keymap_rp/27/004.png",
-    0x17C4: "keymap_rp/27/005.png", 0x17C5: "keymap_rp/27/006.png",
-    0x17C6: "keymap_rp/27/007.png", 0x17C7: "keymap_rp/27/008.png",
-    0x17C8: "keymap_rp/27/009.png", 0x17C9: "keymap_rp/27/010.png",
-    0x17D0: "keymap_rp/28/001.png", 0x17D1: "keymap_rp/28/002.png",
-    0x17D2: "keymap_rp/28/003.png", 0x17D3: "keymap_rp/28/004.png",
-    0x17D4: "keymap_rp/28/005.png", 0x17D5: "keymap_rp/28/006.png",
-    0x17D6: "keymap_rp/28/007.png", 0x17D7: "keymap_rp/28/008.png",
-    0x17D8: "keymap_rp/28/009.png", 0x17D9: "keymap_rp/28/010.png",
-    0x17E0: "keymap_rp/29/001.png", 0x17E1: "keymap_rp/29/002.png",
-    0x17E2: "keymap_rp/29/003.png", 0x17E3: "keymap_rp/29/004.png",
-    0x17E4: "keymap_rp/29/005.png", 0x17E5: "keymap_rp/29/006.png",
-    0x17E6: "keymap_rp/29/007.png", 0x17E7: "keymap_rp/29/008.png",
-    0x17E8: "keymap_rp/29/009.png", 0x17E9: "keymap_rp/29/010.png",
-    0x17F0: "keymap_rp/30/001.png", 0x17F1: "keymap_rp/30/002.png",
-    0x17F2: "keymap_rp/30/003.png", 0x17F3: "keymap_rp/30/004.png",
-    0x17F4: "keymap_rp/30/005.png", 0x17F5: "keymap_rp/30/006.png",
-    0x17F6: "keymap_rp/30/007.png", 0x17F7: "keymap_rp/30/008.png",
-    0x17F8: "keymap_rp/30/009.png", 0x17F9: "keymap_rp/30/010.png"
-}
+
 
 class PKGContentFlag(Flag): # Da pkg.h
     FIRST_PATCH = 0x100000
@@ -869,22 +406,113 @@ class PFSHeaderPfs: # da pfs.h PSFHeader_ (struct con underscore)
     @classmethod
     def from_bytes(cls, data: bytes):
         if len(data) < cls._SIZE:
-            raise ValueError(f"Dati insufficienti per PFSHeaderPfs. Richiesti {cls._SIZE}, forniti {len(data)}.")
-        values = list(struct.unpack_from(cls._FORMAT, data, 0))
+            raise ValueError(f"Data too small for PFSHeaderPfs. Need at least {cls._SIZE} bytes, got {len(data)}")
         
-        # Trova l'indice di 'mode' in _FIELDS_SPEC per convertirlo in Enum
-        mode_idx = -1
-        for i, field_spec in enumerate(cls._FIELDS_SPEC):
-            if field_spec[0] == 'mode':
-                mode_idx = i
-                break
-        if mode_idx != -1:
-            values[mode_idx] = PfsMode(values[mode_idx])
-        else:
-            # Questo non dovrebbe accadere se 'mode' è in _FIELDS_SPEC
-            raise KeyError("'mode' field not found in _FIELDS_SPEC for PFSHeaderPfs")
-            
-        return cls(*values)
+        # Print detailed debug information about the input data
+        print("\n=== PFS Header Debug Information ===")
+        print(f"Data length: {len(data)} bytes")
+        print(f"Expected size: {cls._SIZE} bytes")
+        
+        # Print first 64 bytes in hex
+        hex_dump = []
+        for i in range(0, min(64, len(data)), 8):
+            chunk = data[i:i+8]
+            hex_str = ' '.join(f"{b:02x}" for b in chunk)
+            ascii_str = ''.join(chr(b) if 32 <= b < 127 else '.' for b in chunk)
+            hex_dump.append(f"{i:04x}: {hex_str.ljust(23)} {ascii_str}")
+        
+        print("First 64 bytes of data:")
+        print('\n'.join(hex_dump))
+        
+        # Try to find known magic numbers in the data
+        known_magics = {
+            b'PSF0': 'PSF0 (standard PFS)',
+            b'\x01\x00\x00\x00': 'Version 1 PFS (common in PKG files)'
+        }
+        
+        for magic, desc in known_magics.items():
+            magic_pos = data.find(magic)
+            if magic_pos != -1:
+                print(f"\nFound known magic '{magic.hex()}' ({desc}) at position: 0x{magic_pos:04x}")
+                if magic_pos > 0:
+                    print(f"  Data before magic: {data[magic_pos-8:magic_pos].hex()}")
+                print(f"  Magic context: {data[magic_pos:magic_pos+16].hex()}")
+        
+        # Unpack the data
+        try:
+            values = struct.unpack_from(cls._FORMAT, data)
+        except struct.error as e:
+            print(f"\nERROR: Failed to unpack data: {e}")
+            print(f"Format string: {cls._FORMAT}")
+            print(f"Data length: {len(data)} bytes")
+            raise
+        
+        # Print all unpacked values for debugging
+        print("\nUnpacked values:")
+        for (name, fmt), value in zip(cls._FIELDS_SPEC, values):
+            print(f"  {name:<18} ({fmt}): {value} (0x{value:x})")
+        
+        # Create instance with all required fields
+        header = cls(
+            version=values[0],
+            magic=values[1],
+            id=values[2],
+            fmode=values[3],
+            clean=values[4],
+            read_only=values[5],
+            rsv=values[6],
+            mode=values[7],
+            unk1=values[8],
+            block_size=values[9],
+            n_backup=values[10],
+            n_block=values[11],
+            dinode_count=values[12],
+            nd_block=values[13],
+            dinode_block_count=values[14],
+            superroot_ino=values[15]
+        )
+        
+        # Set attributes individually for better error reporting
+        for i, ((name, _), value) in enumerate(zip(cls._FIELDS_SPEC, values)):
+            try:
+                # Special handling for mode field to convert to PfsMode enum
+                if name == 'mode':
+                    value = PfsMode(value)
+                setattr(header, name, value)
+            except Exception as e:
+                print(f"Error setting field {name} to value {value}: {e}")
+                raise
+        
+        # Debug logging
+        print("\nParsed PFS Header:")
+        print(f"  Magic:           0x{header.magic:016x}")
+        print(f"  Version:         {header.version}")
+        print(f"  dinode_count:    {header.dinode_count}")
+        print(f"  superroot_ino:   {header.superroot_ino}")
+        print(f"  block_size:      {header.block_size}")
+        print(f"  n_block:         {header.n_block}")
+        print(f"  dinode_count:    {header.dinode_count}")
+        print(f"  dinode_block_count: {header.dinode_block_count}")
+        
+        # Handle different magic numbers
+        expected_magic = 0x30534650  # 'PSF0' in little endian
+        if header.magic == 0x01332a0b:  # Common alternative magic
+            print("\nNOTE: Detected alternative PFS magic 0x01332a0b (20130315)")
+            print("This is a valid PFS header with version 1.")
+            # For this format, superroot_ino might be 0, so we'll need to handle that
+            if header.superroot_ino == 0:
+                print("  superroot_ino is 0, will use inode 1 as root directory")
+                header.superroot_ino = 1  # Use inode 1 as root
+        elif header.magic != expected_magic:
+            print(f"\nWARNING: Unexpected PFS magic: 0x{header.magic:08x} (expected 0x30534650)")
+            print("This could indicate:")
+            print("1. The data is at the wrong offset")
+            print("2. The file is corrupted")
+            print("3. The file format is not as expected")
+        
+        print("=== End of PFS Header Debug ===\n")
+        
+        return header
 
 @dataclass
 class PFSCHdrPFS: # Da pfs.h struct PFSCHdr
@@ -1153,6 +781,360 @@ class RealCrypto:
         decrypted_buffer[:] = cipher_aes.decrypt(ciphertext)
         # self.logger(f"Crypto: aesCbcCfb128Decrypt OK.")
 
+    def _xts_xor_block(self, x: bytearray, a: bytes, b: bytes) -> None:
+        """XORs two 16-byte blocks and stores the result in the first argument."""
+        for i in range(16):
+            x[i] = a[i] ^ b[i]
+
+    def _xts_mult(self, encrypted_tweak: bytearray) -> None:
+        """
+        Multiplies the encrypted tweak by α in GF(2^128) modulo x^128 + x^7 + x^2 + x + 1.
+        This is equivalent to a left shift of the entire 128-bit value, with reduction.
+        """
+        # Get the carry from the high bit of the last byte
+        carry = (encrypted_tweak[15] >> 7) & 1
+        
+        # Left shift the entire 128-bit value
+        for i in range(15, 0, -1):
+            encrypted_tweak[i] = ((encrypted_tweak[i] << 1) | ((encrypted_tweak[i-1] >> 7) & 1)) & 0xFF
+        
+        # Handle the first byte
+        encrypted_tweak[0] = (encrypted_tweak[0] << 1) & 0xFF
+        
+        # If there was a carry, apply the reduction polynomial x^128 + x^7 + x^2 + x + 1
+        # which is equivalent to XOR with 0x87 in the first byte
+        if carry:
+            encrypted_tweak[0] ^= 0x87
+
+    def _xts_encrypt_tweak(self, tweak_key: bytes, sector_num: int) -> bytearray:
+        """Encrypt the tweak for XTS mode.
+        
+        Args:
+            tweak_key: 16-byte key for encrypting the tweak
+            sector_num: Sector number to use in the tweak
+            
+        Returns:
+            Encrypted tweak as bytearray
+        """
+        # Initialize a 16-byte tweak with the sector number in little-endian format
+        tweak = bytearray(16)
+        
+        # Pack the sector number as little-endian 64-bit integer
+        # and the second 64 bits as zero
+        struct.pack_into("<Q", tweak, 0, sector_num)
+        struct.pack_into("<Q", tweak, 8, 0)
+        
+        # Debug logging for first few sectors
+        debug_sector = not hasattr(self, '_debug_sector_count') or self._debug_sector_count < 10
+        
+        if debug_sector:
+            self.logger(f"\n=== Sector {sector_num} (0x{sector_num:x}) ===")
+            self.logger(f"Tweak before encryption (hex): {tweak.hex()}")
+            self.logger(f"Tweak key (hex): {tweak_key.hex()}")
+        
+        try:
+            # Create AES cipher in ECB mode for the tweak
+            tweak_cipher = AES.new(tweak_key, AES.MODE_ECB)
+            
+            # Encrypt the tweak
+            encrypted_tweak = bytearray(tweak_cipher.encrypt(tweak))
+            
+            if debug_sector:
+                self.logger(f"Encrypted tweak (hex): {encrypted_tweak.hex()}")
+                # Log the tweak as 16 individual bytes for debugging
+                tweak_bytes = ', '.join(f'0x{b:02x}' for b in encrypted_tweak)
+                self.logger(f"Encrypted tweak bytes: [{tweak_bytes}]")
+                if not hasattr(self, '_debug_sector_count'):
+                    self._debug_sector_count = 0
+                self._debug_sector_count += 1
+            
+            return encrypted_tweak
+            
+        except Exception as e:
+            self.logger(f"ERROR in tweak encryption: {e}")
+            self.logger(f"Sector: {sector_num} (0x{sector_num:x})")
+            self.logger(f"Tweak key (hex): {tweak_key.hex()}")
+            self.logger(f"Tweak before encryption (hex): {tweak.hex()}")
+            import traceback
+            self.logger(traceback.format_exc())
+            raise
+            
+    def _xts_mult(self, encrypted_tweak: bytearray):
+        """Multiply the tweak by α in GF(2^128)
+        
+        Args:
+            encrypted_tweak: 16-byte tweak to be multiplied in-place
+        """
+        carry = 0
+        for i in range(15, -1, -1):
+            next_carry = (encrypted_tweak[i] >> 7) & 1
+            encrypted_tweak[i] = ((encrypted_tweak[i] << 1) | carry) & 0xFF
+            carry = next_carry
+        
+        if carry:
+            encrypted_tweak[0] ^= 0x87
+            
+    def _xts_process_block(self, cipher, block: bytes, encrypted_tweak: bytearray, block_index: int = 0) -> bytes:
+        """Process a single block in XTS mode.
+        
+        Args:
+            cipher: AES cipher object in ECB mode
+            block: 16-byte block to process
+            tweak: 16-byte tweak (will be updated for subsequent blocks)
+            block_index: Index of the block within the sector (0-based)
+            
+        Returns:
+            Processed 16-byte block
+        """
+        if not block or len(block) != 16:
+            error_msg = f"Block size must be 16 bytes, got {len(block) if block else 0}"
+            self.logger(f"ERROR: {error_msg}")
+            raise ValueError(error_msg)
+            
+        if len(encrypted_tweak) != 16:
+            error_msg = f"Tweak size must be 16 bytes, got {len(encrypted_tweak)}"
+            self.logger(f"ERROR: {error_msg}")
+            raise ValueError(error_msg)
+            
+        # For blocks after the first in a sector, multiply the tweak by α^i where i is the block index
+        current_tweak = bytearray(encrypted_tweak)
+        if block_index > 0:
+            for _ in range(block_index):
+                self._xts_mult(current_tweak)
+        
+        # Debug logging for first few blocks and any interesting blocks
+        debug_block = block_index < 10 or block_index % 100 == 0
+        
+        if debug_block:
+            self.logger(f"\n=== Block {block_index} ===")
+            self.logger(f"Input block:    {block.hex()}")
+            self.logger(f"Tweak (α^{block_index}): {bytes(current_tweak).hex()}")
+        
+        try:
+            # XTS Decryption steps:
+            # 1. Xor the block with the tweak
+            xored_block = bytearray(16)
+            self._xts_xor_block(xored_block, block, current_tweak)
+            
+            if debug_block:
+                self.logger(f"After XOR with tweak: {xored_block.hex()}")
+            
+            # 2. Decrypt the block using AES in ECB mode
+            try:
+                # Get the raw AES key from the cipher
+                aes_key = cipher.key if hasattr(cipher, 'key') else None
+                if debug_block and aes_key:
+                    self.logger(f"Using AES key: {aes_key.hex()}")
+                
+                # Decrypt the block
+                decrypted_xored = bytearray(cipher.decrypt(bytes(xored_block)))
+                
+                if debug_block:
+                    self.logger(f"After AES decrypt: {decrypted_xored.hex()}")
+                
+                # 3. Xor again with the same tweak
+                final_block = bytearray(16)
+                self._xts_xor_block(final_block, decrypted_xored, current_tweak)
+                
+                if debug_block:
+                    self.logger(f"After final XOR: {final_block.hex()}")
+                    self.logger(f"Final block: {final_block.hex()}")
+                
+                # Check for all zeros in decrypted block (potential error case)
+                if all(b == 0 for b in final_block):
+                    if any(b != 0 for b in block):
+                        self.logger(f"WARNING: Decrypted block is all zeros but input was not! Block index: {block_index}")
+                        self.logger(f"Input block:    {block.hex()}")
+                        self.logger(f"XORed block:    {xored_block.hex()}")
+                        self.logger(f"Decrypted:      {decrypted_xored.hex()}")
+                        self.logger(f"Tweak (α^{block_index}): {bytes(current_tweak).hex()}")
+                        if aes_key:
+                            self.logger(f"AES Key:        {aes_key.hex()}")
+                
+                return bytes(final_block)
+                
+            except Exception as e:
+                self.logger(f"ERROR in AES decryption: {e}")
+                self.logger(f"Block index:    {block_index}")
+                self.logger(f"Input block:    {block.hex()}")
+                self.logger(f"XORed block:    {xored_block.hex()}")
+                self.logger(f"Tweak (α^{block_index}): {bytes(current_tweak).hex()}")
+                if aes_key:
+                    self.logger(f"AES Key:        {aes_key.hex()}")
+                raise
+            
+        except Exception as e:
+            self.logger(f"ERROR in XTS block processing: {e}")
+            self.logger(f"Block index: {block_index}")
+            self.logger(f"Block: {block.hex()}")
+            self.logger(f"Tweak: {current_tweak.hex()}")
+            if 'aes_key' in locals() and aes_key:
+                self.logger(f"AES Key: {aes_key.hex()}")
+            import traceback
+            self.logger(traceback.format_exc())
+            raise
+
+    def _xts_encrypt_tweak(self, tweak_key: bytes, sector_num: int) -> bytearray:
+        """Encrypt the tweak for XTS mode.
+        
+        The tweak is a 16-byte value where the first 8 bytes are the sector number
+        in little-endian format, and the remaining 8 bytes are zero.
+        """
+        try:
+            # Initialize tweak as 16 zero bytes
+            tweak = bytearray(16)
+            
+            # Pack the sector number into the first 8 bytes in little-endian format
+            struct.pack_into("<Q", tweak, 0, sector_num)
+            
+            # Debug logging for the first few sectors and sector 304
+            if sector_num < 10 or sector_num == 304:
+                self.logger(f"=== XTS Tweak Generation (Sector {sector_num} (0x{sector_num:x})) ===")
+                self.logger(f"  Tweak key: {tweak_key.hex()}")
+                self.logger(f"  Sector num: {sector_num} (0x{sector_num:x})")
+                self.logger(f"  Tweak before encryption: {tweak.hex()}")
+            
+            # Create AES cipher for the tweak
+            tweak_cipher = AES.new(tweak_key, AES.MODE_ECB)
+            
+            # Encrypt the tweak
+            encrypted_tweak = bytearray(tweak_cipher.encrypt(tweak))
+            
+            # More debug logging
+            if sector_num < 10 or sector_num == 304:
+                self.logger(f"  Encrypted tweak: {encrypted_tweak.hex()}")
+                
+                # For sector 304, also log the expected encrypted tweak from the C++ code
+                if sector_num == 304:
+                    # This is the expected encrypted tweak from the C++ code
+                    expected_tweak = bytes.fromhex("86e5f96871c98410ee8ba2842867cd5c")
+                    self.logger(f"  Expected encrypted tweak: {expected_tweak.hex()}")
+                    
+                    if encrypted_tweak == expected_tweak:
+                        self.logger("  Tweak encryption matches expected value!")
+                    else:
+                        self.logger("  WARNING: Tweak encryption does NOT match expected value!")
+                        
+                        # Log the difference
+                        diff = [f"{i:02x}" for i in range(16) if encrypted_tweak[i] != expected_tweak[i]]
+                        self.logger(f"  Bytes that differ: {', '.join(diff) if diff else 'None'}")
+            
+            return encrypted_tweak
+            
+        except Exception as e:
+            self.logger(f"ERROR in _xts_encrypt_tweak (sector {sector_num}): {e}")
+            self.logger(f"Tweak key: {tweak_key.hex() if tweak_key else 'None'}")
+            self.logger(f"Sector num: {sector_num}")
+            import traceback
+            self.logger(traceback.format_exc())
+            raise
+
+    def _xts_mult(self, encrypted_tweak: bytearray):
+        """Multiply the tweak by α in GF(2^128)
+        
+        Args:
+            encrypted_tweak: 16-byte tweak to be multiplied in-place
+        """
+        carry = 0
+        for i in range(15, -1, -1):
+            next_carry = (encrypted_tweak[i] >> 7) & 1
+            encrypted_tweak[i] = ((encrypted_tweak[i] << 1) | carry) & 0xFF
+            carry = next_carry
+        
+        if carry:
+            encrypted_tweak[0] ^= 0x87
+
+    def _xts_xor_block(self, x: bytearray, a: bytes, b: bytes):
+        """XORs two 16-byte blocks and stores the result in x.
+        
+        Args:
+            x: Output buffer for the result
+            a: First 16-byte block
+            b: Second 16-byte block
+            
+        """
+        for i in range(16):
+            x[i] = a[i] ^ b[i]
+
+    def decryptPFS(self, dataKey: bytes, tweakKey: bytes, src_image: bytes, dst_image: bytearray = None, sector: int = 0) -> bytes:
+        """Decrypt PFS image data using XTS-AES mode.
+        
+        Args:
+            dataKey: 16-byte data key for AES decryption
+            tweakKey: 16-byte tweak key for tweak encryption
+            src_image: Source encrypted data
+            dst_image: Optional destination buffer (if None, a new one will be created)
+            sector: Starting sector number (default: 0)
+            
+        Returns:
+            Decrypted data as bytes
+        """
+        try:
+            self.logger(f"DEBUG: Starting PFS decryption with sector {sector}")
+            self.logger(f"DEBUG: dataKey: {dataKey.hex()}")
+            self.logger(f"DEBUG: tweakKey: {tweakKey.hex()}")
+            
+            # Create AES ciphers for data and tweak
+            data_cipher = AES.new(dataKey, AES.MODE_ECB)
+            tweak_cipher = AES.new(tweakKey, AES.MODE_ECB)
+            
+            # Prepare destination buffer if not provided
+            if dst_image is None:
+                dst_image = bytearray(len(src_image))
+                self.logger(f"DEBUG: Created new destination buffer of size {len(dst_image)} bytes")
+            else:
+                if len(dst_image) < len(src_image):
+                    raise ValueError(f"Destination buffer too small: {len(dst_image)} < {len(src_image)}")
+            
+            # Process each 4096-byte sector
+            sector_size = 4096
+            total_blocks = (len(src_image) + 15) // 16  # Total number of 16-byte blocks
+            
+            for sector_offset in range(0, len(src_image), sector_size):
+                current_sector = sector + (sector_offset // sector_size)
+                sector_data = src_image[sector_offset:sector_offset + sector_size]
+                
+                # Generate the initial tweak for this sector (little-endian sector number)
+                tweak = bytearray(16)
+                struct.pack_into("<Q", tweak, 0, current_sector)
+                
+                # Encrypt the tweak
+                encrypted_tweak = bytearray(tweak_cipher.encrypt(tweak))
+                
+                if current_sector < 5 or current_sector % 100 == 0:
+                    self.logger(f"=== Sector {current_sector} ===")
+                    self.logger(f"Tweak: {tweak.hex()}")
+                    self.logger(f"Encrypted tweak: {encrypted_tweak.hex()}")
+                
+                # Process each 16-byte block in the sector
+                blocks_in_sector = (len(sector_data) + 15) // 16
+                for block_index in range(blocks_in_sector):
+                    block_offset = block_index * 16
+                    block = sector_data[block_offset:block_offset + 16]
+                    
+                    # Process the block with the current tweak
+                    decrypted_block = self._xts_process_block(data_cipher, block, encrypted_tweak, block_index)
+                    
+                    # Copy to destination
+                    dst_pos = sector_offset + block_offset
+                    copy_len = min(16, len(sector_data) - block_offset)
+                    if copy_len > 0:
+                        dst_image[dst_pos:dst_pos+copy_len] = decrypted_block[:copy_len]
+            
+            # Save first 256 bytes for debugging
+            debug_path = os.path.join(os.path.dirname(__file__), "debug_decrypted.bin")
+            with open(debug_path, "wb") as f:
+                f.write(dst_image[:min(256, len(dst_image))])
+            self.logger(f"DEBUG: First 256 bytes of decrypted data saved to {debug_path}")
+            
+            return bytes(dst_image)
+            
+        except Exception as e:
+            self.logger(f"ERROR in decryptPFS: {str(e)}")
+            import traceback
+            self.logger(traceback.format_exc())
+            raise
+
     def aesCbcCfb128DecryptEntry(self, ivkey: bytes, ciphertext: bytes, decrypted_buffer: bytearray):
         if len(ivkey) != 32:
             self.logger("Errore aesCbcCfb128DecryptEntry: ivkey lunghezza non valida.")
@@ -1185,135 +1167,533 @@ class RealCrypto:
         # self.logger(f"Crypto: aesCbcCfb128DecryptEntry processed. Input {len(ciphertext)}, valid_len {valid_len}.")
 
     def PfsGenCryptoKey(self, ekpfs: bytes, seed: bytes, dataKey_buffer: bytearray, tweakKey_buffer: bytearray):
-        # ... (implementazione come prima) ...
-        if len(ekpfs) != 32 or len(seed) != 16 or len(dataKey_buffer) != 16 or len(tweakKey_buffer) != 16:
-            self.logger("Errore PfsGenCryptoKey: dimensioni non valide."); return
-        hmac_sha256 = HMAC.new(ekpfs, digestmod=SHA256)
-        d_payload = struct.pack("<I", 1) + seed
-        hmac_sha256.update(d_payload)
-        digest = hmac_sha256.digest()
-        tweakKey_buffer[:] = digest[0:16]; dataKey_buffer[:] = digest[16:32]
-        # self.logger(f"Crypto: PfsGenCryptoKey OK.")
-
-    def _xts_mult(self, tweak_block: bytearray):
-        # ... (implementazione come prima) ...
-        feedback = 0;
-        for k in range(16):
-            tmp = (tweak_block[k] >> 7) & 1
-            tweak_block[k] = ((tweak_block[k] << 1) + feedback) & 0xFF
-            feedback = tmp
-        if feedback != 0: tweak_block[0] ^= 0x87
-
-    def decryptPFS(self, dataKey: bytes, tweakKey: bytes, src_image_block: bytes, dst_image_buffer: bytearray, sector_num: int):
-        """Decrypt PFS blocks using optimized implementation for better performance."""
-        block_size = 0x1000
-        if not (len(dataKey)==16 and len(tweakKey)==16 and \
-                len(src_image_block) % block_size == 0 and \
-                len(dst_image_buffer) == len(src_image_block)):
-            self.logger(f"Errore decryptPFS: dimensioni input/output non valide o src non multiplo di {block_size}."); return
-
-        # Use optimized implementation for large blocks to improve performance
-        if len(src_image_block) > block_size * 4:  # For larger data, use optimized version
-            try:
-                import numpy as np
-                # Convert to numpy arrays for faster processing
-                src_np = np.frombuffer(src_image_block, dtype=np.uint8)
-                dst_np = np.frombuffer(dst_image_buffer, dtype=np.uint8)
-                
-                cipher_data = AES.new(dataKey, AES.MODE_ECB)
-                cipher_tweak = AES.new(tweakKey, AES.MODE_ECB)
-                num_main_blocks = len(src_image_block) // block_size
-                
-                # Process blocks in larger chunks (can be adjusted for optimal performance)
-                chunk_size = min(16, num_main_blocks)  # Process multiple sectors at once
-                
-                for chunk_start in range(0, num_main_blocks, chunk_size):
-                    chunk_end = min(chunk_start + chunk_size, num_main_blocks)
-                    
-                    for main_block_idx in range(chunk_start, chunk_end):
-                        current_main_block_offset = main_block_idx * block_size
-                        current_sector_for_tweak = sector_num + main_block_idx
-                        
-                        # Initialize tweak for this sector
-                        tweak_initial_val = bytearray(16)
-                        tweak_initial_val[0:8] = struct.pack("<Q", current_sector_for_tweak)
-                        encrypted_tweak = bytearray(cipher_tweak.encrypt(bytes(tweak_initial_val)))
-                        
-                        # Process 16-byte blocks within the sector
-                        for i in range(0, block_size, 16):
-                            offset = current_main_block_offset + i
-                            
-                            # Extract current block
-                            ct_block = src_np[offset:offset+16]
-                            
-                            # Fast XOR with numpy
-                            xor_buf = np.bitwise_xor(ct_block, np.frombuffer(encrypted_tweak, dtype=np.uint8))
-                            
-                            # Decrypt
-                            dec_interm = cipher_data.decrypt(xor_buf.tobytes())
-                            
-                            # Final XOR
-                            pt_block = np.bitwise_xor(np.frombuffer(dec_interm, dtype=np.uint8), 
-                                                   np.frombuffer(encrypted_tweak, dtype=np.uint8))
-                            
-                            # Store result
-                            dst_np[offset:offset+16] = pt_block
-                            
-                            # Update tweak for next block
-                            if i + 16 < block_size:
-                                self._xts_mult(encrypted_tweak)
-                
-                # No need to copy back since we used a view into the original buffer
-                return
-                
-            except ImportError:
-                # If numpy isn't available, fall back to standard implementation
-                pass
-            except Exception as e:
-                self.logger(f"Optimized decryptPFS fallback to standard: {e}")
-                pass
+        """
+        Generate PFS crypto keys using HMAC-SHA256.
         
-        # Standard implementation (fallback)
-        cipher_data = AES.new(dataKey, AES.MODE_ECB)
-        cipher_tweak = AES.new(tweakKey, AES.MODE_ECB)
-        num_main_blocks = len(src_image_block) // block_size
-        
-        # Use bytearray.fromhex for faster XOR operations
-        for main_block_idx in range(num_main_blocks):
-            current_main_block_offset = main_block_idx * block_size
-            current_sector_for_tweak = sector_num + main_block_idx
-            tweak_initial_val = bytearray(16)
-            tweak_initial_val[0:8] = struct.pack("<Q", current_sector_for_tweak)
-            encrypted_tweak = bytearray(cipher_tweak.encrypt(bytes(tweak_initial_val)))
+        Args:
+            ekpfs: 32-byte EKPFS key
+            seed: 16-byte seed (usually from PFS superblock)
+            dataKey_buffer: 16-byte buffer to store the data key
+            tweakKey_buffer: 16-byte buffer to store the tweak key
             
-            # Process multiple blocks at once if possible
-            for i in range(0, block_size, 16):
-                aes_block_offset_in_src = current_main_block_offset + i
-                ct_sub_block = src_image_block[aes_block_offset_in_src:aes_block_offset_in_src+16]
-                
-                # Faster XOR operation with bytes
-                xor_buf = bytes(a ^ b for a, b in zip(ct_sub_block, encrypted_tweak))
-                dec_interm = cipher_data.decrypt(xor_buf)
-                pt_sub_block = bytes(a ^ b for a, b in zip(dec_interm, encrypted_tweak))
-                
-                dst_image_buffer[aes_block_offset_in_src:aes_block_offset_in_src+16] = pt_sub_block
-                
-                if i + 16 < block_size:
-                    self._xts_mult(encrypted_tweak)
+        Returns:
+            True if successful, False otherwise
+        """
+        if len(ekpfs) != 32:
+            self.logger(f"[ERROR] PfsGenCryptoKey: Invalid ekpfs length: {len(ekpfs)} (expected 32)")
+            return False
+            
+        if len(seed) != 16:
+            self.logger(f"[ERROR] PfsGenCryptoKey: Invalid seed length: {len(seed)} (expected 16)")
+            return False
+            
+        if len(dataKey_buffer) != 16 or len(tweakKey_buffer) != 16:
+            self.logger(f"[ERROR] PfsGenCryptoKey: Invalid output buffer size (data: {len(dataKey_buffer)}, tweak: {len(tweakKey_buffer)})")
+            return False
+            
+        try:
+            from Crypto.Hash import HMAC, SHA256
+            
+            self.logger(f"[DEBUG] ===== PfsGenCryptoKey (Aligned with C++) =====")
+            self.logger(f"[DEBUG] Input EKPFS (hex): {ekpfs.hex()}")
+            self.logger(f"[DEBUG] Input Seed (hex): {seed.hex()}")
 
-    def decryptEFSM(self, trophyKey: bytes, NPcommID: bytes, efsmIv: bytes, ciphertext: bytes, decrypted_buffer: bytearray):
-        # ... (implementazione come prima) ...
-        if not (len(trophyKey) == 16 and len(NPcommID) == 16 and len(efsmIv) == 16 and \
-                len(ciphertext) % AES.block_size == 0 and len(decrypted_buffer) == len(ciphertext)):
-            self.logger("Errore decryptEFSM: dimensioni non valide."); return
-        trophy_iv_zeros = b'\0' * 16
-        cipher1 = AES.new(trophyKey, AES.MODE_CBC, trophy_iv_zeros)
-        trpKey = cipher1.encrypt(NPcommID)
-        cipher2 = AES.new(trpKey, AES.MODE_CBC, efsmIv)
-        decrypted_buffer[:] = cipher2.decrypt(ciphertext)
+            # Data for HMAC: index (1 as u32_le) concatenated with seed (16 bytes)
+            # This matches the C++ `Crypto::PfsGenCryptoKey` logic where `index = 1;`
+            # and `d` is constructed as `memcpy(d, &index, ...); memcpy(d + sizeof(uint32_t), seed.data(), ...);`
+            index_bytes = struct.pack("<I", 1)  # 4 bytes, little-endian for index = 1
+            hmac_data = index_bytes + seed      # Total 20 bytes
+            
+            self.logger(f"[DEBUG] Data for HMAC (index_le || seed) (hex): {hmac_data.hex()}")
+
+            hmac_obj = HMAC.new(ekpfs, digestmod=SHA256)
+            hmac_obj.update(hmac_data)
+            hmac_result = hmac_obj.digest()  # 32 bytes
+            
+            self.logger(f"[DEBUG] HMAC Result (hex): {hmac_result.hex()}")
+
+            # Assign keys based on C++ `Crypto::PfsGenCryptoKey`
+            # C++ logic:
+            #   std::copy(data_tweak_key.begin(), data_tweak_key.begin() + dataKey.size(), tweakKey.begin());
+            #   std::copy(data_tweak_key.begin() + tweakKey.size(), ..., dataKey.begin());
+            # This means: tweakKey = hmac_result[0:16], dataKey = hmac_result[16:32]
+            
+            tweakKey_from_hmac = hmac_result[0:16]
+            dataKey_from_hmac = hmac_result[16:32]
+            
+            tweakKey_buffer[:] = tweakKey_from_hmac
+            dataKey_buffer[:] = dataKey_from_hmac
+            
+            self.logger(f"[DEBUG] Derived TweakKey (hex): {tweakKey_from_hmac.hex()}")
+            self.logger(f"[DEBUG] Derived DataKey (hex): {dataKey_from_hmac.hex()}")
+            self.logger(f"[DEBUG] ============================================")
+            
+            return True
+            
+        except Exception as e:
+            self.logger(f"[ERROR] PfsGenCryptoKey failed: {str(e)}")
+            import traceback
+            self.logger(f"[ERROR] Stack trace: {traceback.format_exc()}")
+            return False
+
+    def _xts_mult_test(self):
+        """Test the _xts_mult function with known test vectors.
+        
+        Note: The test vectors are in little-endian byte order (tweak_block[0] is LSB).
+        The expected output is also in little-endian byte order.
+        
+        Test cases cover:
+        1. Simple left shift (no carry)
+        2. Left shift with carry to next byte
+        3. Left shift with carry across multiple bytes
+        4. Reduction with polynomial x^128 + x^7 + x^2 + x + 1
+        """
+        test_vectors = [
+            # (input_hex, expected_output_hex, description)
+            
+            # Test 1: 0x01 -> 0x02 (simple left shift of LSB)
+            ("01000000000000000000000000000000", "02000000000000000000000000000000", 
+             "0x01 -> 0x02 (simple left shift of LSB)"),
+            
+            # Test 2: 0x80 -> 0x00 with carry (0x100 mod 0x100 = 0x00, carry=1)
+            # Then reduction with 0x87 (x^7 + x^2 + x + 1)
+            ("80000000000000000000000000000000", "1b000000000000000000000000000000",
+             "0x80 -> 0x1b (carry and reduction with 0x87)"),
+            
+            # Test 3: 0x01 in MSB (0x00...01) -> 0x02 (simple shift, no carry)
+            ("00000000000000000000000000000001", "00000000000000000000000000000002",
+             "0x00...01 -> 0x00...02 (simple shift in MSB)"),
+            
+            # Test 4: 0x80 in MSB (0x00...80) -> 0x00...00 with carry, then reduction
+            ("00000000000000000000000000000080", "87000000000000000000000000000000",
+             "0x00...80 -> 0x87...00 (carry and reduction)"),
+            
+            # Test 5: All bits set (0xFF...FF) -> 0xFF...FE with carry, then reduction
+            ("ffffffffffffffffffffffffffffffff", "79ffffffffffffffffffffffffffffff",
+             "0xFF...FF -> 0x79...FF (carry and reduction)"),
+        ]
+        
+        self.logger("[TEST] Running _xts_mult tests...")
+        all_passed = True
+        
+        for i, (input_hex, expected_hex, desc) in enumerate(test_vectors, 1):
+            try:
+                # Convert hex strings to byte arrays
+                input_bytes = bytes.fromhex(input_hex)
+                expected = bytes.fromhex(expected_hex)
+                
+                # Create a mutable copy for the test
+                tweak = bytearray(input_bytes)
+                
+                # Debug: Log input
+                self.logger(f"[TEST {i}] {desc}")
+                self.logger(f"  Input:    {input_hex}")
+                
+                # Apply the multiplication
+                self._xts_mult(tweak)
+                
+                # Check the result
+                if tweak != expected:
+                    self.logger(f"  [FAIL] Expected: {expected_hex}")
+                    self.logger(f"  [FAIL] Got:      {tweak.hex()}")
+                    all_passed = False
+                else:
+                    self.logger(f"  [PASS] Result:   {tweak.hex()}")
+                
+                self.logger("")
+                    
+            except Exception as e:
+                self.logger(f"[TEST {i}] ERROR: {str(e)}")
+                import traceback
+                self.logger(traceback.format_exc())
+                all_passed = False
+        
+        if all_passed:
+            self.logger("[TEST] All _xts_mult tests passed!")
+        else:
+            self.logger("[TEST] Some _xts_mult tests failed!")
+            
+        return all_passed
+        
+    def _log_hex_dump(self, prefix, data):
+        """Helper to log hex dumps with a prefix."""
+        hex_str = ' '.join(f'{b:02x}' for b in data)
+        self.logger(f"{prefix}{hex_str}")
+
+    def PfsGenCryptoKey(self, ekpfs: bytes, seed: bytes, dataKey_buffer: bytearray, tweakKey_buffer: bytearray):
+        """
+        Genera le chiavi crittografiche per PFS.
+        Corrisponde a Crypto::PfsGenCryptoKey nel codice C++.
+        
+        Args:
+            ekpfs: Chiave EKPFS (32 byte)
+            seed: Seme (16 byte)
+            dataKey_buffer: Buffer di output per la chiave dati (16 byte)
+            tweakKey_buffer: Buffer di output per la chiave tweak (16 byte)
+        """
+        from Crypto.Hash import HMAC, SHA256
+        
+        # Crea l'input per HMAC: 4 byte di index (1) + 16 byte di seed
+        index = 1
+        hmac_input = struct.pack("<I", index) + seed
+        
+        # Calcola HMAC-SHA256
+        hmac = HMAC.new(ekpfs, digestmod=SHA256)
+        hmac.update(hmac_input)
+        hmac_result = hmac.digest()
+        
+        # I primi 16 byte sono la tweakKey, i successivi 16 la dataKey
+        # Nota: in C++ l'ordine è invertito rispetto a quello che sembrerebbe dal nome dei parametri
+        tweakKey_buffer[:] = hmac_result[0:16]
+        dataKey_buffer[:] = hmac_result[16:32]
+    
         # self.logger(f"Crypto: decryptEFSM OK.")
+        
+    def _xts_xor_block(self, x: bytearray, a: bytes, b: bytes) -> None:
+        """
+        XORs two 16-byte blocks and stores the result in the first argument.
+        Equivalent to xtsXorBlock in C++.
+        """
+        for i in range(16):
+            x[i] = a[i] ^ b[i]
+    
+    def _xts_mult(self, encrypted_tweak: bytearray) -> None:
+        """
+        Optimized multiplication by α in GF(2^128) for XTS mode.
+        Equivalent to xtsMult in C++ but optimized for performance.
+        """
+        # Get the carry from the high bit of the last byte
+        carry = encrypted_tweak[15] >> 7
+        
+        # Process all bytes in a single pass
+        # This is equivalent to a left shift of the entire 128-bit value
+        for i in range(15, 0, -1):
+            encrypted_tweak[i] = ((encrypted_tweak[i] << 1) | (encrypted_tweak[i-1] >> 7)) & 0xFF
+        
+        # Handle the first byte
+        encrypted_tweak[0] = (encrypted_tweak[0] << 1) & 0xFF
+        
+        # If there was a carry, apply the reduction polynomial x^128 + x^7 + x^2 + x + 1
+        # which is equivalent to XOR with 0x87 in the first byte
+        if carry:
+            encrypted_tweak[0] ^= 0x87
+    
+    def decryptPFS(self, dataKey: bytes, tweakKey: bytes, src_image: bytes, dst_image: bytearray = None, sector: int = 0) -> bytes:
+        """
+        Decrypts PFS image data using XTS-AES mode with proper handling for partial blocks.
+        
+        Args:
+            dataKey: 16-byte data key for AES decryption
+            tweakKey: 16-byte tweak key for tweak encryption
+            src_image: Source encrypted data
+            dst_image: Optional destination buffer (if None, a new one will be created)
+            sector: Starting sector number (default: 0)
+            
+        Returns:
+            Decrypted data as bytes
+        """
+        # Initialize debug block counter if it doesn't exist
+        if not hasattr(self, '_debug_block_count'):
+            self._debug_block_count = 0
+            
+        try:
+            # Test AES cipher with known values
+            test_key = b'\x00' * 16
+            test_plain = b'\x00' * 16
+            test_cipher = AES.new(test_key, AES.MODE_ECB)
+            encrypted_test = test_cipher.encrypt(test_plain)
+            self.logger(f"DEBUG: AES test encryption: {encrypted_test.hex()}")
+            
+            # Verify decryption works
+            decrypted_test = test_cipher.decrypt(encrypted_test)
+            if decrypted_test != test_plain:
+                self.logger(f"WARNING: AES test decryption failed! Got {decrypted_test.hex()}, expected {test_plain.hex()}")
+            
+            # Create the real ciphers
+            cipher = AES.new(dataKey, AES.MODE_ECB)
+            tweak_cipher = AES.new(tweakKey, AES.MODE_ECB)
+            
+            # Initialize destination buffer if not provided
+            if dst_image is None:
+                dst_image = bytearray(len(src_image))
+            else:
+                if len(dst_image) < len(src_image):
+                    raise ValueError("Destination buffer too small")
+            
+            # Process each 0x1000-byte sector
+            src_len = len(src_image)
+            for i in range(0, src_len, 0x1000):
+                # Get current sector data
+                sector_end = min(i + 0x1000, src_len)
+                sector_data = src_image[i:sector_end]
+                if not sector_data:
+                    break
+                    
+                # Calculate tweak for this sector (little-endian sector number)
+                tweak = bytearray(16)
+                current_sector = sector + (i // 0x1000)
+                struct.pack_into("<Q", tweak, 0, current_sector)
+                
+                # Encrypt the tweak
+                try:
+                    encrypted_tweak = bytearray(tweak_cipher.encrypt(tweak))
+                except Exception as e:
+                    self.logger(f"ERROR encrypting tweak at sector {current_sector}: {e}")
+                    raise
+                
+                # Debug logging for the first few sectors
+                if i < 0x2000:  # First 2 sectors for debugging
+                    self.logger(f"Sector {current_sector} (0x{current_sector:x}):")
+                    self.logger(f"  Tweak: {tweak.hex()}")
+                    self.logger(f"  Encrypted tweak: {encrypted_tweak.hex()}")
+                    self.logger(f"  First 16 bytes of sector: {sector_data[:16].hex() if len(sector_data) >= 16 else sector_data.hex()}")
+                
+                # Process each 16-byte block in the sector
+                current_tweak = bytearray(encrypted_tweak)  # Make a copy for this sector
+                sector_len = len(sector_data)
+                
+                # Process all blocks in the sector
+                num_blocks = (sector_len + 15) // 16
+                for j in range(num_blocks):
+                    block_start = j * 16
+                    block_end = min(block_start + 16, sector_len)
+                    block = sector_data[block_start:block_end]
+                    
+                    # Check if this is the last block and it's a partial block
+                    is_last_block = (j == num_blocks - 1) and (sector_len % 16 != 0)
+                    
+                    if is_last_block and len(block) < 16:
+                        # Handle partial last block using ciphertext stealing
+                        # 1. Get the last full block (which was already decrypted)
+                        last_full_block_start = ((sector_len // 16) - 1) * 16
+                        last_full_block = sector_data[last_full_block_start:last_full_block_start+16]
+                        
+                        # 2. Decrypt the last full block again with the current tweak
+                        decrypted_last_full = self._xts_process_block(cipher, last_full_block, current_tweak)
+                        
+                        # 3. Take the first len(block) bytes for our partial plaintext
+                        partial_plaintext = decrypted_last_full[:len(block)]
+                        
+                        # 4. Store the partial plaintext in the output
+                        dst_image[i+block_start:i+block_end] = partial_plaintext
+                        
+                        # Debug logging
+                        if self._debug_block_count < 10:
+                            self.logger(f"Partial Block {self._debug_block_count} (sector {current_sector}):")
+                            self.logger(f"  Encrypted: {block.hex()}")
+                            self.logger(f"  Decrypted: {partial_plaintext.hex()}")
+                            self._debug_block_count += 1
+                        
+                        # No need to update tweak after last block
+                        break
+                    else:
+                        # Process full block
+                        decrypted_block = self._xts_process_block(cipher, block, current_tweak)
+                        
+                        # Copy the decrypted block to the destination
+                        dst_image[i+block_start:i+block_end] = decrypted_block
+                        
+                        # Debug logging for the first few blocks
+                        if self._debug_block_count < 10:
+                            self.logger(f"Block {self._debug_block_count} (sector {current_sector}):")
+                            self.logger(f"  Encrypted: {block.hex()}")
+                            self.logger(f"  Decrypted: {decrypted_block.hex()}")
+                            self._debug_block_count += 1
+                        
+                        # Update the tweak for the next block (if not the last block in sector)
+                        if j < num_blocks - 1:
+                            self._xts_mult(current_tweak)
+            
+            # Save the first 256 bytes of decrypted data for inspection
+            debug_path = os.path.join(os.path.dirname(__file__), "debug_decrypted.bin")
+            with open(debug_path, "wb") as f:
+                f.write(dst_image[:min(256, len(dst_image))])
+            self.logger(f"DEBUG: First 256 bytes of decrypted data saved to {debug_path}")
+            
+            return bytes(dst_image)
+            
+        except Exception as e:
+            self.logger(f"ERROR in decryptPFS: {e}")
+            import traceback
+            self.logger(traceback.format_exc())
+            raise
+        
+        # Initialize destination buffer if not provided
+        if dst_image is None:
+            dst_image = bytearray(len(src_image))
+        else:
+            if len(dst_image) < len(src_image):
+                raise ValueError("Destination buffer too small")
+        
+        # Process each 0x1000-byte sector
+        src_len = len(src_image)
+        for i in range(0, src_len, 0x1000):
+            # Get current sector data
+            sector_end = min(i + 0x1000, src_len)
+            sector_data = src_image[i:sector_end]
+            if not sector_data:
+                break
+                
+            # Calculate tweak for this sector (little-endian sector number)
+            tweak = bytearray(16)
+            current_sector = sector + (i // 0x1000)
+            struct.pack_into("<Q", tweak, 0, current_sector)
+            
+            # Encrypt the tweak
+            try:
+                encrypted_tweak = bytearray(tweak_cipher.encrypt(tweak))
+            except Exception as e:
+                self.logger(f"ERROR encrypting tweak at sector {current_sector}: {e}")
+                raise
+            
+            # Debug logging for the first few sectors
+            if i < 0x2000:  # First 2 sectors for debugging
+                self.logger(f"Sector {current_sector} (0x{current_sector:x}):")
+                self.logger(f"  Tweak: {tweak.hex()}")
+                self.logger(f"  Encrypted tweak: {encrypted_tweak.hex()}")
+                self.logger(f"  First 16 bytes of sector: {sector_data[:16].hex() if len(sector_data) >= 16 else sector_data.hex()}")
+            
+            # Process each 16-byte block in the sector
+            current_tweak = bytearray(encrypted_tweak)  # Make a copy for this sector
+            sector_len = len(sector_data)
+            
+            # Process full blocks first (all but the last block if it's partial)
+            num_blocks = (sector_len + 15) // 16
+            for j in range(num_blocks):
+                block_start = j * 16
+                block_end = min(block_start + 16, sector_len)
+                block = sector_data[block_start:block_end]
+                
+                # For the last block if it's partial, handle it specially
+                is_last_block = (j == num_blocks - 1) and (sector_len % 16 != 0)
+                
+                if is_last_block:
+                    # For the last partial block, we need to use ciphertext stealing
+                    if len(block) < 16:
+                        # Save the current tweak for later
+                        last_tweak = bytearray(current_tweak)
+                        
+                        # Process the previous full block first
+                        if j > 0:
+                            prev_block_start = (j-1) * 16
+                            prev_block = sector_data[prev_block_start:prev_block_start+16]
+                            
+                            # Encrypt the tweak for the previous block
+                            prev_tweak = bytearray(encrypted_tweak)
+                            for _ in range(j-1):
+                                self._xts_mult(prev_tweak)
+                            
+                            # Process the previous full block
+                            xored_block = bytearray(16)
+                            self._xts_xor_block(xored_block, prev_block, prev_tweak)
+                            decrypted_block = bytearray(cipher.decrypt(bytes(xored_block)))
+                            final_block = bytearray(16)
+                            self._xts_xor_block(final_block, decrypted_block, prev_tweak)
+                            
+                            # Save the result
+                            dst_image[i+prev_block_start:i+prev_block_start+16] = final_block
+                        
+                        # Now handle the last partial block
+                        # We need to read the full block that contains the partial data
+                        full_block_start = (num_blocks - 1) * 16
+                        full_block = sector_data[full_block_start:full_block_start+16]
+                        
+                        # Process the full block
+                        xored_block = bytearray(16)
+                        self._xts_xor_block(xored_block, full_block, last_tweak)
+                        decrypted_block = bytearray(cipher.decrypt(bytes(xored_block)))
+                        final_block = bytearray(16)
+                        self._xts_xor_block(final_block, decrypted_block, last_tweak)
+                        
+                        # Save the partial result
+                        partial_len = sector_len % 16
+                        dst_image[i+full_block_start:i+full_block_start+partial_len] = final_block[:partial_len]
+                        
+                        # Debug log
+                        if i < 0x2000:  # First 2 sectors for debugging
+                            self.logger(f"Block {current_sector}:{j} (last partial):")
+                            self.logger(f"  Input:    {block.hex()}")
+                            self.logger(f"  Tweak:    {last_tweak.hex()}")
+                            self.logger(f"  FullBlock:{full_block.hex()}")
+                            self.logger(f"  Final:    {final_block[:partial_len].hex()}")
+                        
+                        break
+                
+                # For full blocks or when not the last partial block
+                if len(block) == 16:
+                    block_tweak = bytearray(current_tweak)
+                    
+                    # Xor the block with the encrypted tweak
+                    xored_block = bytearray(16)
+                    self._xts_xor_block(xored_block, block, block_tweak)
+                    
+                    # Decrypt the block
+                    try:
+                        decrypted_block = bytearray(cipher.decrypt(bytes(xored_block)))
+                    except Exception as e:
+                        self.logger(f"ERROR decrypting block at sector {current_sector}, offset {j*16}: {e}")
+                        raise
+                    
+                    # Xor again with the encrypted tweak
+                    final_block = bytearray(16)
+                    self._xts_xor_block(final_block, decrypted_block, block_tweak)
+                    
+                    # Copy to destination
+                    dst_image[i+block_start:i+block_end] = final_block[:len(block)]
+                    
+                    # Debug logging for the first few blocks
+                    if i < 0x2000 and j < 4:  # First 2 sectors, first 4 blocks
+                        self.logger(f"Block {current_sector}:{j}:")
+                        self.logger(f"  Input:    {block.hex()}")
+                        self.logger(f"  Tweak:    {block_tweak.hex()}")
+                        self.logger(f"  XORed:    {xored_block.hex()}")
+                        self.logger(f"  Decrypted:{decrypted_block.hex()}")
+                        self.logger(f"  Final:    {final_block.hex()}")
+                
+                # Multiply the tweak by α in GF(2^128) for the next block
+                if not is_last_block:  # Don't update tweak after the last block
+                    prev_tweak = current_tweak.copy()
+                    self._xts_mult(current_tweak)
+        
+        # Save the first 256 bytes of decrypted data for inspection
+        debug_path = os.path.join(os.path.dirname(__file__), "debug_decrypted.bin")
+        with open(debug_path, "wb") as f:
+            f.write(dst_image[:min(256, len(dst_image))])
+        self.logger(f"DEBUG: First 256 bytes of decrypted data saved to {debug_path}")
+        
+        # Check if the decrypted data is all zeros
+        if len(dst_image) >= 32 and all(b == 0 for b in dst_image[:32]):
+            self.logger("WARNING: First 32 bytes of decrypted data are all zeros!")
+            
+            # Try a known-answer test with the same keys
+            self.logger("Performing known-answer test...")
+            test_plain = b'\x00' * 16
+            test_tweak = b'\x00' * 16
+            test_cipher = AES.new(dataKey, AES.MODE_ECB)
+            test_tweak_cipher = AES.new(tweakKey, AES.MODE_ECB)
+            
+            # Encrypt the tweak
+            enc_tweak = test_tweak_cipher.encrypt(test_tweak)
+            
+            # Xor plaintext with encrypted tweak
+            xored = bytes(a ^ b for a, b in zip(test_plain, enc_tweak))
+            
+            # Encrypt the result
+            encrypted = test_cipher.encrypt(xored)
+            
+            # Xor with encrypted tweak again
+            final = bytes(a ^ b for a, b in zip(encrypted, enc_tweak))
+            
+            self.logger(f"KAT - Plain: {test_plain.hex()}")
+            self.logger(f"KAT - Tweak: {test_tweak.hex()}")
+            self.logger(f"KAT - Enc tweak: {enc_tweak.hex()}")
+            self.logger(f"KAT - Xored: {xored.hex()}")
+            self.logger(f"KAT - Encrypted: {encrypted.hex()}")
+            self.logger(f"KAT - Final: {final.hex()}")
+        
+        return bytes(dst_image)
 
-# --- PKG Class (con logica PFS migliorata) ---
+# ... (rest of the code remains the same)
 class PKG:
     def __init__(self, logger_func=print):
         self.logger = logger_func
@@ -1407,6 +1787,7 @@ class PKG:
             self._log(f"Errore apertura PKG: {e}"); import traceback; self._log(traceback.format_exc()); return False, f"Errore: {e}"
 
     def extract(self, filepath: pathlib.Path, extract_base_path_gui: pathlib.Path) -> tuple[bool, str]:
+        
         # Initialize variables outside the try block
         self.pkg_path = filepath
         self._log(f"Inizio estrazione da: {filepath} a GUI base: {extract_base_path_gui}")
@@ -1586,8 +1967,22 @@ class PKG:
                             self._log("DEBUG: Primi 256 bytes del chunk decrittato:")
                             for i_debug in range(0, min(256, len(decrypted_initial_pfs_chunk)), 32):
                                 self._log(f"  {i_debug:04x}: {decrypted_initial_pfs_chunk[i_debug:i_debug+32].hex()}")
+                                
+                            # Log the sector map area if we can find it
+                            if hasattr(self, 'pfsc_offset_in_pfs_image') and self.pfsc_offset_in_pfs_image > 0:
+                                sector_map_start = self.pfsc_offset_in_pfs_image + pfs_chdr_initial.block_offsets
+                                sector_map_end = sector_map_start + size_of_sector_map_table
+                                if sector_map_end <= len(decrypted_initial_pfs_chunk):
+                                    self._log(f"\nDEBUG: Sector Map Data (offset 0x{sector_map_start:08x} - 0x{sector_map_end:08x}):")
+                                    for i in range(0, min(64, size_of_sector_map_table), 8):
+                                        offset = sector_map_start + i
+                                        if offset + 8 <= len(decrypted_initial_pfs_chunk):
+                                            value = struct.unpack_from('<Q', decrypted_initial_pfs_chunk, offset)[0]
+                                            self._log(f"  {offset:08x}: {value:016x}")
                         except Exception as e_dbg:
-                            self._log(f"DEBUG: Errore salvataggio chunk decrittato: {e_dbg}")
+                            self._log(f"DEBUG: Errore salvataggio/analisi chunk decrittato: {e_dbg}")
+                            import traceback
+                            self._log(f"DEBUG: {traceback.format_exc()}")
                         # --- Fine Debug ---
 
                         current_pfsc_offset_in_decrypted_chunk = get_pfsc_offset(decrypted_initial_pfs_chunk, self._log)
@@ -1631,13 +2026,52 @@ class PKG:
                                        pfs_chdr_initial.data_start + total_compressed_data_size
                                    )
                             
+                            # Debug log all relevant values
+                            self._log(f"DEBUG: PFS Header Values:")
+                            self._log(f"  block_sz: {pfs_chdr_initial.block_sz} (0x{pfs_chdr_initial.block_sz:x})")
+                            self._log(f"  block_sz2: {pfs_chdr_initial.block_sz2} (0x{pfs_chdr_initial.block_sz2:x})")
+                            self._log(f"  block_offsets: {pfs_chdr_initial.block_offsets} (0x{pfs_chdr_initial.block_offsets:x})")
+                            self._log(f"  data_start: {pfs_chdr_initial.data_start} (0x{pfs_chdr_initial.data_start:x})")
+                            self._log(f"  data_length: {pfs_chdr_initial.data_length} (0x{pfs_chdr_initial.data_length:x})")
+                            self._log(f"  num_data_blocks: {num_data_blocks} (0x{num_data_blocks:x})")
+                            self._log(f"  size_of_sector_map_table: {size_of_sector_map_table} (0x{size_of_sector_map_table:x})")
+                            
+                            if 'total_compressed_data_size' in locals():
+                                self._log(f"  total_compressed_data_size: {total_compressed_data_size} (0x{total_compressed_data_size:x})")
+                            
+                            # Ensure we don't have negative values
+                            if estimated_pfsc_internal_content_size < 0:
+                                self._log(f"ERRORE: Dimensione PFSC interna stimata negativa: {estimated_pfsc_internal_content_size}")
+                                self._log("  Questo indica un problema con la decrittazione o con i valori dell'header PFSC.")
+                                self._log("  Verificare che i dati decrittati siano corretti e che l'header PFSC sia valido.")
+                                
+                                # Try to recover by using just the PFSC header size as a fallback
+                                estimated_pfsc_internal_content_size = PFSCHdrPFS._SIZE
+                                self._log(f"  Utilizzo dimensione minima di fallback: {estimated_pfsc_internal_content_size} bytes")
+                            
                             total_pfsc_span_in_pfs_image = self.pfsc_offset_in_pfs_image + estimated_pfsc_internal_content_size
+                            
+                            # Ensure we don't exceed the PFS image size
+                            if total_pfsc_span_in_pfs_image > self.pkg_header.pfs_image_size:
+                                self._log(f"AVVISO: La dimensione stimata del PFSC ({total_pfsc_span_in_pfs_image} B) eccede la dimensione dell'immagine PFS ({self.pkg_header.pfs_image_size} B).")
+                                self._log(f"  Verrà utilizzata la dimensione dell'immagine PFS meno l'offset PFSC.")
+                                total_pfsc_span_in_pfs_image = self.pkg_header.pfs_image_size - self.pfsc_offset_in_pfs_image
+                                if total_pfsc_span_in_pfs_image < PFSCHdrPFS._SIZE:
+                                    self._log(f"  AVVISO GRAVE: Lo spazio disponibile ({total_pfsc_span_in_pfs_image} B) è minore della dimensione minima dell'header PFSC ({PFSCHdrPFS._SIZE} B)")
+                                    total_pfsc_span_in_pfs_image = PFSCHdrPFS._SIZE
+                            
+                            # Align to 0x1000 boundary
                             total_len_to_read_for_full_pfsc_aligned = ((total_pfsc_span_in_pfs_image + 0xFFF) // 0x1000) * 0x1000
                             
-                            self._log(f"Dimensione interna PFSC stimata: {estimated_pfsc_internal_content_size}. Totale da leggere/decrittare per PFSC completo: {total_len_to_read_for_full_pfsc_aligned}")
+                            self._log(f"Dimensione interna PFSC stimata: {estimated_pfsc_internal_content_size} B. Totale da leggere/decrittare per PFSC completo: {total_len_to_read_for_full_pfsc_aligned} B")
 
                             f.seek(self.pkg_header.pfs_image_offset)
-                            full_pfs_chunk_for_pfsc_processing = f.read(min(total_len_to_read_for_full_pfsc_aligned, self.pkg_header.pfs_image_size))
+                            # Ensure we don't try to read a negative length
+                            read_length = min(total_len_to_read_for_full_pfsc_aligned, self.pkg_header.pfs_image_size)
+                            if read_length <= 0:
+                                raise ValueError(f"Invalid read length: {read_length}. PFSC offset: {self.pfsc_offset_in_pfs_image}, estimated size: {estimated_pfsc_internal_content_size}")
+                                
+                            full_pfs_chunk_for_pfsc_processing = f.read(read_length)
                             effective_len_full_pfsc_decrypt = (len(full_pfs_chunk_for_pfsc_processing) // 0x1000) * 0x1000
 
                             if effective_len_full_pfsc_decrypt == 0:
@@ -1949,27 +2383,6 @@ class PKG:
                                self.iNodeBuf[potential_root_idx].Blocks > 0:
                                 root_dir_inode_num = 2
                                 self._log(f"Fallback: Uso inode 2 come root.")
-                            else:
-                                # Tentativo 2: Inode 1
-                                potential_root_idx = 1 - 1
-                                if 0 <= potential_root_idx < len(self.iNodeBuf) and \
-                                   self.iNodeBuf[potential_root_idx].get_file_type() == PFSFileType.PFS_DIR and \
-                                   self.iNodeBuf[potential_root_idx].Blocks > 0:
-                                    root_dir_inode_num = 1
-                                    self._log(f"Fallback: Uso inode 1 come root.")
-                                else:
-                                    # Tentativo 3: Primo inode directory trovato
-                                    found_fallback_root = False
-                                    for idx, inode_entry in enumerate(self.iNodeBuf):
-                                        inode_num_candidate = idx + 1
-                                        if inode_entry.get_file_type() == PFSFileType.PFS_DIR and inode_entry.Blocks > 0:
-                                            root_dir_inode_num = inode_num_candidate
-                                            self._log(f"Fallback: Trovato primo inode directory valido ({root_dir_inode_num}) come root.")
-                                            found_fallback_root = True
-                                            break
-                                    if not found_fallback_root:
-                                        self._log(f"Fallback fallito: Nessun inode directory valido trovato in iNodeBuf.")
-                                        root_dir_inode_num = -1 # Indica fallimento chiaro
                         else:
                             self._log("ERRORE CRITICO: iNodeBuf è vuoto. Impossibile determinare un root inode valido.")
                             return False, "Estrazione fallita: iNodeBuf vuoto, impossibile trovare un root inode valido."
@@ -1987,6 +2400,50 @@ class PKG:
                     if root_dir_inode_num > 0 and root_dir_inode_num <= len(self.iNodeBuf):
                         self._process_pfs_directory_bfs(root_dir_inode_num, self.extract_base_path)
                         self._log(f"Completato parsing ricorsivo. Trovate {len(self.fs_table)} voci in fs_table.")
+                        
+                        # --- INIZIO LOGICA PER UROOT E FPT INTERNA ---
+                        self._log(f"DEBUG: Controllo pre-FPT interna. fs_table ha {len(self.fs_table)} elementi.")
+                        self._log(f"DEBUG: fs_table attuale (prima del parsing FPT uroot): {[(e.name, e.inode, e.type.name) for e in self.fs_table]}")
+                        self._log(f"DEBUG: extract_paths attuale (prima del parsing FPT uroot): {self.extract_paths}")
+
+                        uroot_entry_details = None
+                        uroot_inode_num_for_fpt = -1
+
+                        for fs_entry_item in list(self.fs_table):
+                            if fs_entry_item.name == "uroot":
+                                if 0 <= fs_entry_item.inode - 1 < len(self.iNodeBuf):
+                                    uroot_inode_obj_check = self.iNodeBuf[fs_entry_item.inode - 1]
+                                    if uroot_inode_obj_check.get_file_type() == PFSFileType.PFS_FILE:
+                                        self._log(f"Trovato file 'uroot' (inode {fs_entry_item.inode}, type dall'inode: {uroot_inode_obj_check.get_file_type().name}) che PUNTA a FPT.")
+                                        uroot_entry_details = fs_entry_item
+                                        uroot_inode_num_for_fpt = fs_entry_item.inode
+                                        break
+                                    else:
+                                        self._log(f"Trovata entry 'uroot' (inode {fs_entry_item.inode}) ma il suo inode type è {uroot_inode_obj_check.get_file_type().name}, non PFS_FILE. Non la userò per FPT.")
+                                else:
+                                    self._log(f"AVVISO: Trovata entry 'uroot' ma il suo inode {fs_entry_item.inode} è fuori range per iNodeBuf (len {len(self.iNodeBuf)}).")
+
+                        if uroot_entry_details and uroot_inode_num_for_fpt != -1:
+                            self._log(f"DEBUG: uroot_entry_details trovato: True, uroot_inode_num_for_fpt: {uroot_inode_num_for_fpt}")
+                            self._log(f"DEBUG: ENTRATO nel blocco di parsing FPT interna per uroot (inode {uroot_inode_num_for_fpt}).")
+                            
+                            uroot_inode_obj = self.iNodeBuf[uroot_inode_num_for_fpt - 1]
+                            
+                            try:
+                                with open(self.pkg_path, "rb") as pkg_file_for_uroot:
+                                    uroot_file_content_bytes = self._extract_single_pfs_file_data_to_memory(pkg_file_for_uroot, uroot_inode_obj)
+                                    
+                                    if uroot_file_content_bytes:
+                                        self._log(f"DEBUG: Contenuto di uroot estratto con successo. Dimensione: {len(uroot_file_content_bytes)} bytes")
+                                        self._parse_internal_flat_path_table(uroot_file_content_bytes, self.extract_base_path)
+                                        self._log(f"DEBUG: Dopo _parse_internal_flat_path_table, fs_table ora ha {len(self.fs_table)} voci.")
+                                    else:
+                                        self._log("AVVISO: Nessun contenuto estratto per uroot. Impossibile processare FPT interna.")
+                                        
+                            except Exception as e_uroot_extract:
+                                self._log(f"ERRORE durante l'estrazione del contenuto di uroot (inode {uroot_inode_num_for_fpt}): {e_uroot_extract}")
+                                import traceback
+                                self._log(traceback.format_exc())
                     elif self.pkg_header and self.pkg_header.pfs_image_size > 0: # Solo se PFS era atteso
                         self._log(f"ERRORE: Impossibile procedere con BFS, root_dir_inode_num ({root_dir_inode_num}) non valido o iNodeBuf (len {len(self.iNodeBuf)}) problematico.")
 
@@ -2015,6 +2472,7 @@ class PKG:
             parent_path (Path): Path padre dove creare i file/directory estratti
         """
         self._log("\nInizio parsing flat_path_table in uroot...")
+        
         # Salva i dati per un'analisi più approfondita
         debug_fpt_path = self.extract_base_path / "debug_FLAT_PATH_TABLE_from_uroot.bin"
         try:
@@ -2024,622 +2482,401 @@ class PKG:
         except Exception as e:
             self._log(f"DEBUG: Errore salvataggio flat_path_table: {e}")
         
+        # Analisi dei primi byte per debug
+        first_bytes = flat_path_data[:min(64, len(flat_path_data))]
+        self._log(f"DEBUG: Primi {len(first_bytes)}B del flat_path_table: {first_bytes.hex()}")
+        
+        # Cerca la stringa "flat_path_table" a offset 0x10
+        if len(flat_path_data) >= 0x20 and flat_path_data[0x10:0x1f] == b'flat_path_table':
+            self._log("DEBUG: Trovato marker 'flat_path_table' a offset 0x10")
+        
         # Basato sulla logica C++ descritta dall'utente
         offset = 0
         ndinode_counter = 0  # Inode della directory a cui appartengono le entry in flat_path_table
         
-        # Prima cerchiamo entry speciali (ino != 0) che possono contenere informazioni sulla struttura
-        while offset < len(flat_path_data):
-            if len(flat_path_data) - offset < Dirent._SIZE_BASE:
-                self._log(f"  FINE FLAT_PATH_TABLE: dimensione rimanente {len(flat_path_data) - offset} < {Dirent._SIZE_BASE}")
-                break
+        # Processa le meta-entry (ino != 0) che descrivono la struttura
+        while offset + Dirent._SIZE_BASE <= len(flat_path_data):
+            try:
+                dirent = Dirent.from_bytes(flat_path_data[offset:])
+                self._log(f"  META-ENTRY: ino={dirent.ino}, type={dirent.type}, "
+                         f"namelen={dirent.namelen}, entsize={dirent.entsize}, name='{dirent.name}'")
                 
-            dirent = Dirent.from_bytes(flat_path_data[offset:])
-            self._log(f"  FPT Entry: offset=0x{offset:x}, ino={dirent.ino}, type={dirent.type}, "
-                     f"namelen={dirent.namelen}, entsize={dirent.entsize}, name='{dirent.name}'")
-            
-            if dirent.entsize == 0:
-                self._log(f"  FINE FLAT_PATH_TABLE: trovata dirent con entsize=0")
-                break
+                # Terminatore delle meta-entry
+                if dirent.ino == 0 or dirent.entsize == 0:
+                    self._log("  FINE META-ENTRY: Trovato terminatore")
+                    offset += dirent.entsize if dirent.entsize > 0 else 4
+                    break
+                    
+                # Salta le meta-entry senza nome valido
+                if not dirent.name or dirent.namelen == 0:
+                    self._log("  SKIP META-ENTRY: Nome vuoto")
+                    offset += dirent.entsize if dirent.entsize > 0 else 4
+                    continue
                 
-            if dirent.ino != 0:
-                # Entry speciale (probabilmente metadati o entry . e ..)
-                ndinode_counter = dirent.ino  # Salva l'ultimo inode counter
-                self._log(f"  METADATO: Aggiornato ndinode_counter a {ndinode_counter}")
-            else:
-                # Trovata la prima entry con ino=0, il che segna l'inizio delle vere entry di file/directory
-                self._log(f"  MARKER: Trovata entry con ino=0. Inizio delle vere entry di file/directory")
-                offset += dirent.entsize
-                break
+                # Se troviamo 'uroot', impostiamo il contatore
+                if dirent.name == 'uroot' and dirent.ino > 0:
+                    ndinode_counter = dirent.ino
+                    self._log(f"  TROVATO UROOT: Impostato ndinode_counter a {ndinode_counter}")
                 
-            offset += dirent.entsize
+                offset += dirent.entsize if dirent.entsize > 0 else 4
+                
+            except Exception as e:
+                self._log(f"  ERRORE durante il parsing della meta-entry a offset {offset}: {e}")
+                offset += 4  # Prova a riprendersi saltando avanti
         
-        # Da qui, leggiamo le vere entry di file/directory (dopo il marker ino=0)
-        self._log(f"\n  INIZIO PARSING ENTRY REALI (offset=0x{offset:x}, parent_inode={ndinode_counter})")
+        self._log(f"  Dopo le meta-entry, offset = {offset:#x}, ndinode_counter = {ndinode_counter}")
         
-        # Leggi e processa le entry reali
-        real_entries = []
-        while offset < len(flat_path_data):
-            if len(flat_path_data) - offset < Dirent._SIZE_BASE:
-                break
-                
-            dirent = Dirent.from_bytes(flat_path_data[offset:])
-            if dirent.entsize == 0 or dirent.ino == 0:
-                break
-                
-            entry_name = dirent.name
-            entry_inode_num = dirent.ino
-            entry_type = dirent.get_pfs_file_type()
-            
-            self._log(f"  ENTRY REALE: '{entry_name}' (inode {entry_inode_num}), type={dirent.type} -> {entry_type.name}")
-            
-            # Aggiungi alla fs_table e all'elenco delle entry reali
-            self.fs_table.append(FSTableEntry(entry_name, entry_inode_num, entry_type))
-            real_entries.append((entry_name, entry_inode_num, entry_type))
-            
-            # Imposta il percorso di estrazione
-            entry_path = parent_path / entry_name
-            self.extract_paths[entry_inode_num] = entry_path
-            
-            # Crea directory se necessario
-            if entry_type == PFSFileType.PFS_DIR:
-                self._log(f"  CREAZIONE DIR: '{entry_path}'")
-                entry_path.mkdir(parents=True, exist_ok=True)
-                
-                # Accoda per il BFS se è una directory
-                # Note: Non usiamo visited_dirs_for_bfs qui poiché queste sono le vere entry
-                # e vogliamo processarle tutte indipendentemente da uroot
-                queue = getattr(self, 'bfs_queue', [])
-                if hasattr(self, 'bfs_queue'):
-                    queue.append((entry_inode_num, entry_path))
-                    self._log(f"  ACCODATO per BFS: inode {entry_inode_num} ('{entry_path}')")
-            
-            offset += dirent.entsize
+        # Se non abbiamo trovato 'uroot', usiamo l'inode 2 come fallback
+        if ndinode_counter == 0:
+            ndinode_counter = 2
+            self._log(f"  Nessun inode 'uroot' trovato, uso fallback inode {ndinode_counter}")
         
-        self._log(f"Fine parsing flat_path_table. Trovate {len(real_entries)} entry reali.\n")
-        return real_entries
+        # Ora processa le entry reali
+        while offset + Dirent._SIZE_BASE <= len(flat_path_data):
+            try:
+                dirent = Dirent.from_bytes(flat_path_data[offset:])
+                self._log(f"  ENTRY: ino={dirent.ino}, type={dirent.type}, "
+                         f"namelen={dirent.namelen}, entsize={dirent.entsize}, name='{dirent.name}'")
+                
+                # Terminatore
+                if dirent.ino == 0 or dirent.entsize == 0:
+                    self._log(f"  Fine parsing flat_path_table, offset finale = {offset:#x}")
+                    break
+                    
+                # Salta le entry senza nome valido
+                if not dirent.name or dirent.namelen == 0:
+                    self._log("  SKIP ENTRY: Nome vuoto")
+                    offset += dirent.entsize if dirent.entsize > 0 else 4
+                    continue
+                
+                # Aggiungi al filesystem
+                entry_path = parent_path / dirent.name
+                self.fs_table[str(entry_path)] = {
+                    'inode': dirent.ino,
+                    'type': dirent.get_pfs_file_type(),
+                    'size': 0,  # Dovrà essere riempito dall'inode
+                    'offset': 0  # Dovrà essere riempito dall'inode
+                }
+                self._log(f"  AGGIUNTO: {entry_path} (inode {dirent.ino})")
+                
+                # Se è una directory, aggiungila alla coda BFS
+                if dirent.get_pfs_file_type() == PFSFileType.PFS_DIR:
+                    self._log(f"  CREAZIONE DIR: '{entry_path}'")
+                    entry_path.mkdir(parents=True, exist_ok=True)
+                    if hasattr(self, 'bfs_queue'):
+                        self.bfs_queue.append((dirent.ino, entry_path))
+                        self._log(f"  ACCODATO per BFS: inode {dirent.ino} ('{entry_path}')")
+                
+                offset += dirent.entsize if dirent.entsize > 0 else 4
+                
+            except Exception as e:
+                self._log(f"  ERRORE durante il parsing dell'entry a offset {offset}: {e}")
+                offset += 4  # Prova a riprendersi saltando avanti
+        
+        self._log(f"Fine parsing flat_path_table. Trovate entry reali.\n")
+        return
 
     def _process_flat_path_table(self, flat_path_data, parent_path):
         """Processa un flat_path_table trovato nell'inode 'uroot'.
         
         Args:
-            flat_path_data (bytes): I dati decompressati del flat_path_table
+            flat_path_data (bytes): I dati decompressi del flat_path_table
             parent_path (Path): Path padre dove creare i file/directory estratti
         """
         self._log("\nInizio parsing flat_path_table in uroot...")
-        # Salva i dati per un'analisi più approfondita
-        debug_fpt_path = self.extract_base_path / "debug_FLAT_PATH_TABLE_from_uroot.bin"
+        
         try:
-            with open(debug_fpt_path, "wb") as f:
+            # Save the raw data for debugging
+            debug_path = parent_path / "debug_flat_path_table.bin"
+            with open(debug_path, "wb") as f:
                 f.write(flat_path_data)
-            self._log(f"DEBUG: Dati flat_path_table salvati in: {debug_fpt_path}")
+            self._log(f"  Dati flat_path_table salvati in: {debug_path}")
+            
+            # Check for flat_path_table marker
+            if not flat_path_data.startswith(b'flat_path_table'):
+                self._log("  AVVISO: Il blocco dati non inizia con 'flat_path_table'")
+                return []
+
+            offset = 0
+            entries = []
+            
+            # Skip the header (16 bytes)
+            offset = 16
+            
+            # Parse directory entries
+            while offset + 16 <= len(flat_path_data):
+                # Read dirent structure
+                dirent = Dirent.from_bytes(flat_path_data[offset:])
+                
+                # Check for end of entries
+                if dirent.ino == 0 or dirent.entsize == 0:
+                    break
+                    
+                # Skip invalid entries
+                if dirent.namelen == 0 or dirent.namelen > 256:
+                    offset += dirent.entsize if dirent.entsize > 0 else 16
+                    continue
+                    
+                # Get entry name
+                name = dirent.name.decode('utf-8', errors='replace')
+                self._log(f"  Trovata entry: ino={dirent.ino}, type={dirent.type}, name='{name}'")
+                
+                # Add to entries list
+                entries.append((name, dirent.ino, dirent.get_pfs_file_type()))
+                
+                # Move to next entry
+                offset += dirent.entsize if dirent.entsize > 0 else 16
+                
+            self._log(f"  Trovate {len(entries)} voci nella flat_path_table")
+            return entries
+            
         except Exception as e:
-            self._log(f"DEBUG: Errore salvataggio flat_path_table: {e}")
-        
-        # Basato sulla logica C++ descritta dall'utente
-        offset = 0
-        ndinode_counter = 0  # Inode della directory a cui appartengono le entry in flat_path_table
-        
-        # Prima cerchiamo entry speciali (ino != 0) che possono contenere informazioni sulla struttura
-        while offset < len(flat_path_data):
-            if len(flat_path_data) - offset < Dirent._SIZE_BASE:
-                self._log(f"  FINE FLAT_PATH_TABLE: dimensione rimanente {len(flat_path_data) - offset} < {Dirent._SIZE_BASE}")
-                break
-                
-            dirent = Dirent.from_bytes(flat_path_data[offset:])
-            self._log(f"  FPT Entry: offset=0x{offset:x}, ino={dirent.ino}, type={dirent.type}, "
-                     f"namelen={dirent.namelen}, entsize={dirent.entsize}, name='{dirent.name}'")
-            
-            if dirent.entsize == 0:
-                self._log(f"  FINE FLAT_PATH_TABLE: trovata dirent con entsize=0")
-                break
-                
-            if dirent.ino != 0:
-                # Entry speciale (probabilmente metadati o entry . e ..)
-                ndinode_counter = dirent.ino  # Salva l'ultimo inode counter
-                self._log(f"  METADATO: Aggiornato ndinode_counter a {ndinode_counter}")
-            else:
-                # Trovata la prima entry con ino=0, il che segna l'inizio delle vere entry di file/directory
-                self._log(f"  MARKER: Trovata entry con ino=0. Inizio delle vere entry di file/directory")
-                offset += dirent.entsize
-                break
-                
-            offset += dirent.entsize
-        
-        # Da qui, leggiamo le vere entry di file/directory (dopo il marker ino=0)
-        self._log(f"\n  INIZIO PARSING ENTRY REALI (offset=0x{offset:x}, parent_inode={ndinode_counter})")
-        
-        # Leggi e processa le entry reali
-        real_entries = []
-        while offset < len(flat_path_data):
-            if len(flat_path_data) - offset < Dirent._SIZE_BASE:
-                break
-                
-            dirent = Dirent.from_bytes(flat_path_data[offset:])
-            if dirent.entsize == 0 or dirent.ino == 0:
-                break
-                
-            entry_name = dirent.name
-            entry_inode_num = dirent.ino
-            entry_type = dirent.get_pfs_file_type()
-            
-            self._log(f"  ENTRY REALE: '{entry_name}' (inode {entry_inode_num}), type={dirent.type} -> {entry_type.name}")
-            
-            # Aggiungi alla fs_table e all'elenco delle entry reali
-            self.fs_table.append(FSTableEntry(entry_name, entry_inode_num, entry_type))
-            real_entries.append((entry_name, entry_inode_num, entry_type))
-            
-            # Imposta il percorso di estrazione
-            entry_path = parent_path / entry_name
-            self.extract_paths[entry_inode_num] = entry_path
-            
-            # Crea directory se necessario
-            if entry_type == PFSFileType.PFS_DIR:
-                self._log(f"  CREAZIONE DIR: '{entry_path}'")
-                entry_path.mkdir(parents=True, exist_ok=True)
-                
-                # Accoda per il BFS se è una directory
-                # Note: Non usiamo visited_dirs_for_bfs qui poiché queste sono le vere entry
-                # e vogliamo processarle tutte indipendentemente da uroot
-                if hasattr(self, 'bfs_queue'):
-                    self.bfs_queue.append((entry_inode_num, entry_path))
-                    self._log(f"  ACCODATO per BFS: inode {entry_inode_num} ('{entry_path}')")
-            
-            offset += dirent.entsize
+            self._log(f"  ERRORE durante il parsing della flat_path_table: {e}")
+            import traceback
+            self._log(traceback.format_exc())
+            return []
         
         self._log(f"Fine parsing flat_path_table. Trovate {len(real_entries)} entry reali.\n")
         return real_entries
 
-    def _process_pfs_directory_bfs(self, root_dir_inode_num, current_output_path: Path):
-        """Processa la directory del PFS in modo BFS (breadth-first search).
+    def _extract_inode_data(self, inode_obj: Inode, output_path: Path) -> bool:
+        """Estrai i dati di un inode in un file.
         
         Args:
-            root_dir_inode_num (int): Numero di inode della directory root da cui iniziare
-            current_output_path (Path): Path di output per i file estratti
+            inode_obj: L'oggetto Inode da estrarre
+            output_path: Percorso di destinazione del file
+            
+        Returns:
+            bool: True se l'estrazione è riuscita, False altrimenti
         """
         try:
-            self._log(f"Inizio parsing ricorsivo (BFS) delle directory da root inode {root_dir_inode_num}")
+            self._log(f"  Estrazione inode {inode_obj} in {output_path}")
             
-            if not (self.pfs_chdr and self.sector_map and self.iNodeBuf):
-                self._log("ERRORE BFS: Strutture PFS non inizializzate."); return
-
-            # extract_paths[root_dir_inode_num] deve essere già stato impostato in extract()
-            self.extract_base_path.mkdir(parents=True, exist_ok=True)
-            self.extract_paths[root_dir_inode_num] = current_output_path
-
-            # Inizializza una coda BFS con la root directory
-            queue = [(root_dir_inode_num, current_output_path)]
-            visited_dirs_for_bfs = {root_dir_inode_num}
-            head = 0
-
-            decomp_block_buf_size = self.pfs_chdr.block_sz2 if self.pfs_chdr.block_sz2 > 0 else 0x10000
+            # Crea la directory di destinazione se non esiste
+            output_path.parent.mkdir(parents=True, exist_ok=True)
             
-            # Ciclo principale BFS
-            while head < len(queue):
-                current_dir_inode_num, current_dir_path = queue[head]; head += 1
+            # Leggi i dati dell'inode
+            data = bytearray()
+            for block_idx in range(inode_obj.Blocks):
+                map_idx = inode_obj.loc + block_idx
+                if map_idx >= len(self.sector_map) - 1:
+                    break
+                    
+                block_offset = self.sector_map[map_idx]
+                next_block_offset = self.sector_map[map_idx + 1]
+                block_size = next_block_offset - block_offset
                 
-                self._log(f"  BFS: Processo directory inode {current_dir_inode_num} ('{current_dir_path}')")
+                if block_offset + block_size > len(self.pfsc_content_actual_bytes):
+                    self._log(f"    ERRORE: Blocco {block_idx} fuori dai limiti")
+                    break
+                    
+                block_data = self.pfsc_content_actual_bytes[block_offset:block_offset + block_size]
                 
-                dir_inode_idx = current_dir_inode_num - 1
-                if not (0 <= dir_inode_idx < len(self.iNodeBuf)):
-                    self._log(f"    ERRORE BFS: Indice inode dir {dir_inode_idx} non valido. Salto."); continue
-                
-                dir_inode_obj = self.iNodeBuf[dir_inode_idx]
-                self._log(f"    BFS: Inode {current_dir_inode_num} (idx {dir_inode_idx}) ha Mode={dir_inode_obj.Mode:#06x}, Tipo={dir_inode_obj.get_file_type().name}, Size={dir_inode_obj.Size}, Blocks={dir_inode_obj.Blocks}, Loc={dir_inode_obj.loc}")
-
-                if dir_inode_obj.get_file_type() != PFSFileType.PFS_DIR:
-                     original_dirent_type_for_this_inode = next((fe.type for fe in self.fs_table if fe.inode == current_dir_inode_num), PFSFileType.PFS_INVALID)
-                     if original_dirent_type_for_this_inode == PFSFileType.PFS_DIR:
-                         self._log(f"    AVVISO BFS: Inode {current_dir_inode_num} Mode non è DIR, ma Dirent.type lo era. Procedo.")
-                     else:
-                        self._log(f"    AVVISO BFS: Inode {current_dir_inode_num} non è una directory. Salto."); continue
-                
-                first_block_idx_for_dir_in_map = dir_inode_obj.loc 
-                num_blocks_for_dir = dir_inode_obj.Blocks
-
-                self._log(f"    Dir Inode {current_dir_inode_num}: loc={first_block_idx_for_dir_in_map}, blocks={num_blocks_for_dir}, size={dir_inode_obj.Size}")
-
-                
-                # Processa blocchi di dati della directory
-                for i_dir_block in range(num_blocks_for_dir):
-                    map_idx_dir = first_block_idx_for_dir_in_map + i_dir_block
-                    
-                    if map_idx_dir >= len(self.sector_map) - 1:
-                        self._log(f"      AVVISO BFS: Indice mappa {map_idx_dir} fuori limiti per dirent di inode {current_dir_inode_num}. Ultimo blocco processato.")
-                        break # Break from for i_dir_block loop
-                    
-                    block_offset_in_pfsc = self.sector_map[map_idx_dir]
-                    block_csize = self.sector_map[map_idx_dir + 1] - block_offset_in_pfsc
-                    
-                    self._log(f"      Blocco dirent {i_dir_block} (map_idx {map_idx_dir}): offset_in_pfsc_content={block_offset_in_pfsc:#x}, csize={block_csize:#x}")
-
-                    if block_offset_in_pfsc + block_csize > len(self.pfsc_content_actual_bytes):
-                        self._log(f"      ERRORE BFS: Lettura fuori limiti per blocco dirent {i_dir_block} di inode {current_dir_inode_num}. "
-                                 f"Accesso a {block_offset_in_pfsc + block_csize} in buffer di {len(self.pfsc_content_actual_bytes)}")
-                        break # Break from for i_dir_block loop
-                    if block_csize == 0: 
-                        self._log(f"      Blocco dirent {i_dir_block} ha csize 0. Salto.")
-                        continue # To next i_dir_block
-
-                    compressed_dir_block_data = self.pfsc_content_actual_bytes[block_offset_in_pfsc : block_offset_in_pfsc + block_csize]
-                    
-                    # Decompressione blocco dati directory
-                    decompressed_data = bytearray(decomp_block_buf_size)
-                    if block_csize == decomp_block_buf_size:
-                        self._log(f"      DEBUG: Blocco dirent {i_dir_block} (size {block_csize}) non compresso. Copia diretta.")
-                        decompressed_data[:] = compressed_dir_block_data
-                    else: # Assumiamo compresso se non di dimensione piena
-                        self._log(f"      DEBUG: Blocco dirent {i_dir_block} compresso (size {block_csize}). Decompressione...")
-                        decompressed_data[:] = decompress_pfsc(bytes(compressed_dir_block_data), decomp_block_buf_size, self._log)
-                    
-                    actual_decomp_len_dir = len(decompressed_data)
-                    
-                    # Salva il blocco decompresso per debug
-                    debug_dirent_block_path = self.extract_base_path / f"debug_DIRENT_BLOCK_inode{current_dir_inode_num}_block{i_dir_block}.bin"
+                # Se il blocco è compresso, decomprimilo
+                if block_size < 0x10000:  # Dimensione tipica di un blocco non compresso
                     try:
-                        with open(debug_dirent_block_path, "wb") as dbg_df: 
-                            dbg_df.write(decompressed_data)
-                        self._log(f"DEBUG: Blocco dirent decompresso per inode {current_dir_inode_num} (blocco {i_dir_block}) salvato: {debug_dirent_block_path}")
-                        if actual_decomp_len_dir >= 64 : 
-                            self._log(f"DEBUG: Primi 64B di questo blocco: {decompressed_data[:64].hex()}")
-                    except Exception as e_dbg_df: 
-                        self._log(f"DEBUG: Errore salvataggio blocco dirent: {e_dbg_df}")
-
-                    offset_in_dir_block = 0
-                    is_first_entry_in_block = True # Per la logica di salto "." e ".." se non è FPT
-                    
-                    # Controlla se è una flat_path_table (solo per log, il parsing resta generico per ora)
-                    is_fpt_like = False
-                    if actual_decomp_len_dir >= 0x10 + 15 and decompressed_data[0x10 : 0x10+15] == b"flat_path_table":
-                        self._log(f"        Blocco per inode {current_dir_inode_num} contiene 'flat_path_table' a 0x10.")
-                        is_fpt_like = True
-                    elif actual_decomp_len_dir >= 24 and decompressed_data[0:1] == b'.' and decompressed_data[0x18:0x18+2] == b'..':
-                         self._log(f"        Blocco per inode {current_dir_inode_num} sembra una dir standard (trovati '.' e '..').")                 
-
-                    # Loop principale per leggere le Dirent nel blocco
-                    while offset_in_dir_block < actual_decomp_len_dir:
-                        if actual_decomp_len_dir - offset_in_dir_block < Dirent._SIZE_BASE: 
-                            self._log(f"          TERMINAZIONE LOOP Dirent: Spazio insufficiente per Dirent base. Rimanenti: {actual_decomp_len_dir - offset_in_dir_block}")
-                            break
-                        
-                        dirent_data_segment = decompressed_data[offset_in_dir_block:]
-                        dirent = Dirent.from_bytes(dirent_data_segment)
-                        
-                        if dirent.entsize == 0: 
-                            self._log(f"          TERMINAZIONE LOOP Dirent: entsize=0"); 
-                            break
-                        # Un ino=0 con entsize!=0 può essere un terminatore di FPT meta-entry, 
-                        # o una dirent corrotta. Trattalo come terminatore per ora.
-                        if dirent.ino == 0: 
-                            self._log(f"          TERMINAZIONE LOOP Dirent: ino=0"); 
-                            break 
-                        
-                        entry_name = dirent.name
-                        entry_inode_num = dirent.ino
-                        entry_pfs_type_from_dirent = dirent.get_pfs_file_type()
-                        
-                        self._log(f"          Trovata Dirent: '{entry_name}' (inode {entry_inode_num}), Dirent.type={dirent.type} -> {entry_pfs_type_from_dirent.name}, Entsize: {dirent.entsize}")
-
-                        # Salta "." e ".." per tutte le directory, inclusa "uroot" (flat_path_table).
-                        # Il C++ salta le prime due entry del loop j=0 e j=1 se dinode_reached.
-                        if entry_name == ".":
-                            if entry_inode_num != current_dir_inode_num:
-                                self._log(f"            AVVISO: Dirent '.' punta a inode {entry_inode_num}, ma dir corrente è {current_dir_inode_num}.")
-                            self.extract_paths[entry_inode_num] = current_dir_path # Assicura che il path per . sia corretto
-                            offset_in_dir_block += dirent.entsize
-                            continue
-                        if entry_name == "..":
-                            # Trova il path del genitore del genitore
-                            # current_dir_path è il path dell'inode corrente (parent_ino).
-                            # Il genitore di current_dir_path è il path dell'inode a cui ".." dovrebbe puntare.
-                            if current_dir_path != self.extract_base_path: # Non c'è genitore per la root
-                                self.extract_paths[entry_inode_num] = current_dir_path.parent
-                            # else: .. della root potrebbe puntare a sé stessa o a un inode speciale
-                            offset_in_dir_block += dirent.entsize
-                            continue
-                        
-                        # Processa l'entry corrente (file o directory)
-                        if (current_dir_inode_num == 1 and
-                                (entry_name == "uroot" or (entry_inode_num == 2 and is_fpt_like))):
-                            self._log(f"            SPECIALE: trovato uroot (ino={entry_inode_num}) nella root!")
-                            
-                            # Aggiungi alla coda BFS se è una directory e non è già visitata
-                            uroot_path = current_dir_path / 'uroot'
-                            uroot_path.mkdir(parents=True, exist_ok=True)
-                            self.extract_paths[entry_inode_num] = uroot_path
-                            
-                            # Crea e aggiungi l'entry per uroot
-                            fs_entry = FSTableEntry(
-                                name='uroot',
-                                inode=entry_inode_num,
-                                type=PFSFileType.PFS_DIR
-                            )
-                            self.fs_table.append(fs_entry)
-                            
-                            # Aggiungi alla coda BFS se non è già stata visitata
-                            entry_inode_idx = entry_inode_num - 1
-                            if (entry_inode_num not in visited_dirs_for_bfs and
-                                    0 <= entry_inode_idx < len(self.iNodeBuf)):
-                                queue.append((entry_inode_num, uroot_path))
-                                visited_dirs_for_bfs.add(entry_inode_num)
-                                self._log(f"            ACCODATO uroot (ino={entry_inode_num}) per BFS")
-                            
-                            # Passa alla prossima entry
-                            offset_in_dir_block += dirent.entsize
-                            continue
-                        
-                        # Se è un'entry che si chiama "flat_path_table", aggiungi alla fs_table ma non estrarre
-                        if entry_name == "flat_path_table":
-                            fs_entry = FSTableEntry('flat_path_table', entry_inode_num, entry_pfs_type_from_dirent)
-                            self.fs_table.append(fs_entry)
-                            offset_in_dir_block += dirent.entsize
-                            continue
-                        
-                        # Controlla se abbiamo un inode valido per questa entry
-                        entry_inode_idx = entry_inode_num - 1
-                        has_valid_inode = 0 <= entry_inode_idx < len(self.iNodeBuf)
-                        
-                        # Determina se è un file o una directory
-                        is_dir_from_dirent = entry_pfs_type_from_dirent == PFSFileType.PFS_DIR
-                        is_dir = is_dir_from_dirent  # Default: usa il tipo del dirent
-                        
-                        # Se l'inode è valido, controlla anche il suo Mode per determinare il tipo
-                        if has_valid_inode:
-                            entry_inode = self.iNodeBuf[entry_inode_idx]
-                            inode_file_type = entry_inode.get_file_type()
-                            is_dir_from_inode = inode_file_type == PFSFileType.PFS_DIR
-                            
-                            if is_dir_from_dirent != is_dir_from_inode:
-                                self._log(f"            ATTENZIONE: Tipo di '{entry_name}' differisce: Dirent={is_dir_from_dirent}, Inode={is_dir_from_inode}. Uso Inode.")
-                                is_dir = is_dir_from_inode  # Priorità al tipo dell'inode
-                        
-                        # Aggiungi entry all'fs_table
-                        fs_type = PFSFileType.PFS_DIR if is_dir else PFSFileType.PFS_FILE
-                        fs_entry = FSTableEntry(entry_name, entry_inode_num, fs_type)
-                        self.fs_table.append(fs_entry)
-                        
-                        # Costruisci il path di output per questo file/directory
-                        entry_output_path = current_dir_path / entry_name
-                        self.extract_paths[entry_inode_num] = entry_output_path
-                        
-                        # Se è una directory, creala e accodala per BFS
-                        if is_dir:
-                            try:
-                                entry_output_path.mkdir(parents=True, exist_ok=True)
-                                
-                                if entry_inode_num not in visited_dirs_for_bfs and has_valid_inode:
-                                    queue.append((entry_inode_num, entry_output_path))
-                                    visited_dirs_for_bfs.add(entry_inode_num)
-                                    self._log(f"            Aggiunta directory '{entry_name}' (ino={entry_inode_num}) alla coda BFS")
-                            except OSError as e_mkdir:
-                                self._log(f"            ERRORE: Impossibile creare directory '{entry_output_path}': {e_mkdir}")
-                            except Exception as e_dec:
-                                self._log(f"      ERRORE BFS: Decompressione o parsing fallito per blocco dirent {i_dir_block} di inode {current_dir_inode_num}: {e_dec}")
-                                continue  # To next i_dir_block
-                        
-                        # Debug per root/uroot
-                        if current_dir_inode_num == 1 or current_dir_inode_num == 2:
-                            block_type_str = "ROOT" if current_dir_inode_num == 1 else "UROOT"
-                            self._log(f"            DEBUG {block_type_str}: Aggiunta entry '{entry_name}' (inode {entry_inode_num}, type={fs_type.name})")
-                        
-                        # Avanza alla prossima dirent
-                        offset_in_dir_block += dirent.entsize
-                    
-                    actual_decomp_len_dir = len(decompressed_data)
-                    
-                    if is_fpt_like:
-                        self._log(f"        Blocco per inode {current_dir_inode_num} è una flat_path_table (riconferma per parsing).")
-
-                        # Reset offset per il parsing della flat_path_table
-                        offset_in_dir_block = 0
-                        
-                        self._log(f"PROCESSAMENTO SPECIALE: Blocco flat_path_table per inode {current_dir_inode_num}")
-                        
-                        # --- FASE 1: Loop per trovare il terminatore delle meta-entry ---
-                        # Questo è il loop iniziale per saltare le meta-entry come 'flat_path_table' e 'uroot'
-                        # fino a trovare il terminatore (ino=0) che segna l'inizio delle vere entry
-                        meta_offset = 0
-                        found_fpt_terminator_at = -1
-                        ndinode_counter = 0  # Questo viene incrementato per ogni meta-entry (come fa il codice C++)
-                        
-                        while meta_offset < actual_decomp_len_dir:
-                            if actual_decomp_len_dir - meta_offset < Dirent._SIZE_BASE:
-                                self._log(f"Meta-entry loop: Spazio insufficiente per Dirent base. Rimanenti: {actual_decomp_len_dir - meta_offset}")
-                                break
-                            
-                            dirent_data_segment_meta = decompressed_data[meta_offset:]
-                            dirent_meta = Dirent.from_bytes(dirent_data_segment_meta)
-                            
-                            self._log(f"Raw Meta Dirent Hex (offset {meta_offset:#x}): {dirent_data_segment_meta[:max(32,dirent_meta.entsize if dirent_meta.entsize > 0 else 32)].hex()}")
-                            self._log(f"Parsed Meta Dirent: ino={dirent_meta.ino}, type={dirent_meta.type}, namelen={dirent_meta.namelen}, entsize={dirent_meta.entsize}, name='{dirent_meta.name}'")
-                            
-                            if dirent_meta.entsize == 0:
-                                self._log("TERMINAZIONE LOOP META: dirent.entsize=0")
-                                break
-                            
-                            if dirent_meta.ino != 0:
-                                # Entry speciale (probabilmente metadati o entry . e ..)
-                                ndinode_counter = dirent_meta.ino  # Salva l'ultimo inode counter
-                                self._log(f"  METADATO: Aggiornato ndinode_counter a {ndinode_counter}")
-                            else:
-                                # Trovata la prima entry con ino=0, il che segna l'inizio delle vere entry di file/directory
-                                self._log(f"  MARKER: Trovata entry con ino=0. Inizio delle vere entry di file/directory")
-                                found_fpt_terminator_at = meta_offset + dirent_meta.entsize
-                                self._log(f"  Terminatore FPT trovato. Vere entry dovrebbero iniziare a offset {found_fpt_terminator_at:#x}")
-                                meta_offset += dirent_meta.entsize
-                                break
-                                
-                            meta_offset += dirent_meta.entsize
-                        
-                        # --- FASE 2: Parsare le vere entry dopo il terminatore ---
-                        # Se troviamo un terminatore, partiamo da quel punto, altrimenti facciamo come il codice C++
-                        # e ripartiamo da offset 0
-                        if found_fpt_terminator_at > 0:
-                            self._log(f"Uso offset {found_fpt_terminator_at:#x} per le entry reali (dopo terminatore)")
-                            offset_in_dir_block = found_fpt_terminator_at
-                        else:
-                            self._log("RIPARTO DA OFFSET 0 PER LEGGERE LE ENTRY REALI COME FA IL CODICE C++")
-                            offset_in_dir_block = 0
-                        
-                        # Check aggiuntivo per '.' e '..' (solo per debugging)
-                        if actual_decomp_len_dir >= 0x28 + 2: 
-                            try:
-                                dot_check = chr(decompressed_data[0x10]) if len(decompressed_data) > 0x10 else ""
-                                dotdot_check = decompressed_data[0x28:0x28+2].decode('utf-8', errors='ignore') if len(decompressed_data) > 0x28+1 else ""
-                                if dot_check == '.' and dotdot_check == "..":
-                                    self._log(f"Trovati '.' e '..' all'inizio del blocco flat_path_table come atteso")
-                                else:
-                                    self._log(f"Non trovati '.' e '..' all'inizio: dot_check='{dot_check}', dotdot_check='{dotdot_check}'")
-                            except Exception as e_dot_check:
-                                self._log(f"Errore nel check di '.' e '..': {e_dot_check}")
-                        
-                        # Crea la cartella uroot se ndinode_counter è stato aggiornato
-                        if ndinode_counter > 0 and current_dir_inode_num == 1:  # Solo se siamo nella directory root
-                            self._log(f"Preparazione directory per ndinode_counter={ndinode_counter}")
-                            uroot_path = current_dir_path / 'uroot'  # Nome fisso, come nel codice C++
-                            uroot_path.mkdir(parents=True, exist_ok=True)
-                            self.extract_paths[ndinode_counter] = uroot_path  # Collega l'inode al path
-                            self.fs_table.append(FSTableEntry('uroot', ndinode_counter, PFSFileType.PFS_DIR))
-                            
-                            if ndinode_counter not in visited_dirs_for_bfs:
-                                self._log(f"Accodamento di ndinode_counter={ndinode_counter} per BFS")
-                                queue.append((ndinode_counter, uroot_path))
-                                visited_dirs_for_bfs.add(ndinode_counter)
-                    
-                    # Process all directory entries in this block
-                    while offset_in_dir_block < actual_decomp_len_dir:
-                        # Check if we have enough data for a minimal dirent
-                        if actual_decomp_len_dir - offset_in_dir_block < Dirent._SIZE_BASE:
-                            self._log(f"          INSUFFICIENT DATA: Need at least {Dirent._SIZE_BASE} bytes, got {actual_decomp_len_dir - offset_in_dir_block}")
-                            break
-                        
-                        # Parse the dirent
-                        dirent_data_segment = decompressed_data[offset_in_dir_block:]
-                        try:
-                            dirent = Dirent.from_bytes(dirent_data_segment)
-                            self._log(f"          [DIRENT @ {offset_in_dir_block:#x}] ino={dirent.ino}, type={dirent.type}, "
-                                    f"namelen={dirent.namelen}, entsize={dirent.entsize}, name='{dirent.name}'")
-                            
-                            # Log raw data for debugging
-                            if dirent.entsize > 0:
-                                raw_hex = dirent_data_segment[:min(32, dirent.entsize)].hex()
-                                self._log(f"          Raw Hex: {raw_hex}")
-                        except Exception as e:
-                            self._log(f"          ERROR parsing dirent at offset {offset_in_dir_block:#x}: {e}")
-                            break
-                        
-                        # Check for termination conditions
-                        if dirent.entsize == 0:
-                            self._log("          TERMINATION: dirent.entsize = 0")
-                            break
-                            
-                        if dirent.ino == 0:
-                            self._log("          TERMINATION: dirent.ino = 0")
-                            # In flat path tables, ino=0 marks the end of meta-entries
-                            if is_fpt_like:
-                                offset_in_dir_block += dirent.entsize  # Skip the terminator
-                            break
-                            
-                        # Skip invalid entries
-                        if dirent.entsize < Dirent._SIZE_BASE:
-                            self._log(f"          INVALID ENTRY: entsize ({dirent.entsize}) < minimum size ({Dirent._SIZE_BASE})")
-                            break
-                            
-                        # Skip empty names
-                        if not dirent.name or dirent.namelen == 0:
-                            self._log("          SKIPPING: Empty name")
-                            offset_in_dir_block += dirent.entsize
-                            continue
-                            
-                        # Skip special entries that were already processed
-                        if dirent.name in ('.', '..'):
-                            offset_in_dir_block += dirent.entsize
-                            continue
-
-                        # Determine entry type from dirent
-                        entry_name = dirent.name
-                        entry_inode_num = dirent.ino
-                        entry_pfs_type = dirent.get_pfs_file_type()
-                        
-                        # Get inode information if available
-                        entry_inode = None
-                        has_valid_inode = False
-                        is_dir_from_inode = False
-                        
-                        if 0 < entry_inode_num <= len(self.iNodeBuf):
-                            entry_inode = self.iNodeBuf[entry_inode_num - 1]
-                            has_valid_inode = True
-                            inode_file_type = entry_inode.get_file_type()
-                            is_dir_from_inode = inode_file_type == PFSFileType.PFS_DIR
-                            
-                            # Log inode details for debugging
-                            inode_debug = (
-                                f"          INODE[{entry_inode_num}]: type={inode_file_type.name}, "
-                                f"size={entry_inode.Size}, blocks={entry_inode.Blocks}, "
-                                f"mode={entry_inode.Mode:04o}, flags={entry_inode.Flags}"
-                            )
-                            self._log(inode_debug)
-                        
-                        # Determine final type (prefer inode type if available)
-                        is_dir = is_dir_from_inode if has_valid_inode else (entry_pfs_type == PFSFileType.PFS_DIR)
-                        
-                        # Log type resolution
-                        if has_valid_inode and (entry_pfs_type == PFSFileType.PFS_DIR) != is_dir_from_inode:
-                            type_mismatch_msg = (
-                                f"          TYPE MISMATCH for '{entry_name}': "
-                                f"dirent_type={entry_pfs_type.name}, inode_type={inode_file_type.name}"
-                            )
-                            self._log(type_mismatch_msg)
-                        
-                        # Add to filesystem table
-                        fs_entry = FSTableEntry(entry_name, entry_inode_num, 
-                                             PFSFileType.PFS_DIR if is_dir else PFSFileType.PFS_FILE)
-                        self.fs_table.append(fs_entry)
-                        
-                        # Build output path and add to BFS queue if directory
-                        entry_output_path = current_dir_path / entry_name
-                        self.extract_paths[entry_inode_num] = entry_output_path
-                        
-                        if is_dir:
-                            try:
-                                entry_output_path.mkdir(parents=True, exist_ok=True)
-                                if entry_inode_num not in visited_dirs_for_bfs:
-                                    queue.append((entry_inode_num, entry_output_path))
-                                    visited_dirs_for_bfs.add(entry_inode_num)
-                                    self._log(f"          QUEUED: Directory '{entry_name}' (inode {entry_inode_num})")
-                            except OSError as e:
-                                self._log(f"          ERROR creating directory '{entry_output_path}': {e}")
-                        else:
-                            self._log(f"          FILE: '{entry_name}' (inode {entry_inode_num}, size={entry_inode.Size if has_valid_inode else '?'})")
-                        
-                        # Move to next entry
-                        offset_in_dir_block += dirent.entsize
-                        
-                        if dirent.entsize < Dirent._SIZE_BASE and dirent.entsize != 0: 
-                            self._log(f"AVVISO BFS: Dirent.entsize ({dirent.entsize}) anomalo per '{entry_name}'. Interruzione parsing blocco.")
-                            break 
+                        block_data = decompress_pfsc(block_data, 0x10000, self._log)
+                    except Exception as e:
+                        self._log(f"    ERRORE decompressione blocco {block_idx}: {e}")
+                        continue
+                
+                data.extend(block_data)
             
-            self._log(f"Completato parsing ricorsivo. Trovate {len(self.fs_table)} voci in fs_table.")
+            # Scrivi i dati nel file di output
+            with open(output_path, 'wb') as f:
+                f.write(data[:inode_obj.Size])  # Tronca alla dimensione effettiva
+                
+            self._log(f"  Estrazione completata: {output_path} ({len(data)} bytes)")
+            return True
             
-            if self.pfsc_offset_in_pfs_image == -1 or not self.pfs_chdr or not self.fs_table:
-                return True, "Estrazione file di sistema completata. Parsing PFS fallito o PFS non presente/vuoto."
-            else:
-                return True, "Analisi PKG e parsing PFS completati. Estrazione file PFS seguirà."
-        
         except Exception as e:
-            self._log(f"ERRORE CRITICO durante l'estrazione BFS: {e}")
+            self._log(f"ERRORE durante l'estrazione dell'inode: {e}")
             import traceback
             self._log(traceback.format_exc())
-            return False, f"Errore durante l'estrazione BFS: {e}"
+            return False
 
+    def _process_pfs_directory_bfs(self, root_inode_num: int, root_dir_initial_path: pathlib.Path):
+        if not (self.pfs_chdr and self.sector_map and self.iNodeBuf):
+            self._log("ERRORE BFS: Strutture PFS non inizializzate.")
+            return
+
+        decomp_block_buf_size = self.pfs_chdr.block_sz2 if self.pfs_chdr.block_sz2 > 0 else 0x10000
+        decomp_block_buf = bytearray(decomp_block_buf_size)
+
+        # extract_paths[root_inode_num] è stato impostato in extract()
+        queue = [(root_inode_num, root_dir_initial_path)]
+        visited_dirs_for_bfs = {root_inode_num}
+        head = 0
+
+        while head < len(queue):
+            current_dir_inode_num, current_dir_path = queue[head]; head += 1
+            
+            self._log(f"  BFS: Processo directory inode {current_dir_inode_num} ('{current_dir_path}')")
+            
+            dir_inode_idx = current_dir_inode_num - 1
+            if not (0 <= dir_inode_idx < len(self.iNodeBuf)):
+                self._log(f"    ERRORE BFS: Indice inode dir {dir_inode_idx} non valido. Salto.")
+                continue
+            
+            dir_inode_obj = self.iNodeBuf[dir_inode_idx]
+            self._log(f"    BFS: Inode {current_dir_inode_num} (idx {dir_inode_idx}) ha Mode={dir_inode_obj.Mode:#06x}, Tipo={dir_inode_obj.get_file_type().name}, Size={dir_inode_obj.Size}, Blocks={dir_inode_obj.Blocks}, Loc={dir_inode_obj.loc}")
+
+            # Se l'inode non è una directory, non processare come tale
+            if dir_inode_obj.get_file_type() != PFSFileType.PFS_DIR:
+                self._log(f"    AVVISO BFS: Inode {current_dir_inode_num} (Mode={dir_inode_obj.Mode:#06x}) non è una directory PFS standard. Non verranno lette dirent da esso.")
+                continue
+            
+            first_block_idx_for_dir_in_map = dir_inode_obj.loc 
+            num_blocks_for_dir = dir_inode_obj.Blocks
+
+            for i_dir_block in range(num_blocks_for_dir):
+                map_idx_dir = first_block_idx_for_dir_in_map + i_dir_block
+                if map_idx_dir >= len(self.sector_map) - 1:
+                    break
+                
+                block_offset_in_pfsc = self.sector_map[map_idx_dir]
+                block_csize = self.sector_map[map_idx_dir + 1] - block_offset_in_pfsc
+                
+                if block_offset_in_pfsc + block_csize > len(self.pfsc_content_actual_bytes):
+                    break
+                if block_csize == 0:
+                    continue
+
+                compressed_dir_block_data = self.pfsc_content_actual_bytes[block_offset_in_pfsc : block_offset_in_pfsc + block_csize]
+                
+                decompressed_data = bytearray(decomp_block_buf_size)
+                if block_csize == decomp_block_buf_size:  # Non compresso
+                    decompressed_data[:] = compressed_dir_block_data
+                else:  # Compresso
+                    decompressed_data[:] = decompress_pfsc(bytes(compressed_dir_block_data), decomp_block_buf_size, self._log)
+                
+                actual_decomp_len_dir = len(decompressed_data)
+
+                # Salva il blocco decompresso per debug
+                debug_dirent_block_path = self.extract_base_path / f"debug_DIRENT_BLOCK_inode{current_dir_inode_num}_block{i_dir_block}.bin"
+                try:
+                    with open(debug_dirent_block_path, "wb") as dbg_df:
+                        dbg_df.write(decompressed_data)
+                except Exception as e:
+                    self._log(f"    ERRORE salvataggio blocco debug: {e}")
+
+                offset_in_dir_block = 0
+                dirents_processed_in_block = 0
+                while offset_in_dir_block < actual_decomp_len_dir:
+                    if actual_decomp_len_dir - offset_in_dir_block < Dirent._SIZE_BASE:
+                        break
+                    
+                    dirent = Dirent.from_bytes(decompressed_data[offset_in_dir_block:])
+                    
+                    if dirent.entsize == 0:
+                        self._log(f"          Terminazione dirent: entsize=0")
+                        break
+                    if dirent.ino == 0:
+                        self._log(f"          Terminazione dirent: ino=0")
+                        break
+                    
+                    entry_name = dirent.name
+                    entry_inode_num = dirent.ino
+                    entry_pfs_type_from_dirent = dirent.get_pfs_file_type()
+                    dirents_processed_in_block += 1
+                    
+                    self._log(f"          Trovata Dirent: '{entry_name}' (inode {entry_inode_num}), Dirent.type={dirent.type} -> {entry_pfs_type_from_dirent.name}, Entsize: {dirent.entsize}")
+
+                    # Salta le prime due entry (.) e (..)
+                    if dirents_processed_in_block <= 2 and entry_name in [".", ".."]:
+                        self._log(f"            Saltando Dirent speciale PFS: '{entry_name}'")
+                        if entry_name == ".":
+                            self.extract_paths[entry_inode_num] = current_dir_path
+                        elif entry_name == ".." and current_dir_path != self.extract_base_path:
+                            self.extract_paths[entry_inode_num] = current_dir_path.parent
+
+                        offset_in_dir_block += dirent.entsize
+                        continue
+                        
+                    if not (0 <= entry_inode_num - 1 < len(self.iNodeBuf)):
+                        self._log(f"            AVVISO BFS: Dirent '{entry_name}' (inode {entry_inode_num}) non in iNodeBuf. Salto.")
+                        offset_in_dir_block += dirent.entsize
+                        continue
+                    
+                    target_inode_for_dirent = self.iNodeBuf[entry_inode_num - 1]
+                    if target_inode_for_dirent.Mode == 0:
+                        self._log(f"            AVVISO BFS: Dirent '{entry_name}' punta a inode {entry_inode_num} con Mode=0. Salto.")
+                        offset_in_dir_block += dirent.entsize
+                        continue
+
+                    # Aggiungi a fs_table
+                    self.fs_table.append(FSTableEntry(entry_name, entry_inode_num, entry_pfs_type_from_dirent))
+                    
+                    current_entry_path = current_dir_path / entry_name
+                    self.extract_paths[entry_inode_num] = current_entry_path
+
+                    if entry_pfs_type_from_dirent == PFSFileType.PFS_DIR:
+                        if entry_inode_num not in visited_dirs_for_bfs:
+                            self._log(f"            Accodata subdir: '{current_entry_path}' (inode {entry_inode_num})")
+                            current_entry_path.mkdir(parents=True, exist_ok=True)
+                            queue.append((entry_inode_num, current_entry_path))
+                            visited_dirs_for_bfs.add(entry_inode_num)
+                            
+                    offset_in_dir_block += dirent.entsize
+                    if dirent.entsize < Dirent._SIZE_BASE and dirent.entsize != 0:
+                        self._log(f"AVVISO BFS: Dirent.entsize ({dirent.entsize}) anomalo per '{entry_name}'.")
+                        break
+                
+                self._log(f"      Blocco dirent {i_dir_block} per inode {current_dir_inode_num}: processate {dirents_processed_in_block} dirents.")
+            
+
+        
 
     def _read_decrypt_decompress_pfs_block(self, 
-                                         block_map_idx: int, 
-                                         is_compressed_flag: bool, 
-                                         pkg_file_handle, 
-                                         decomp_buffer: bytearray) -> tuple[Optional[bytes], str]:
-        # ... (codice esistente non modificato)
-        pass # Added pass to make the function syntactically correct
+                                        block_map_idx: int, 
+                                        is_compressed_flag: bool, 
+                                        pkg_file_handle, 
+                                        decomp_buffer: bytearray) -> tuple[Optional[bytes], str]:
+        """
+        Legge, decifra e decomprime un blocco PFS.
+        
+        Args:
+            block_map_idx: Indice del blocco nella mappa dei blocchi
+            is_compressed_flag: Se True, il blocco è compresso
+            pkg_file_handle: File handle del PKG
+            decomp_buffer: Buffer per i dati decompressi
+            
+        Returns:
+            tuple: (dati_decompressi, messaggio_errore) o (None, messaggio_errore) in caso di errore
+        """
+        try:
+            # Verifica che l'indice del blocco sia valido
+            if block_map_idx < 0 or block_map_idx >= len(self.sector_map):
+                return None, f"Indice blocco {block_map_idx} fuori dai limiti (0-{len(self.sector_map)-1})"
+                
+            # Leggi il blocco cifrato
+            block_offset = self.sector_map[block_map_idx]
+            pkg_file_handle.seek(block_offset)
+            
+            # Leggi i dati cifrati
+            block_size = 0x10000  # Dimensione fissa del blocco
+            encrypted_block = pkg_file_handle.read(block_size)
+            
+            # Decifra il blocco
+            decrypted_block = bytearray(len(encrypted_block))
+            self.crypto.decryptPFS(self.dataKey, self.tweakKey, encrypted_block, decrypted_block, block_map_idx)
+            
+            # Se il blocco è compresso, decomprimilo
+            if is_compressed_flag:
+                try:
+                    decompressed = decompress_pfsc(decrypted_block, len(decomp_buffer), self._log)
+                    if decompressed is None:
+                        return None, f"Decompressione fallita per il blocco {block_map_idx}"
+                    return decompressed, ""
+                except Exception as e:
+                    return None, f"Errore durante la decompressione del blocco {block_map_idx}: {str(e)}"
+            else:
+                # Se non è compresso, copia i dati nel buffer di output
+                decomp_buffer[:len(decrypted_block)] = decrypted_block
+                return bytes(decomp_buffer[:len(decrypted_block)]), ""
+                
+        except Exception as e:
+            return None, f"Errore durante la lettura/decifratura del blocco {block_map_idx}: {str(e)}"
 
     def extract_pfs_files(self) -> tuple[bool, str]:
         self._log("Inizio estrazione file da PFS...")
@@ -2778,6 +3015,393 @@ class PKG:
     # Note: This duplicate implementation has been removed because it conflicted with the one at line ~2301
     # and was causing a KeyError when trying to access self.extract_paths[root_inode_num]
 
+    def _extract_single_pfs_file_data_to_memory(self, pkg_file_handle, inode_obj: Inode) -> Optional[bytes]:
+        """
+        Estrae i dati di un singolo file PFS (descritto da inode_obj) e li restituisce come bytes.
+        Utilizza il file handle del PKG già aperto.
+        """
+        self._log(f"[DEBUG] Inizio _extract_single_pfs_file_data_to_memory per inode: {inode_obj}")
+        
+        # Log dettagliato delle strutture PFS/PKG
+        self._log(f"[DEBUG] PKG Header - pfs_image_offset: {self.pkg_header.pfs_image_offset:#x}")
+        self._log(f"[DEBUG] PFS Header - pfsc_offset_in_pfs_image: {self.pfsc_offset_in_pfs_image:#x}")
+        self._log(f"[DEBUG] PFS Header - data_start: {self.pfs_chdr.data_start:#x}")
+        
+        if not (self.pfs_chdr and self.sector_map and self.pkg_header and self.pfsc_offset_in_pfs_image != -1):
+            error_msg = "ERRORE _extract_single_pfs_file_data_to_memory: Strutture PFS/PKG non inizializzate."
+            self._log(error_msg)
+            self._log(f"[DEBUG] pfs_chdr: {self.pfs_chdr is not None}, sector_map: {len(self.sector_map) if self.sector_map else 0}, pkg_header: {self.pkg_header is not None}, pfsc_offset: {self.pfsc_offset_in_pfs_image}")
+            return None
+            
+        if inode_obj.Size == 0:
+            self._log("[DEBUG] Dimensione inode è 0, restituisco dati vuoti")
+            return b''
+
+        self._log(f"[DEBUG] Estrazione in memoria - Size: {inode_obj.Size}, Blocks: {inode_obj.Blocks}, Loc: {inode_obj.loc}, Flags: {inode_obj.Flags}")
+
+        file_data_accumulator = bytearray()
+        written_total_for_file = 0
+        
+        decomp_block_buf_size = self.pfs_chdr.block_sz2 if self.pfs_chdr.block_sz2 > 0 else 0x10000
+        self._log(f"[DEBUG] decomp_block_buf_size: {decomp_block_buf_size}, block_sz2: {self.pfs_chdr.block_sz2}")
+        
+        xts_read_buffer = bytearray(0x1000)
+        xts_decrypted_buffer = bytearray(0x1000)
+
+        is_compressed = InodeFlagsPfs.compressed in inode_obj.Flags
+        self._log(f"[DEBUG] Inode compresso: {is_compressed}, Flags: {inode_obj.Flags}")
+
+        first_file_block_map_idx = inode_obj.loc 
+        num_file_blocks = inode_obj.Blocks
+        self._log(f"[DEBUG] first_file_block_map_idx: {first_file_block_map_idx}, num_file_blocks: {num_file_blocks}, sector_map len: {len(self.sector_map)}")
+
+        # Log dei valori della sector_map per i blocchi interessati
+        for i in range(max(0, first_file_block_map_idx - 2), min(len(self.sector_map), first_file_block_map_idx + num_file_blocks + 2)):
+            self._log(f"[DEBUG] sector_map[{i}]: {self.sector_map[i]:#x}")
+
+        if not (0 <= first_file_block_map_idx < len(self.sector_map) and 
+                first_file_block_map_idx + num_file_blocks < len(self.sector_map)):
+            error_msg = f"ERRORE (mem extract): loc/num_blocks Inode ({first_file_block_map_idx}/{num_file_blocks}) non validi per sector_map (len {len(self.sector_map)})."
+            self._log(error_msg)
+            return None
+
+        for j_file_block in range(num_file_blocks):
+            current_map_idx = first_file_block_map_idx + j_file_block
+            
+            block_offset_in_pfsc_data_area = self.sector_map[current_map_idx]
+            block_size_in_pfsc_data_area = self.sector_map[current_map_idx + 1] - block_offset_in_pfsc_data_area
+            
+            self._log(f"[DEBUG] Blocco {j_file_block} (map_idx={current_map_idx}):")
+            self._log(f"  - block_offset_in_pfsc_data_area: {block_offset_in_pfsc_data_area:#x}")
+            self._log(f"  - block_size_in_pfsc_data_area: {block_size_in_pfsc_data_area:#x}")
+            
+            if block_size_in_pfsc_data_area == 0:
+                self._log("[DEBUG] Dimensione blocco 0, salto")
+                continue
+
+            abs_offset_block_in_pfs_image_for_xts = self.pfsc_offset_in_pfs_image + self.pfs_chdr.data_start + block_offset_in_pfsc_data_area
+            
+            self._log(f"  - pfsc_offset_in_pfs_image: {self.pfsc_offset_in_pfs_image:#x}")
+            self._log(f"  - pfs_chdr.data_start: {self.pfs_chdr.data_start:#x}")
+            self._log(f"  - block_offset_in_pfsc_data_area: {block_offset_in_pfsc_data_area:#x}")
+            self._log(f"  => abs_offset_block_in_pfs_image_for_xts: {abs_offset_block_in_pfs_image_for_xts:#x}")
+            
+            current_block_data_after_xts = bytearray(block_size_in_pfsc_data_area)
+            read_for_this_pfs_block = 0
+
+            for xts_sub_offset_in_pfs_block in range(0, block_size_in_pfsc_data_area, 0x1000):
+                pkg_read_offset_for_xts = self.pkg_header.pfs_image_offset + abs_offset_block_in_pfs_image_for_xts + xts_sub_offset_in_pfs_block
+                xts_sector_num_for_tweak = (abs_offset_block_in_pfs_image_for_xts + xts_sub_offset_in_pfs_block) // 0x1000
+                bytes_to_read_for_this_xts_chunk = min(0x1000, block_size_in_pfsc_data_area - xts_sub_offset_in_pfs_block)
+                
+                self._log(f"  Chunk {xts_sub_offset_in_pfs_block // 0x1000}:")
+                self._log(f"    pkg_header.pfs_image_offset: {self.pkg_header.pfs_image_offset:#x}")
+                self._log(f"    abs_offset_block_in_pfs_image_for_xts: {abs_offset_block_in_pfs_image_for_xts:#x}")
+                self._log(f"    xts_sub_offset_in_pfs_block: {xts_sub_offset_in_pfs_block:#x}")
+                self._log(f"    => pkg_read_offset_for_xts: {pkg_read_offset_for_xts:#x}")
+                self._log(f"    xts_sector_num_for_tweak: {xts_sector_num_for_tweak} (0x{xts_sector_num_for_tweak:x})")
+                
+                # DEBUG: Special handling for the problematic chunk at 0x14F000
+                if pkg_read_offset_for_xts == 0x14F000 or (pkg_read_offset_for_xts >= 0x14F000 and pkg_read_offset_for_xts < 0x150000):
+                    self._log(f"\n[DEBUG] ===== TARGET CHUNK DEBUG (0x14F000) =====")
+                    self._log(f"[DEBUG] Current file position before seek: {pkg_file_handle.tell():#x}")
+                    self._log(f"[DEBUG] Attempting to read {bytes_to_read_for_this_xts_chunk} bytes at offset {pkg_read_offset_for_xts:#x}")
+                
+                # Save current position and perform the seek
+                current_pos = pkg_file_handle.tell()
+                pkg_file_handle.seek(pkg_read_offset_for_xts)
+                
+                # DEBUG: For the target chunk, log position after seek
+                if pkg_read_offset_for_xts == 0x14F000 or (pkg_read_offset_for_xts >= 0x14F000 and pkg_read_offset_for_xts < 0x150000):
+                    self._log(f"[DEBUG] File position after seek: {pkg_file_handle.tell():#x}")
+                
+                # Clear the buffer before reading
+                xts_read_buffer[:] = b'\0' * len(xts_read_buffer)
+                
+                # Use read() instead of readinto for more reliable operation
+                pkg_file_handle.seek(pkg_read_offset_for_xts)
+                temp_read_data = pkg_file_handle.read(bytes_to_read_for_this_xts_chunk)
+                read_len_xts = len(temp_read_data)
+                
+                if read_len_xts == bytes_to_read_for_this_xts_chunk:
+                    # Copy the read data into our buffer
+                    xts_read_buffer[:read_len_xts] = temp_read_data
+                else:
+                    # Handle partial read or EOF
+                    self._log(f"[WARNING] Partial read: got {read_len_xts} bytes, expected {bytes_to_read_for_this_xts_chunk} at offset {pkg_read_offset_for_xts:#x}")
+                    if read_len_xts > 0:
+                        xts_read_buffer[:read_len_xts] = temp_read_data
+                        # Zero out the rest of the buffer
+                        xts_read_buffer[read_len_xts:bytes_to_read_for_this_xts_chunk] = b'\0' * (bytes_to_read_for_this_xts_chunk - read_len_xts)
+                    else:
+                        self._log(f"[ERROR] Failed to read any data at offset {pkg_read_offset_for_xts:#x}")
+                        return None
+                
+                # Log the first 32 bytes of the read data for verification
+                if pkg_read_offset_for_xts == 0x14F000 or (pkg_read_offset_for_xts >= 0x14F000 and pkg_read_offset_for_xts < 0x150000):
+                    self._log(f"[DEBUG] Successfully read {read_len_xts} bytes at offset {pkg_read_offset_for_xts:#x}")
+                    self._log(f"[DEBUG] First 32 bytes: {temp_read_data[:32].hex() if temp_read_data else 'None'}")
+                    
+                    # Save the read data for debugging
+                    debug_path = self.extract_base_path / f"fixed_read_{pkg_read_offset_for_xts:08x}.bin"
+                    try:
+                        with open(debug_path, 'wb') as df:
+                            df.write(temp_read_data)
+                        self._log(f"[DEBUG] Saved fixed read to {debug_path}")
+                    except Exception as e:
+                        self._log(f"[DEBUG] Error saving debug data: {e}")
+                
+                if read_len_xts != bytes_to_read_for_this_xts_chunk:
+                    error_msg = f"ERRORE (mem extract): Lettura PKG incompleta per blocco XTS. Richiesti {bytes_to_read_for_this_xts_chunk}, letti {read_len_xts}."
+                    self._log(error_msg)
+                    
+                    # Try to continue with partial read if possible
+                    if read_len_xts <= 0:
+                        return None
+
+                # Salva i dati prima della decrittazione
+                data_before_decrypt = bytes(xts_read_buffer[:read_len_xts])
+                
+                # Salva i dati grezzi su disco per analisi
+                raw_data_path = self.extract_base_path / f"debug_raw_block_{j_file_block}_chunk{xts_sub_offset_in_pfs_block // 0x1000}.bin"
+                try:
+                    with open(raw_data_path, "wb") as f:
+                        f.write(data_before_decrypt)
+                    self._log(f"    [DEBUG] Salvati dati grezzi in {raw_data_path}")
+                except Exception as e:
+                    self._log(f"    [DEBUG] Errore salvataggio dati grezzi: {e}")
+                
+                # Esegui la decrittazione
+                self.crypto.decryptPFS(self.dataKey, self.tweakKey, 
+                                       data_before_decrypt, 
+                                       xts_decrypted_buffer[:read_len_xts], 
+                                       xts_sector_num_for_tweak)
+                
+                # Salva i dati dopo la decrittazione
+                data_after_decrypt = bytes(xts_decrypted_buffer[:read_len_xts])
+                
+                # Salva i dati decrittati su disco per analisi
+                decrypted_data_path = self.extract_base_path / f"debug_decrypted_block_{j_file_block}_chunk{xts_sub_offset_in_pfs_block // 0x1000}.bin"
+                try:
+                    with open(decrypted_data_path, "wb") as f:
+                        f.write(data_after_decrypt)
+                    self._log(f"    [DEBUG] Salvati dati decrittati in {decrypted_data_path}")
+                except Exception as e:
+                    self._log(f"    [DEBUG] Errore salvataggio dati decrittati: {e}")
+                
+                # Log dei primi 32 byte prima e dopo la decrittazione
+                self._log(f"    [DEBUG] Dati prima decrittazione (primi 32 byte): {data_before_decrypt[:32].hex()}")
+                self._log(f"    [DEBUG] Dati dopo decrittazione (primi 32 byte): {data_after_decrypt[:32].hex()}")
+                
+                # Controlla se i dati sono tutti zeri
+                if all(b == 0 for b in data_before_decrypt[:32]):
+                    self._log("    [WARNING] Dati prima della decrittazione sono tutti zeri!")
+                if all(b == 0 for b in data_after_decrypt[:32]):
+                    self._log("    [WARNING] Dati dopo la decrittazione sono tutti zeri!")
+                
+                # Salva i dati decrittati nel buffer
+                current_block_data_after_xts[read_for_this_pfs_block : read_for_this_pfs_block + read_len_xts] = data_after_decrypt
+                read_for_this_pfs_block += read_len_xts
+            
+            final_data_for_this_pfs_block = bytes(current_block_data_after_xts)
+            self._log(f"[DEBUG] Dimensione blocco dopo XTS: {len(final_data_for_this_pfs_block)} byte")
+
+            if is_compressed:
+                self._log(f"[DEBUG] Decompressione blocco {j_file_block}, dimensione compressa: {len(final_data_for_this_pfs_block)}")
+                
+                # Salva i dati compressi su disco per analisi
+                compressed_debug_path = self.extract_base_path / f"debug_compressed_block_{j_file_block}.bin"
+                try:
+                    with open(compressed_debug_path, "wb") as f:
+                        f.write(final_data_for_this_pfs_block)
+                    self._log(f"[DEBUG] Salvati dati compressi in {compressed_debug_path}")
+                except Exception as e:
+                    self._log(f"[DEBUG] Errore salvataggio dati compressi: {e}")
+                
+                decomp_buffer_for_file_block = bytearray(decomp_block_buf_size)
+                decompressed_part = decompress_pfsc(final_data_for_this_pfs_block, len(decomp_buffer_for_file_block), self._log)
+                
+                if decompressed_part is None:
+                    self._log(f"ERRORE (mem extract): Decompressione fallita per blocco file {j_file_block}.")
+                    return None
+                    
+                final_data_for_this_pfs_block = decompressed_part
+                self._log(f"[DEBUG] Dimensione dopo decompressione: {len(final_data_for_this_pfs_block)} byte")
+            
+            bytes_to_append = min(len(final_data_for_this_pfs_block), inode_obj.Size - written_total_for_file)
+            if bytes_to_append > 0:
+                file_data_accumulator.extend(final_data_for_this_pfs_block[:bytes_to_append])
+                written_total_for_file += bytes_to_append
+                self._log(f"[DEBUG] Aggiunti {bytes_to_append} byte al buffer (totale: {written_total_for_file}/{inode_obj.Size})")
+            
+            # Salva i primi 32 byte dei dati finali per verifica
+            self._log(f"[DEBUG] Primi 32 byte dei dati finali: {bytes(file_data_accumulator[:32]).hex()}")
+            
+            # Se abbiamo abbastanza dati, controlla se sono tutti zeri
+            if len(file_data_accumulator) >= 32:
+                all_zeros = all(b == 0 for b in file_data_accumulator[:32])
+                self._log(f"[DEBUG] I primi 32 byte sono tutti zeri: {all_zeros}")
+                
+                if all_zeros:
+                    self._log("[WARNING] I primi 32 byte sono tutti zeri! Potrebbe esserci un problema con la lettura o la decrittazione.")
+                    
+                    # Prova a leggere direttamente dal file PKG per verificare i dati grezzi
+                    try:
+                        with open(self.pkg_path, 'rb') as f:
+                            f.seek(pkg_read_offset_for_xts)
+                            raw_data = f.read(32)
+                            self._log(f"[DEBUG] Dati grezzi letti direttamente da {self.pkg_path} all'offset {pkg_read_offset_for_xts:#x}: {raw_data.hex()}")
+                    except Exception as e:
+                        self._log(f"[DEBUG] Errore durante la lettura diretta del file PKG: {e}")
+        
+        if written_total_for_file != inode_obj.Size: 
+            self._log(f"AVVISO (mem extract): Dimensione finale ({written_total_for_file}) non corrisponde a inode.Size ({inode_obj.Size}).")
+        
+        return bytes(file_data_accumulator)
+
+    def _parse_internal_flat_path_table(self, fpt_data: bytes, base_extract_path: Path):
+        self._log(f"Parsing FPT interna (size {len(fpt_data)} bytes) in '{base_extract_path}'")
+        
+        debug_fpt_path = self.extract_base_path / "debug_INTERNAL_FPT_data.bin"
+        try:
+            with open(debug_fpt_path, "wb") as f: f.write(fpt_data)
+            self._log(f"  Dati FPT interna salvati in: {debug_fpt_path}")
+        except Exception as e: self._log(f"  Errore salvataggio FPT interna: {e}")
+
+        offset = 0
+        dirents_in_fpt = 0
+        
+        while offset < len(fpt_data):
+            if len(fpt_data) - offset < Dirent._BASE_SIZE:
+                self._log(f"  FPT Interna: Dati rimanenti ({len(fpt_data) - offset}) troppo pochi per una Dirent base. Fine parsing.")
+                break
+            
+            try:
+                dirent = Dirent.from_bytes(fpt_data[offset:])
+            except ValueError as ve:
+                self._log(f"  ERRORE parsing Dirent in FPT interna a offset {offset}: {ve}")
+                break
+
+            if dirent.entsize == 0:
+                self._log(f"  FPT Interna: Dirent con entsize=0 a offset {offset}. Fine parsing.")
+                break
+            if dirent.ino == 0 and dirent.namelen == 0 : 
+                self._log(f"  FPT Interna: Dirent terminatore (ino=0, namelen=0) a offset {offset}. Fine parsing.")
+                break
+            
+            entry_name = dirent.name
+            entry_inode_num = dirent.ino
+            
+            self._log(f"    FPT Interna Dirent: '{entry_name}' (inode {entry_inode_num}), Dirent.type={dirent.type} ({dirent.get_pfs_file_type().name}), Entsize: {dirent.entsize}")
+
+            if not entry_name: 
+                self._log(f"      FPT Interna: Nome dirent vuoto a offset {offset}. Salto.")
+                offset += dirent.entsize
+                continue
+
+            if not (0 <= entry_inode_num - 1 < len(self.iNodeBuf)):
+                self._log(f"      AVVISO FPT Interna: Dirent '{entry_name}' (inode {entry_inode_num}) non in iNodeBuf. Salto.")
+                offset += dirent.entsize
+                continue
+            
+            target_inode_obj = self.iNodeBuf[entry_inode_num - 1]
+            if target_inode_obj.Mode == 0:
+                 self._log(f"      AVVISO FPT Interna: Dirent '{entry_name}' punta a inode {entry_inode_num} con Mode=0. Salto.")
+                 offset += dirent.entsize
+                 continue
+
+            actual_entry_type = target_inode_obj.get_file_type()
+            
+            self.fs_table.append(FSTableEntry(entry_name, entry_inode_num, actual_entry_type))
+            
+            current_entry_full_path = base_extract_path / entry_name
+            self.extract_paths[entry_inode_num] = current_entry_full_path
+
+            if actual_entry_type == PFSFileType.PFS_DIR:
+                self._log(f"      FPT Interna: Creazione directory '{current_entry_full_path}' (inode {entry_inode_num})")
+                current_entry_full_path.mkdir(parents=True, exist_ok=True)
+            else: 
+                self._log(f"      FPT Interna: Trovato file/link '{current_entry_full_path}' (inode {entry_inode_num})")
+            
+            dirents_in_fpt += 1
+            offset += dirent.entsize
+            if dirent.entsize < Dirent._BASE_SIZE and dirent.entsize != 0: 
+                self._log(f"AVVISO FPT Interna: Dirent.entsize ({dirent.entsize}) anomalo per '{entry_name}'. Interruzione parsing FPT.")
+                break
+        
+        self._log(f"  FPT Interna: Processate {dirents_in_fpt} dirents.")
+
+        # --- INIZIO LOGICA PER UROOT E FPT INTERNA (COME SUGGERITO DALL'UTENTE) ---
+        self._log(f"DEBUG: Controllo pre-FPT interna. fs_table ha {len(self.fs_table)} elementi.")
+        self._log(f"DEBUG: fs_table attuale (prima del parsing FPT uroot): {[(e.name, e.inode, e.type.name) for e in self.fs_table]}")
+        self._log(f"DEBUG: extract_paths attuale (prima del parsing FPT uroot): {self.extract_paths}")
+
+        uroot_entry_details: Optional[FSTableEntry] = None
+        uroot_inode_num_for_fpt = -1
+        # original_uroot_fs_table_idx = -1 # Non strettamente necessario qui
+
+        for fs_entry_item in list(self.fs_table): # Iteriamo su una copia per sicurezza se fs_table fosse modificata altrove (anche se non qui)
+            if fs_entry_item.name == "uroot":
+                # Controlla che l'inode sia valido prima di accedere a iNodeBuf
+                if 0 <= fs_entry_item.inode - 1 < len(self.iNodeBuf):
+                    uroot_inode_obj_check = self.iNodeBuf[fs_entry_item.inode - 1]
+                    # La dirent potrebbe dire PFS_DIR ma l'inode PFS_FILE, o viceversa.
+                    # L'inode ha l'autorità finale sul tipo.
+                    if uroot_inode_obj_check.get_file_type() == PFSFileType.PFS_FILE:
+                        self._log(f"Trovato file 'uroot' (inode {fs_entry_item.inode}, type dall'inode: {uroot_inode_obj_check.get_file_type().name}) che PUNTA a FPT.")
+                        uroot_entry_details = fs_entry_item
+                        uroot_inode_num_for_fpt = fs_entry_item.inode
+                        break 
+                    else:
+                        self._log(f"Trovata entry 'uroot' (inode {fs_entry_item.inode}) ma il suo inode type è {uroot_inode_obj_check.get_file_type().name}, non PFS_FILE. Non la userò per FPT.")
+                else:
+                    self._log(f"AVVISO: Trovata entry 'uroot' ma il suo inode {fs_entry_item.inode} è fuori range per iNodeBuf (len {len(self.iNodeBuf)}).")
+
+        if uroot_entry_details and uroot_inode_num_for_fpt != -1:
+            self._log(f"DEBUG: uroot_entry_details trovato: True, uroot_inode_num_for_fpt: {uroot_inode_num_for_fpt}")
+            self._log(f"DEBUG: ENTRATO nel blocco di parsing FPT interna per uroot (inode {uroot_inode_num_for_fpt}).")
+            
+            uroot_inode_obj = self.iNodeBuf[uroot_inode_num_for_fpt - 1]
+            
+            # Apri di nuovo il file PKG per estrarre i dati di uroot
+            # È importante usare un nuovo handle o assicurarsi che la posizione sia corretta.
+            uroot_file_content_bytes: Optional[bytes] = None
+            try:
+                with open(self.pkg_path, "rb") as pkg_file_for_uroot: # self.pkg_path deve essere settato
+                    uroot_file_content_bytes = self._extract_single_pfs_file_data_to_memory(pkg_file_for_uroot, uroot_inode_obj)
+            except Exception as e_uroot_extract:
+                self._log(f"ERRORE durante l'estrazione del contenuto di uroot (inode {uroot_inode_num_for_fpt}): {e_uroot_extract}")
+                import traceback
+                self._log(traceback.format_exc())
+
+            if uroot_file_content_bytes is not None:
+                self._log(f"Contenuto del file uroot (inode {uroot_inode_num_for_fpt}, size {len(uroot_file_content_bytes)}) estratto in memoria.")
+                # Salva per debug
+                debug_uroot_path = self.extract_base_path / f"debug_UROOD_FILE_CONTENT_inode{uroot_inode_num_for_fpt}.bin"
+                try:
+                    with open(debug_uroot_path, "wb") as f_uroot_dbg: 
+                        f_uroot_dbg.write(uroot_file_content_bytes)
+                    self._log(f"Contenuto del file uroot (inode {uroot_inode_num_for_fpt}, size {len(uroot_file_content_bytes)}) salvato in {debug_uroot_path}")
+                except Exception as e_save_uroot: 
+                    self._log(f"Errore salvataggio debug uroot: {e_save_uroot}")
+                
+                # Prima di parsare la FPT interna, svuota la fs_table e extract_paths attuali
+                # perché la FPT interna è la "vera" tabella dei file.
+                self._log("Resettando fs_table e extract_paths prima di parsare FPT interna da uroot.")
+                self.fs_table.clear()
+                self.extract_paths.clear()
+                
+                # Il base_extract_path per la FPT interna è la radice dell'estrazione del PKG.
+                self._parse_internal_flat_path_table(uroot_file_content_bytes, self.extract_base_path)
+                self._log(f"Dopo parsing FPT interna da uroot, fs_table ha {len(self.fs_table)} voci.")
+                self._log(f"DEBUG: fs_table DOPO parsing FPT uroot: {[(e.name, e.inode, e.type.name) for e in self.fs_table]}")
+                self._log(f"DEBUG: extract_paths DOPO parsing FPT uroot: {self.extract_paths}")
+            else:
+                self._log(f"ERRORE: Impossibile estrarre contenuto di uroot (inode {uroot_inode_num_for_fpt}). FPT interna non parsata.")
+        else:
+            self._log("DEBUG: Nessun file 'uroot' valido trovato o uroot_inode_num_for_fpt non impostato. Salto parsing FPT interna.")
+        # --- FINE LOGICA PER UROOT E FPT INTERNA ---
+
 # --- Interfaccia Grafica (Tkinter) ---
 class PKGToolGUI:
     def __init__(self, master):
@@ -2867,7 +3491,7 @@ class PKGToolGUI:
                  self.log_to_scrolledtext("AVVISO: fs_table vuota, ma PFS sembrava presente. Controllare log di parsing.")
             elif not pkg_instance.fs_table:
                  self.log_to_scrolledtext("Nessun file trovato/processato da PFS.")
-            else:
+            else: 
                 self.log_to_scrolledtext(f"\n--- Inizio Estrazione File da PFS ({len(pkg_instance.fs_table)} voci) ---")
                 success, message = pkg_instance.extract_pfs_files()
                 if not success: self.log_to_scrolledtext(f"ERRORE ESTRAZIONE FILE PFS: {message}")
@@ -2897,7 +3521,8 @@ if __name__ == "__main__":
         print(f"Running in command line mode with: {args.pkg} -> {args.output}")
         pkg = PKG()
         pkg.extract(pathlib.Path(args.pkg), pathlib.Path(args.output))
-    else:
+        
+    else: 
         # Run in GUI mode
         root = tk.Tk()
         app = PKGToolGUI(root)
