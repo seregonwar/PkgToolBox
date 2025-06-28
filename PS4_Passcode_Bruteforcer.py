@@ -1,3 +1,7 @@
+# This module is part of PKGToolBox, developed by seregonwar. It is a translated and adapted version from C++ to Python, based on the original implementation made by HoppersPS4.
+# Credit to HoppersPS4 
+# repository link: https://github.com/HoppersPS4/Waste_Ur_Time
+
 import os
 import sys
 import time
