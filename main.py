@@ -22,8 +22,8 @@ from packages import (
 from Utilities.Trophy import Archiver, TrophyFile, TRPCreator, TRPReader
 from file_operations import extract_file, inject_file, modify_file_header
 from Utilities import Logger, SettingsManager, Utils
-from repack import Repack
-from PS5_Game_Info import PS5GameInfo
+from tools.repack import Repack
+from tools.PS5_Game_Info import PS5GameInfo
 from PyQt5.QtWidgets import QApplication
 
 # Configure logging

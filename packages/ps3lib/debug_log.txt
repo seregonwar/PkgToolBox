@@ -1,0 +1,2559 @@
+[2025-09-03 14:27:42] [START] Avvio estrattore PKG con generatore RIF
+[2025-09-03 17:51:46] [START] Avvio estrattore PKG con generatore RIF
+[2025-09-03 17:51:46] [INFO] File PKG: E:/[SuperPSX]-Minecraft.PlayStation4.Edition_CUSA00265_v1.00_[1.70]-PS4.pkg
+[2025-09-03 17:51:46] [INFO] Cartella output: C:/Users/marco/Downloads/minecraft
+[2025-09-03 17:51:46] [DEBUG] Inizio PKG::Open su E:/[SuperPSX]-Minecraft.PlayStation4.Edition_CUSA00265_v1.00_[1.70]-PS4.pkg
+[2025-09-03 17:51:46] [DEBUG] Table entry offset: 10976, count: 48
+[2025-09-03 17:51:46] [DEBUG] Entry 0: id=1, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 1: id=16, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 2: id=32, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 3: id=128, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 4: id=256, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 5: id=512, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 6: id=1024, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 7: id=1025, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 8: id=1026, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 9: id=1027, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 10: id=1033, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 11: id=4096, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 12: id=4097, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 13: id=4098, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 14: id=4099, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 15: id=4100, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 16: id=4101, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 17: id=4102, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 18: id=4608, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 19: id=4640, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 20: id=4672, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 21: id=4704, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 22: id=4736, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 23: id=4768, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 24: id=4800, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 25: id=5120, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 26: id=5632, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 27: id=5648, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 28: id=5664, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 29: id=5680, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 30: id=5696, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 31: id=5712, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 32: id=5728, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 33: id=5744, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 34: id=5760, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 35: id=5776, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 36: id=5792, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 37: id=5808, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 38: id=5824, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 39: id=5840, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 40: id=5856, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 41: id=5872, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 42: id=5888, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 43: id=5904, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 44: id=5920, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 45: id=5936, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 46: id=5952, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Entry 47: id=5968, name=unknown
+[2025-09-03 17:51:46] [DEBUG] Fine PKG::Open
+[2025-09-03 17:51:46] [SUCCESS] File PKG aperto con successo!
+[2025-09-03 17:51:46] [DEBUG] Inizio PKG::Extract su E:/[SuperPSX]-Minecraft.PlayStation4.Edition_CUSA00265_v1.00_[1.70]-PS4.pkg -> C:/Users/marco/Downloads/minecraft
+[2025-09-03 17:51:46] [DEBUG] pkgheader.magic: 2135117396
+[2025-09-03 17:51:46] [DEBUG] pkgheader.pkg_size: 186122240
+[2025-09-03 17:51:46] [DEBUG] pkgheader.pkg_content_size: 0
+[2025-09-03 17:51:46] [DEBUG] pkgheader.pkg_content_offset: 0
+[2025-09-03 17:51:46] [DEBUG] pkgheader.pkg_table_entry_offset: 10976
+[2025-09-03 17:51:46] [DEBUG] pkgheader.pkg_table_entry_count: 48
+[2025-09-03 17:51:46] [DEBUG] pkgheader.pfs_image_offset: 15728640
+[2025-09-03 17:51:46] [DEBUG] pkgheader.pfs_cache_size: 720896
+[2025-09-03 17:51:46] [DEBUG] Table entry offset: 10976, count: 48
+[2025-09-03 17:51:47] [DEBUG] Inizio parsing blocchi PFS, num_blocks: 3286
+[2025-09-03 17:51:47] [DEBUG] ndinode (num folder/file): 448
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 17:51:47] [DEBUG] flat_path_table trovato, uroot_reached=true
+[2025-09-03 17:51:47] [DEBUG] Dirent uroot: ino=1, entsize=32
+[2025-09-03 17:51:47] [DEBUG] Dirent uroot: ino=2, entsize=24
+[2025-09-03 17:51:47] [DEBUG] Dirent uroot: ino=0, entsize=0
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=2, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Common, inode=3, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Orbis, inode=48, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Sound, inode=69, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=music, inode=70, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=sce_module, inode=73, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=sce_sys, inode=74, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=eboot.bin, inode=446, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=sce_discmap.plt, inode=447, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=3, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Media, inode=4, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=res, inode=10, type=3
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=4, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=3, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=font, inode=5, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=MediaOrbis.arc, inode=105, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=5, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=4, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=CHT, inode=6, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=JPN, inode=7, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=KOR, inode=8, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=RU, inode=9, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Mojangles.ttf, inode=104, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=6, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=5, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=DFTT_R5.TTC, inode=100, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=7, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=5, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=DF-DotDotGothic16.ttf, inode=101, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=8, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=5, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=candadite2.ttf, inode=102, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=9, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=5, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=SpaceMace.ttf, inode=103, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=10, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=3, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=1_2_2, inode=11, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=TitleUpdate, inode=24, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=achievement, inode=38, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=armor, inode=39, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=art, inode=40, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=environment, inode=41, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=font, inode=42, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=gui, inode=43, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=item, inode=44, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=misc, inode=45, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=mob, inode=46, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=terrain, inode=47, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=pack.png, inode=360, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=particles.png, inode=361, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=terrain.png, inode=362, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=11, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=achievement, inode=12, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=armor, inode=13, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=art, inode=14, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=environment, inode=15, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=font, inode=16, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=gui, inode=17, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=item, inode=18, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=misc, inode=19, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=mob, inode=20, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=terrain, inode=23, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=pack.png, inode=217, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=pack.txt, inode=218, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=particles.png, inode=219, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=terrain.png, inode=220, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=12, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=bg.png, inode=106, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=icons.png, inode=107, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=13, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=chain_1.png, inode=108, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=chain_2.png, inode=109, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cloth_1.png, inode=110, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cloth_2.png, inode=111, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=diamond_1.png, inode=112, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=diamond_2.png, inode=113, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=gold_1.png, inode=114, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=gold_2.png, inode=115, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=iron_1.png, inode=116, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=iron_2.png, inode=117, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=power.png, inode=118, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=14, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=kz.png, inode=119, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=15, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=clouds.png, inode=120, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=light_normal.png, inode=121, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=rain.png, inode=122, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=snow.png, inode=123, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=16, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=alternate.png, inode=124, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=default.png, inode=125, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=17, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=alchemy.png, inode=126, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=allitems.png, inode=127, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=background.png, inode=128, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=container.png, inode=129, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=crafting.png, inode=130, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=crash_logo.png, inode=131, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=enchant.png, inode=132, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=furnace.png, inode=133, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=gui.png, inode=134, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=icons.png, inode=135, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=inventory.png, inode=136, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=items.png, inode=137, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=particles.png, inode=138, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=slot.png, inode=139, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=trap.png, inode=140, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=unknown_pack.png, inode=141, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=18, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=arrows.png, inode=142, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=boat.png, inode=143, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=book.png, inode=144, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cart.png, inode=145, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=chest.png, inode=146, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=door.png, inode=147, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=largechest.png, inode=148, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=sign.png, inode=149, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=xporb.png, inode=150, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=19, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=dial.png, inode=151, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=explosion.png, inode=152, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=foliagecolor.png, inode=153, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=footprint.png, inode=154, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=glint.png, inode=155, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=grasscolor.png, inode=156, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=mapbg.png, inode=157, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=mapicons.png, inode=158, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=particlefield.png, inode=159, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=pumpkinblur.png, inode=160, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=shadow.png, inode=161, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=tunnel.png, inode=162, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=vignette.png, inode=163, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=water.png, inode=164, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=watercolor.png, inode=165, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=20, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=enderdragon, inode=21, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=villager, inode=22, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cat_black.png, inode=179, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cat_red.png, inode=180, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cat_siamese.png, inode=181, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cavespider.png, inode=182, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=char.png, inode=183, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=chicken.png, inode=184, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cow.png, inode=185, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=creeper.png, inode=186, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=enderman.png, inode=187, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=enderman_eyes.png, inode=188, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=fire.png, inode=189, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=ghast.png, inode=190, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=ghast_fire.png, inode=191, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=lava.png, inode=192, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=ozelot.png, inode=193, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=pig.png, inode=194, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=pigman.png, inode=195, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=pigzombie.png, inode=196, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=redcow.png, inode=197, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=saddle.png, inode=198, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=sheep.png, inode=199, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=sheep_fur.png, inode=200, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=silverfish.png, inode=201, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=skeleton.png, inode=202, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=slime.png, inode=203, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=snowman.png, inode=204, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=spider.png, inode=205, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=spider_eyes.png, inode=206, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=squid.png, inode=207, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=villager.png, inode=208, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=villager_golem.png, inode=209, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=wolf.png, inode=210, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=wolf_angry.png, inode=211, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=wolf_tame.png, inode=212, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=zombie.png, inode=213, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=21, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=20, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=beam.png, inode=166, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=body.png, inode=167, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=crystal.png, inode=168, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=dragon.png, inode=169, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=ender.png, inode=170, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=ender_eyes.png, inode=171, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=shuffle.png, inode=172, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=22, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=20, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=butcher.png, inode=173, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=farmer.png, inode=174, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=librarian.png, inode=175, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=priest.png, inode=176, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=smith.png, inode=177, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=villager.png, inode=178, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=23, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=moon.png, inode=214, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=moon_phases.png, inode=215, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=sun.png, inode=216, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=24, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=GameRules, inode=25, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=res, inode=26, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=tutorialDiff, inode=280, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=25, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=24, type=5
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=26, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=24, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=armor, inode=27, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=art, inode=28, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=font, inode=29, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=item, inode=30, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=misc, inode=31, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=mob, inode=32, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=textures, inode=35, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=colours.col, inode=274, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=items.png, inode=275, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=particles.png, inode=276, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=terrain.png, inode=277, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=terrainMipMapLevel2.png, inode=278, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=terrainMipMapLevel3.png, inode=279, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=27, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cloth_1.png, inode=221, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cloth_1_b.png, inode=222, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cloth_2.png, inode=223, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cloth_2_b.png, inode=224, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=power.png, inode=225, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=28, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=kz.png, inode=226, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=29, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Default.png, inode=227, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Mojangles_11.png, inode=228, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Mojangles_7.png, inode=229, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=30, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=book.png, inode=230, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=enderchest.png, inode=231, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=31, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=additionalmapicons.png, inode=232, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=explosion.png, inode=233, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=footprint.png, inode=234, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=glint.png, inode=235, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=mapicons.png, inode=236, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=particlefield.png, inode=237, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=tunnel.png, inode=238, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=32, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=enderdragon, inode=33, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=villager, inode=34, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=enderman_eyes.png, inode=248, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=redcow.png, inode=249, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=skeleton_wither.png, inode=250, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=snowman.png, inode=251, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=wolf_collar.png, inode=252, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=wolf_tame.png, inode=253, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=zombie.png, inode=254, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=zombie_villager.png, inode=255, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=33, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=32, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=beam.png, inode=239, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=ender.png, inode=240, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=ender_eyes.png, inode=241, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=34, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=32, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=butcher.png, inode=242, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=farmer.png, inode=243, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=librarian.png, inode=244, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=priest.png, inode=245, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=smith.png, inode=246, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=villager.png, inode=247, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=35, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=blocks, inode=36, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=items, inode=37, type=3
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=36, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=35, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=fire_0.png, inode=256, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=fire_0.txt, inode=257, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=fire_1.png, inode=258, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=fire_1.txt, inode=259, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=lava.png, inode=260, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=lava.txt, inode=261, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=lava_flow.png, inode=262, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=lava_flow.txt, inode=263, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=portal.png, inode=264, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=portal.txt, inode=265, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=water.png, inode=266, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=water.txt, inode=267, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=water_flow.png, inode=268, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=water_flow.txt, inode=269, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=37, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=35, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=clock.png, inode=270, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=clock.txt, inode=271, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=compass.png, inode=272, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=compass.txt, inode=273, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=38, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=bg.png, inode=281, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=icons.png, inode=282, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=39, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=chain_1.png, inode=283, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=chain_2.png, inode=284, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cloth_1.png, inode=285, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cloth_2.png, inode=286, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=diamond_1.png, inode=287, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=diamond_2.png, inode=288, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=gold_1.png, inode=289, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=gold_2.png, inode=290, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=iron_1.png, inode=291, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=iron_2.png, inode=292, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=power.png, inode=293, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=40, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=kz.png, inode=294, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=41, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=clouds.png, inode=295, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=rain.png, inode=296, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=snow.png, inode=297, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=42, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Mojangles_11.png, inode=298, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Mojangles_7.png, inode=299, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=default.png, inode=300, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=43, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=background.png, inode=301, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=container.png, inode=302, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=crafting.png, inode=303, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=furnace.png, inode=304, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=gui.png, inode=305, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=icons.png, inode=306, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=inventory.png, inode=307, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=items.png, inode=308, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=logo.png, inode=309, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=particles.png, inode=310, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=slot.png, inode=311, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=trap.png, inode=312, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=unknown_pack.png, inode=313, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=44, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=arrows.png, inode=314, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=boat.png, inode=315, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cart.png, inode=316, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=door.png, inode=317, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=sign.png, inode=318, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=45, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=dial.png, inode=319, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=foliagecolor.png, inode=320, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=footprint.png, inode=321, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=grasscolor.png, inode=322, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=mapbg.png, inode=323, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=mapicons.png, inode=324, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=pumpkinblur.png, inode=325, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=shadow.png, inode=326, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=vignette.png, inode=327, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=water.png, inode=328, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=watercolor.png, inode=329, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=46, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=char.png, inode=330, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=char1.png, inode=331, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=char2.png, inode=332, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=char3.png, inode=333, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=char4.png, inode=334, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=char5.png, inode=335, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=char6.png, inode=336, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=char7.png, inode=337, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=chicken.png, inode=338, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cow.png, inode=339, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=creeper.png, inode=340, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=ghast.png, inode=341, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=ghast_fire.png, inode=342, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=pig.png, inode=343, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=pigman.png, inode=344, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=pigzombie.png, inode=345, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=saddle.png, inode=346, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=sheep.png, inode=347, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=sheep_fur.png, inode=348, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=skeleton.png, inode=349, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=slime.png, inode=350, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=spider.png, inode=351, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=spider_eyes.png, inode=352, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=squid.png, inode=353, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=wolf.png, inode=354, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=wolf_angry.png, inode=355, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=wolf_tame.png, inode=356, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=zombie.png, inode=357, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=47, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=moon.png, inode=358, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=sun.png, inode=359, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=48, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=DLC, inode=49, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=DLCImages, inode=68, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=PS4ProductCodes.bin, inode=399, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=session_image.jpg, inode=400, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=49, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=48, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Battle & Beasts, inode=50, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Battle & Beasts 2, inode=51, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Candy Texture Pack, inode=52, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Cartoon Texture Pack, inode=54, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=City Texture Pack, inode=56, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Fantasy Texture Pack, inode=58, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Festive Skin Pack, inode=60, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Natural Texture Pack, inode=61, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Plastic Texture Pack, inode=63, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Skin Pack 1, inode=65, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Skin Pack 2, inode=66, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Skin Pack 3, inode=67, type=3
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=50, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=BattleAndBeasts.pck, inode=363, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=51, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=BattleAndBeasts2.pck, inode=364, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=52, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Data, inode=53, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=TexturePack.pck, inode=367, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=53, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=52, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=media.arc, inode=365, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=x16Data.pck, inode=366, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=54, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Data, inode=55, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=TexturePack.pck, inode=370, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=55, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=54, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=media.arc, inode=368, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=x32Data.pck, inode=369, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=56, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Data, inode=57, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=TexturePack.pck, inode=373, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=57, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=56, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=media.arc, inode=371, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=x32Data.pck, inode=372, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=58, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Data, inode=59, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=TexturePack.pck, inode=376, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=59, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=58, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=media.arc, inode=374, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=x32Data.pck, inode=375, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=60, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=SkinsFestive.pck, inode=377, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=61, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Data, inode=62, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=TexturePack.pck, inode=380, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=62, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=61, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=media.arc, inode=378, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=x32Data.pck, inode=379, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=63, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Data, inode=64, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=TexturePack.pck, inode=383, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=64, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=63, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=media.arc, inode=381, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=x16Data.pck, inode=382, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=65, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Skins1_Sony.pck, inode=384, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=66, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Skins2_Sony.pck, inode=385, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=67, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Skins3_Sony.pck, inode=386, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=68, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=48, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=SP1_360x360.png, inode=387, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=SP2_360x360.png, inode=388, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=SP3_360x360.png, inode=389, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=SPC_360x360.png, inode=390, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=SPF_360x360.png, inode=391, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=SPZ_360x360.png, inode=392, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=TP01_360x360.png, inode=393, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=TP02_360x360.png, inode=394, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=TP03_360x360.png, inode=395, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=TP05_360x360.png, inode=396, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=TP06_360x360.png, inode=397, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=TP07_360x360.png, inode=398, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=69, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=Minecraft.msscmp, inode=401, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=70, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cds, inode=71, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=music, inode=72, type=3
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=71, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=70, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=11.binka, inode=402, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=13.binka, inode=403, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=blocks.binka, inode=404, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=cat.binka, inode=405, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=chirp.binka, inode=406, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=far.binka, inode=407, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=mall.binka, inode=408, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=mellohi.binka, inode=409, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=stal.binka, inode=410, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=strad.binka, inode=411, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=ward.binka, inode=412, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=where_are_we_now.binka, inode=413, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=72, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=70, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=calm1.binka, inode=414, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=calm2.binka, inode=415, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=calm3.binka, inode=416, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=creative1.binka, inode=417, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=creative2.binka, inode=418, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=creative3.binka, inode=419, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=creative4.binka, inode=420, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=creative5.binka, inode=421, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=creative6.binka, inode=422, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=hal1.binka, inode=423, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=hal2.binka, inode=424, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=hal3.binka, inode=425, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=hal4.binka, inode=426, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=menu1.binka, inode=427, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=menu2.binka, inode=428, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=menu3.binka, inode=429, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=menu4.binka, inode=430, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=nether1.binka, inode=431, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=nether2.binka, inode=432, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=nether3.binka, inode=433, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=nether4.binka, inode=434, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=nuance1.binka, inode=435, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=nuance2.binka, inode=436, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=piano1.binka, inode=437, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=piano2.binka, inode=438, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=piano3.binka, inode=439, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=the_end_dragon_alive.binka, inode=440, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=the_end_end.binka, inode=441, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=73, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=libSceFios2.prx, inode=442, type=2
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=libc.prx, inode=443, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=74, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=about, inode=75, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=changeinfo, inode=76, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=keymap_rp, inode=77, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=trophy, inode=99, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=keystone, inode=445, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=75, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=74, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=right.sprx, inode=444, type=2
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=76, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=74, type=5
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] dinode_reached=true
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=., inode=77, type=4
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=.., inode=74, type=5
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=00, inode=78, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=01, inode=79, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=02, inode=80, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=03, inode=81, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=04, inode=82, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=05, inode=83, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=06, inode=84, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=07, inode=85, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=08, inode=86, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=09, inode=87, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=10, inode=88, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=11, inode=89, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=12, inode=90, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=13, inode=91, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=14, inode=92, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=15, inode=93, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=16, inode=94, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=17, inode=95, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=18, inode=96, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=19, inode=97, type=3
+[2025-09-03 17:51:47] [DEBUG] fsTable aggiunta: nome=20, inode=98, type=3
+[2025-09-03 17:51:47] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 17:51:47] [DEBUG] end_reached=true, break ciclo blocchi
+[2025-09-03 17:51:47] [DEBUG] Fine parsing blocchi PFS
+[2025-09-03 18:07:27] [START] Avvio estrattore PKG con generatore RIF
+[2025-09-03 18:10:20] [START] Avvio estrattore PKG con generatore RIF
+[2025-09-03 18:10:48] [START] Avvio estrattore PKG con generatore RIF
+[2025-09-03 18:10:48] [DEBUG] Inizio PKG::Scan su E:\[SuperPSX]-Minecraft.PlayStation4.Edition_CUSA00265_v1.00_[1.70]-PS4.pkg
+[2025-09-03 18:10:48] [DEBUG] Fine PKG::Scan, entries: 597
+[2025-09-03 18:11:26] [START] Avvio estrattore PKG con generatore RIF
+[2025-09-03 18:11:26] [DEBUG] Inizio PKG::Scan su E:\UP0177-CUSA00363_00-ALIENISOLATIONP4-A0104-V0100.pkg
+[2025-09-03 18:11:44] [START] Avvio estrattore PKG con generatore RIF
+[2025-09-03 18:11:44] [DEBUG] Inizio PKG::Scan su E:\UP0177-CUSA00363_00-ALIENISOLATIONP4-A0104-V0100.pkg
+[2025-09-03 18:12:02] [START] Avvio estrattore PKG con generatore RIF
+[2025-09-03 18:12:02] [DEBUG] Inizio PKG::Scan su E:\UP1082-CUSA20270_00-0000000000000001-A0375-V0100-DP.pkg
+[2025-09-03 18:12:02] [DEBUG] Fine PKG::Scan, entries: 0
+[2025-09-03 18:20:13] [START] Avvio estrattore PKG con generatore RIF
+[2025-09-03 18:20:13] [DEBUG] Inizio PKG::Scan su E:/[SuperPSX]-Minecraft.PlayStation4.Edition_CUSA00265_v1.00_[1.70]-PS4.pkg
+[2025-09-03 18:20:13] [DEBUG] Fine PKG::Scan, entries: 597
+[2025-09-03 18:31:35] [START] Avvio estrattore PKG con generatore RIF
+[2025-09-03 18:31:35] [DEBUG] Inizio PKG::Scan su E:/[SuperPSX]-Minecraft.PlayStation4.Edition_CUSA00265_v1.00_[1.70]-PS4.pkg
+[2025-09-03 18:31:35] [DEBUG] Fine PKG::Scan, entries: 597
+[2025-09-03 18:33:00] [START] Avvio estrattore PKG con generatore RIF
+[2025-09-03 18:33:00] [INFO] File PKG: E:/[SuperPSX]-Minecraft.PlayStation4.Edition_CUSA00265_v1.00_[1.70]-PS4.pkg
+[2025-09-03 18:33:00] [INFO] Cartella output: E:/extract
+[2025-09-03 18:33:00] [DEBUG] Inizio PKG::Open su E:/[SuperPSX]-Minecraft.PlayStation4.Edition_CUSA00265_v1.00_[1.70]-PS4.pkg
+[2025-09-03 18:33:00] [DEBUG] Table entry offset: 10976, count: 48
+[2025-09-03 18:33:00] [DEBUG] Entry 0: id=1, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 1: id=16, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 2: id=32, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 3: id=128, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 4: id=256, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 5: id=512, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 6: id=1024, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 7: id=1025, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 8: id=1026, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 9: id=1027, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 10: id=1033, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 11: id=4096, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 12: id=4097, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 13: id=4098, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 14: id=4099, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 15: id=4100, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 16: id=4101, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 17: id=4102, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 18: id=4608, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 19: id=4640, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 20: id=4672, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 21: id=4704, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 22: id=4736, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 23: id=4768, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 24: id=4800, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 25: id=5120, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 26: id=5632, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 27: id=5648, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 28: id=5664, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 29: id=5680, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 30: id=5696, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 31: id=5712, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 32: id=5728, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 33: id=5744, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 34: id=5760, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 35: id=5776, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 36: id=5792, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 37: id=5808, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 38: id=5824, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 39: id=5840, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 40: id=5856, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 41: id=5872, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 42: id=5888, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 43: id=5904, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 44: id=5920, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 45: id=5936, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 46: id=5952, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Entry 47: id=5968, name=unknown
+[2025-09-03 18:33:00] [DEBUG] Fine PKG::Open
+[2025-09-03 18:33:00] [SUCCESS] File PKG aperto con successo!
+[2025-09-03 18:33:00] [DEBUG] Inizio PKG::Extract su E:/[SuperPSX]-Minecraft.PlayStation4.Edition_CUSA00265_v1.00_[1.70]-PS4.pkg -> E:/extract
+[2025-09-03 18:33:00] [DEBUG] pkgheader.magic: 2135117396
+[2025-09-03 18:33:00] [DEBUG] pkgheader.pkg_size: 186122240
+[2025-09-03 18:33:00] [DEBUG] pkgheader.pkg_content_size: 0
+[2025-09-03 18:33:00] [DEBUG] pkgheader.pkg_content_offset: 0
+[2025-09-03 18:33:00] [DEBUG] pkgheader.pkg_table_entry_offset: 10976
+[2025-09-03 18:33:00] [DEBUG] pkgheader.pkg_table_entry_count: 48
+[2025-09-03 18:33:00] [DEBUG] pkgheader.pfs_image_offset: 15728640
+[2025-09-03 18:33:00] [DEBUG] pkgheader.pfs_cache_size: 720896
+[2025-09-03 18:33:00] [DEBUG] Table entry offset: 10976, count: 48
+[2025-09-03 18:33:00] [DEBUG] Inizio parsing blocchi PFS, num_blocks: 3286
+[2025-09-03 18:33:00] [DEBUG] ndinode (num folder/file): 448
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=16749
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] iNode aggiunto: Mode=33133
+[2025-09-03 18:33:00] [DEBUG] flat_path_table trovato, uroot_reached=true
+[2025-09-03 18:33:00] [DEBUG] Dirent uroot: ino=1, entsize=32
+[2025-09-03 18:33:00] [DEBUG] Dirent uroot: ino=2, entsize=24
+[2025-09-03 18:33:00] [DEBUG] Dirent uroot: ino=0, entsize=0
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=2, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Common, inode=3, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Orbis, inode=48, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Sound, inode=69, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=music, inode=70, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=sce_module, inode=73, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=sce_sys, inode=74, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=eboot.bin, inode=446, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=sce_discmap.plt, inode=447, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=3, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Media, inode=4, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=res, inode=10, type=3
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=4, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=3, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=font, inode=5, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=MediaOrbis.arc, inode=105, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=5, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=4, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=CHT, inode=6, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=JPN, inode=7, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=KOR, inode=8, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=RU, inode=9, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Mojangles.ttf, inode=104, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=6, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=5, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=DFTT_R5.TTC, inode=100, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=7, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=5, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=DF-DotDotGothic16.ttf, inode=101, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=8, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=5, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=candadite2.ttf, inode=102, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=9, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=5, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=SpaceMace.ttf, inode=103, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=10, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=3, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=1_2_2, inode=11, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=TitleUpdate, inode=24, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=achievement, inode=38, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=armor, inode=39, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=art, inode=40, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=environment, inode=41, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=font, inode=42, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=gui, inode=43, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=item, inode=44, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=misc, inode=45, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=mob, inode=46, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=terrain, inode=47, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=pack.png, inode=360, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=particles.png, inode=361, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=terrain.png, inode=362, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=11, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=achievement, inode=12, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=armor, inode=13, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=art, inode=14, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=environment, inode=15, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=font, inode=16, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=gui, inode=17, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=item, inode=18, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=misc, inode=19, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=mob, inode=20, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=terrain, inode=23, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=pack.png, inode=217, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=pack.txt, inode=218, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=particles.png, inode=219, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=terrain.png, inode=220, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=12, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=bg.png, inode=106, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=icons.png, inode=107, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=13, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=chain_1.png, inode=108, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=chain_2.png, inode=109, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cloth_1.png, inode=110, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cloth_2.png, inode=111, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=diamond_1.png, inode=112, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=diamond_2.png, inode=113, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=gold_1.png, inode=114, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=gold_2.png, inode=115, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=iron_1.png, inode=116, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=iron_2.png, inode=117, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=power.png, inode=118, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=14, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=kz.png, inode=119, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=15, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=clouds.png, inode=120, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=light_normal.png, inode=121, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=rain.png, inode=122, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=snow.png, inode=123, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=16, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=alternate.png, inode=124, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=default.png, inode=125, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=17, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=alchemy.png, inode=126, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=allitems.png, inode=127, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=background.png, inode=128, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=container.png, inode=129, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=crafting.png, inode=130, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=crash_logo.png, inode=131, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=enchant.png, inode=132, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=furnace.png, inode=133, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=gui.png, inode=134, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=icons.png, inode=135, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=inventory.png, inode=136, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=items.png, inode=137, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=particles.png, inode=138, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=slot.png, inode=139, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=trap.png, inode=140, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=unknown_pack.png, inode=141, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=18, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=arrows.png, inode=142, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=boat.png, inode=143, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=book.png, inode=144, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cart.png, inode=145, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=chest.png, inode=146, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=door.png, inode=147, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=largechest.png, inode=148, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=sign.png, inode=149, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=xporb.png, inode=150, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=19, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=dial.png, inode=151, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=explosion.png, inode=152, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=foliagecolor.png, inode=153, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=footprint.png, inode=154, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=glint.png, inode=155, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=grasscolor.png, inode=156, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=mapbg.png, inode=157, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=mapicons.png, inode=158, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=particlefield.png, inode=159, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=pumpkinblur.png, inode=160, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=shadow.png, inode=161, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=tunnel.png, inode=162, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=vignette.png, inode=163, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=water.png, inode=164, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=watercolor.png, inode=165, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=20, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=enderdragon, inode=21, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=villager, inode=22, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cat_black.png, inode=179, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cat_red.png, inode=180, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cat_siamese.png, inode=181, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cavespider.png, inode=182, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=char.png, inode=183, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=chicken.png, inode=184, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cow.png, inode=185, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=creeper.png, inode=186, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=enderman.png, inode=187, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=enderman_eyes.png, inode=188, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=fire.png, inode=189, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=ghast.png, inode=190, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=ghast_fire.png, inode=191, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=lava.png, inode=192, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=ozelot.png, inode=193, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=pig.png, inode=194, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=pigman.png, inode=195, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=pigzombie.png, inode=196, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=redcow.png, inode=197, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=saddle.png, inode=198, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=sheep.png, inode=199, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=sheep_fur.png, inode=200, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=silverfish.png, inode=201, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=skeleton.png, inode=202, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=slime.png, inode=203, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=snowman.png, inode=204, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=spider.png, inode=205, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=spider_eyes.png, inode=206, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=squid.png, inode=207, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=villager.png, inode=208, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=villager_golem.png, inode=209, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=wolf.png, inode=210, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=wolf_angry.png, inode=211, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=wolf_tame.png, inode=212, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=zombie.png, inode=213, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=21, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=20, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=beam.png, inode=166, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=body.png, inode=167, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=crystal.png, inode=168, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=dragon.png, inode=169, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=ender.png, inode=170, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=ender_eyes.png, inode=171, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=shuffle.png, inode=172, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=22, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=20, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=butcher.png, inode=173, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=farmer.png, inode=174, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=librarian.png, inode=175, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=priest.png, inode=176, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=smith.png, inode=177, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=villager.png, inode=178, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=23, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=11, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=moon.png, inode=214, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=moon_phases.png, inode=215, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=sun.png, inode=216, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=24, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=GameRules, inode=25, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=res, inode=26, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=tutorialDiff, inode=280, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=25, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=24, type=5
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=26, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=24, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=armor, inode=27, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=art, inode=28, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=font, inode=29, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=item, inode=30, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=misc, inode=31, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=mob, inode=32, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=textures, inode=35, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=colours.col, inode=274, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=items.png, inode=275, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=particles.png, inode=276, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=terrain.png, inode=277, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=terrainMipMapLevel2.png, inode=278, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=terrainMipMapLevel3.png, inode=279, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=27, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cloth_1.png, inode=221, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cloth_1_b.png, inode=222, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cloth_2.png, inode=223, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cloth_2_b.png, inode=224, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=power.png, inode=225, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=28, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=kz.png, inode=226, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=29, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Default.png, inode=227, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Mojangles_11.png, inode=228, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Mojangles_7.png, inode=229, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=30, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=book.png, inode=230, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=enderchest.png, inode=231, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=31, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=additionalmapicons.png, inode=232, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=explosion.png, inode=233, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=footprint.png, inode=234, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=glint.png, inode=235, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=mapicons.png, inode=236, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=particlefield.png, inode=237, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=tunnel.png, inode=238, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=32, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=enderdragon, inode=33, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=villager, inode=34, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=enderman_eyes.png, inode=248, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=redcow.png, inode=249, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=skeleton_wither.png, inode=250, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=snowman.png, inode=251, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=wolf_collar.png, inode=252, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=wolf_tame.png, inode=253, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=zombie.png, inode=254, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=zombie_villager.png, inode=255, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=33, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=32, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=beam.png, inode=239, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=ender.png, inode=240, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=ender_eyes.png, inode=241, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=34, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=32, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=butcher.png, inode=242, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=farmer.png, inode=243, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=librarian.png, inode=244, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=priest.png, inode=245, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=smith.png, inode=246, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=villager.png, inode=247, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=35, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=26, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=blocks, inode=36, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=items, inode=37, type=3
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=36, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=35, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=fire_0.png, inode=256, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=fire_0.txt, inode=257, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=fire_1.png, inode=258, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=fire_1.txt, inode=259, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=lava.png, inode=260, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=lava.txt, inode=261, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=lava_flow.png, inode=262, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=lava_flow.txt, inode=263, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=portal.png, inode=264, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=portal.txt, inode=265, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=water.png, inode=266, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=water.txt, inode=267, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=water_flow.png, inode=268, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=water_flow.txt, inode=269, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=37, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=35, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=clock.png, inode=270, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=clock.txt, inode=271, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=compass.png, inode=272, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=compass.txt, inode=273, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=38, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=bg.png, inode=281, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=icons.png, inode=282, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=39, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=chain_1.png, inode=283, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=chain_2.png, inode=284, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cloth_1.png, inode=285, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cloth_2.png, inode=286, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=diamond_1.png, inode=287, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=diamond_2.png, inode=288, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=gold_1.png, inode=289, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=gold_2.png, inode=290, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=iron_1.png, inode=291, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=iron_2.png, inode=292, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=power.png, inode=293, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=40, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=kz.png, inode=294, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=41, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=clouds.png, inode=295, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=rain.png, inode=296, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=snow.png, inode=297, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=42, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Mojangles_11.png, inode=298, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Mojangles_7.png, inode=299, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=default.png, inode=300, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=43, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=background.png, inode=301, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=container.png, inode=302, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=crafting.png, inode=303, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=furnace.png, inode=304, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=gui.png, inode=305, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=icons.png, inode=306, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=inventory.png, inode=307, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=items.png, inode=308, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=logo.png, inode=309, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=particles.png, inode=310, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=slot.png, inode=311, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=trap.png, inode=312, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=unknown_pack.png, inode=313, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=44, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=arrows.png, inode=314, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=boat.png, inode=315, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cart.png, inode=316, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=door.png, inode=317, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=sign.png, inode=318, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=45, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=dial.png, inode=319, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=foliagecolor.png, inode=320, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=footprint.png, inode=321, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=grasscolor.png, inode=322, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=mapbg.png, inode=323, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=mapicons.png, inode=324, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=pumpkinblur.png, inode=325, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=shadow.png, inode=326, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=vignette.png, inode=327, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=water.png, inode=328, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=watercolor.png, inode=329, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=46, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=char.png, inode=330, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=char1.png, inode=331, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=char2.png, inode=332, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=char3.png, inode=333, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=char4.png, inode=334, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=char5.png, inode=335, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=char6.png, inode=336, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=char7.png, inode=337, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=chicken.png, inode=338, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cow.png, inode=339, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=creeper.png, inode=340, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=ghast.png, inode=341, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=ghast_fire.png, inode=342, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=pig.png, inode=343, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=pigman.png, inode=344, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=pigzombie.png, inode=345, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=saddle.png, inode=346, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=sheep.png, inode=347, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=sheep_fur.png, inode=348, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=skeleton.png, inode=349, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=slime.png, inode=350, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=spider.png, inode=351, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=spider_eyes.png, inode=352, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=squid.png, inode=353, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=wolf.png, inode=354, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=wolf_angry.png, inode=355, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=wolf_tame.png, inode=356, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=zombie.png, inode=357, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=47, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=10, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=moon.png, inode=358, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=sun.png, inode=359, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=48, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=DLC, inode=49, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=DLCImages, inode=68, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=PS4ProductCodes.bin, inode=399, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=session_image.jpg, inode=400, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=49, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=48, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Battle & Beasts, inode=50, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Battle & Beasts 2, inode=51, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Candy Texture Pack, inode=52, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Cartoon Texture Pack, inode=54, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=City Texture Pack, inode=56, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Fantasy Texture Pack, inode=58, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Festive Skin Pack, inode=60, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Natural Texture Pack, inode=61, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Plastic Texture Pack, inode=63, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Skin Pack 1, inode=65, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Skin Pack 2, inode=66, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Skin Pack 3, inode=67, type=3
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=50, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=BattleAndBeasts.pck, inode=363, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=51, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=BattleAndBeasts2.pck, inode=364, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=52, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Data, inode=53, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=TexturePack.pck, inode=367, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=53, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=52, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=media.arc, inode=365, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=x16Data.pck, inode=366, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=54, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Data, inode=55, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=TexturePack.pck, inode=370, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=55, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=54, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=media.arc, inode=368, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=x32Data.pck, inode=369, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=56, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Data, inode=57, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=TexturePack.pck, inode=373, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=57, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=56, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=media.arc, inode=371, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=x32Data.pck, inode=372, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=58, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Data, inode=59, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=TexturePack.pck, inode=376, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=59, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=58, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=media.arc, inode=374, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=x32Data.pck, inode=375, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=60, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=SkinsFestive.pck, inode=377, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=61, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Data, inode=62, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=TexturePack.pck, inode=380, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=62, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=61, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=media.arc, inode=378, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=x32Data.pck, inode=379, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=63, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Data, inode=64, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=TexturePack.pck, inode=383, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=64, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=63, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=media.arc, inode=381, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=x16Data.pck, inode=382, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=65, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Skins1_Sony.pck, inode=384, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=66, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Skins2_Sony.pck, inode=385, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=67, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=49, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Skins3_Sony.pck, inode=386, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=68, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=48, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=SP1_360x360.png, inode=387, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=SP2_360x360.png, inode=388, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=SP3_360x360.png, inode=389, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=SPC_360x360.png, inode=390, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=SPF_360x360.png, inode=391, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=SPZ_360x360.png, inode=392, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=TP01_360x360.png, inode=393, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=TP02_360x360.png, inode=394, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=TP03_360x360.png, inode=395, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=TP05_360x360.png, inode=396, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=TP06_360x360.png, inode=397, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=TP07_360x360.png, inode=398, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=69, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=Minecraft.msscmp, inode=401, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=70, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cds, inode=71, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=music, inode=72, type=3
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=71, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=70, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=11.binka, inode=402, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=13.binka, inode=403, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=blocks.binka, inode=404, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=cat.binka, inode=405, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=chirp.binka, inode=406, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=far.binka, inode=407, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=mall.binka, inode=408, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=mellohi.binka, inode=409, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=stal.binka, inode=410, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=strad.binka, inode=411, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=ward.binka, inode=412, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=where_are_we_now.binka, inode=413, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=72, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=70, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=calm1.binka, inode=414, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=calm2.binka, inode=415, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=calm3.binka, inode=416, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=creative1.binka, inode=417, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=creative2.binka, inode=418, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=creative3.binka, inode=419, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=creative4.binka, inode=420, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=creative5.binka, inode=421, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=creative6.binka, inode=422, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=hal1.binka, inode=423, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=hal2.binka, inode=424, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=hal3.binka, inode=425, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=hal4.binka, inode=426, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=menu1.binka, inode=427, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=menu2.binka, inode=428, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=menu3.binka, inode=429, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=menu4.binka, inode=430, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=nether1.binka, inode=431, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=nether2.binka, inode=432, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=nether3.binka, inode=433, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=nether4.binka, inode=434, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=nuance1.binka, inode=435, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=nuance2.binka, inode=436, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=piano1.binka, inode=437, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=piano2.binka, inode=438, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=piano3.binka, inode=439, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=the_end_dragon_alive.binka, inode=440, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=the_end_end.binka, inode=441, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=73, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=libSceFios2.prx, inode=442, type=2
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=libc.prx, inode=443, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=74, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=2, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=about, inode=75, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=changeinfo, inode=76, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=keymap_rp, inode=77, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=trophy, inode=99, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=keystone, inode=445, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=75, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=74, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=right.sprx, inode=444, type=2
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=76, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=74, type=5
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] dinode_reached=true
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=., inode=77, type=4
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=.., inode=74, type=5
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=00, inode=78, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=01, inode=79, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=02, inode=80, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=03, inode=81, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=04, inode=82, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=05, inode=83, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=06, inode=84, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=07, inode=85, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=08, inode=86, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=09, inode=87, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=10, inode=88, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=11, inode=89, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=12, inode=90, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=13, inode=91, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=14, inode=92, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=15, inode=93, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=16, inode=94, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=17, inode=95, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=18, inode=96, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=19, inode=97, type=3
+[2025-09-03 18:33:00] [DEBUG] fsTable aggiunta: nome=20, inode=98, type=3
+[2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
+[2025-09-03 18:33:00] [DEBUG] end_reached=true, break ciclo blocchi
+[2025-09-03 18:33:00] [DEBUG] Fine parsing blocchi PFS

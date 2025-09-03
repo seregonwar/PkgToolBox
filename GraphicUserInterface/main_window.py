@@ -1,21 +1,24 @@
 import logging
 import sys
 import os
+import re
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                             QHBoxLayout, QLabel, QLineEdit, QPushButton, QTabWidget,
-                            QMessageBox, QToolBar, QAction, QTreeWidget, QTextEdit, QTableWidget, QFileDialog, QGroupBox, QGridLayout, QSpinBox, QTreeWidgetItem, QDialog, QProgressBar, QShortcut, QActionGroup, QComboBox, QCheckBox)
-from PyQt5.QtCore import Qt, QSize, QUrl
+                            QMessageBox, QToolBar, QAction, QTreeWidget, QTextEdit, QTableWidget, QFileDialog, QGroupBox, QGridLayout, QSpinBox, QTreeWidgetItem, QDialog, QProgressBar, QShortcut, QActionGroup, QComboBox, QCheckBox, QListWidget, QFrame)
+from PyQt5.QtCore import Qt, QSize, QUrl, QObject, pyqtSignal, QThread
 from PyQt5.QtGui import QFont, QDesktopServices
 from PyQt5.QtWidgets import QStyle
 import struct
 from GraphicUserInterface.components import FileBrowser, WallpaperViewer
 from GraphicUserInterface.dialogs import SettingsDialog
 from GraphicUserInterface.utils import StyleManager, ImageUtils, FileUtils
-from PS5_Game_Info import PS5GameInfo
+from GraphicUserInterface.widgets import ExtractTab, InfoTab, BruteforceTab
+from GraphicUserInterface.widgets.pfs_info_tab import PfsInfoTab
+from tools.PS5_Game_Info import PS5GameInfo
 from packages import PackagePS4, PackagePS5, PackagePS3
 from file_operations import extract_file, inject_file, modify_file_header
 from Utilities.Trophy import ESMFDecrypter, TRPCreator
-from PS4_Passcode_Bruteforcer import PS4PasscodeBruteforcer
+from tools.PS4_Passcode_Bruteforcer import PS4PasscodeBruteforcer
 import re
 from Utilities import Logger
 import json
@@ -65,42 +68,28 @@ class MainWindow(QMainWindow):
         # Initialize translator
         self.translator = Translator()
         
-        # Load settings
-        config_file = os.path.join(os.path.expanduser("~"), ".pkgtoolbox", "config.json")
-        if os.path.exists(config_file):
-            with open(config_file, 'r') as f:
-                settings_dict = json.load(f)
-        else:
-            settings_dict = {
-                "theme": "Light",
-                "night_mode": False,
-                "font_family": "Arial",
-                "font_size": 12,
-                "bg_color": "#ffffff",
-                "text_color": "#000000",
-                "accent_color": "#3498db"
-            }
-        
-        # Apply settings
-        self.night_mode = settings_dict.get("night_mode", False)
+        # Load and apply appearance settings
+        self.settings_dict = StyleManager.load_settings()
+        appearance = self.settings_dict.get("appearance", {})
+        # Font
         self.font = QFont(
-            settings_dict.get("font_family", "Arial"),
-            settings_dict.get("font_size", 12)
+            appearance.get("font_family", "Arial"),
+            appearance.get("font_size", 12)
         )
         QApplication.setFont(self.font)
-        
-        # Apply theme
-        theme_colors = {
-            'bg_color': settings_dict.get("bg_color", "#ffffff"),
-            'text_color': settings_dict.get("text_color", "#000000"),
-            'accent_color': settings_dict.get("accent_color", "#3498db")
-        }
-        StyleManager.apply_theme(self, theme_colors)
+        # Theme
+        StyleManager.apply_theme(self, self.settings_dict)
         
         # Setup UI
         self.setup_ui()
         self.setup_settings_button()
         
+        # Apply saved language after UI is built (menus/tabs exist)
+        try:
+            self._apply_saved_language()
+        except Exception:
+            pass
+
         # Enable drag and drop
         self.setAcceptDrops(True)
         
@@ -116,229 +105,265 @@ class MainWindow(QMainWindow):
         if not self.should_skip_updates():
             self.update_checker.start()
 
+    def _apply_saved_language(self):
+        """Read saved language from settings and apply to translator, then refresh UI."""
+        saved = self.settings_dict.get("language", "English")
+        # Accept either display names or language codes
+        name_to_code = {
+            'English': 'en', 'Italian': 'it', 'Spanish': 'es',
+            'French': 'fr', 'German': 'de', 'Japanese': 'ja'
+        }
+        code = saved.lower() if len(saved) in (2, 3) else name_to_code.get(saved, 'en')
+        if hasattr(self, 'translator'):
+            if self.translator.change_language(code):
+                if hasattr(self, 'retranslate_ui'):
+                    self.retranslate_ui()
+
     def set_style(self):
-        """Set application style based on theme"""
-        colors = self.COLORS['dark'] if self.night_mode else self.COLORS['light']
-        
-        self.setStyleSheet(f"""
-            /* Base styles */
-            QMainWindow, QWidget {{ 
-                background-color: {colors['background']}; 
-                color: {colors['text']}; 
-            }}
+        """Modern UI styling using Qt-supported properties only"""
+        self.setStyleSheet("""
+            /* Main Window */
+            QMainWindow {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(74, 144, 226, 25%),
+                    stop:0.3 rgba(80, 227, 194, 15%),
+                    stop:0.7 rgba(245, 101, 101, 15%),
+                    stop:1 rgba(196, 113, 237, 25%));
+            }
             
-            /* Input fields */
-            QLineEdit, QTextEdit, QPlainTextEdit {{ 
-                background-color: {colors['secondary']}; 
-                color: {colors['text']}; 
-                border: 1px solid {colors['accent']};
-                border-radius: 4px;
-                padding: 5px;
-            }}
+            /* Cards */
+            QWidget {
+                background: rgba(255, 255, 255, 20%);
+                border: 1px solid rgba(255, 255, 255, 30%);
+                border-radius: 16px;
+            }
             
-            /* Buttons */
-            QPushButton {{ 
-                background-color: {colors['accent']}; 
-                color: white;
+            /* Modern Input Fields */
+            QLineEdit, QTextEdit, QPlainTextEdit {
+                background: rgba(255, 255, 255, 18%);
+                border: 2px solid transparent;
+                border-radius: 12px;
+                padding: 14px 18px;
+                font-size: 14px;
+                font-weight: 500;
+                color: #2d3748;
+                selection-background-color: rgba(74, 144, 226, 30%);
+            }
+            QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {
+                border: 2px solid rgba(74, 144, 226, 60%);
+                background: rgba(255, 255, 255, 24%);
+            }
+            
+            /* Revolutionary Buttons */
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(74, 144, 226, 90%),
+                    stop:1 rgba(80, 227, 194, 90%));
                 border: none;
-                padding: 8px;
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{
-                background-color: {colors['tree_selected']};
-            }}
-            QPushButton:pressed {{
-                background-color: {colors['tree_hover']};
-            }}
-            QPushButton:disabled {{
-                background-color: {colors['secondary']};
-                color: {colors['text']};
-                opacity: 0.5;
-            }}
-            
-            /* Tree and List Widgets */
-            QTreeWidget, QListWidget {{ 
-                background-color: {colors['background']};
-                alternate-background-color: {colors['tree_alternate']};
-                color: {colors['text']};
-                border: 1px solid {colors['accent']};
-                border-radius: 4px;
-            }}
-            QTreeWidget::item:hover, QListWidget::item:hover {{
-                background-color: {colors['tree_hover']};
-            }}
-            QTreeWidget::item:selected, QListWidget::item:selected {{
-                background-color: {colors['tree_selected']};
+                border-radius: 14px;
+                padding: 12px 24px;
+                font-size: 14px;
+                font-weight: 600;
                 color: white;
-            }}
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(74, 144, 226, 100%),
+                    stop:1 rgba(80, 227, 194, 100%));
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(74, 144, 226, 85%),
+                    stop:1 rgba(80, 227, 194, 85%));
+            }
+            QPushButton:disabled {
+                background: rgba(160, 174, 192, 0.4);
+                color: rgba(160, 174, 192, 0.8);
+            }
             
-            /* Headers */
-            QHeaderView::section {{
-                background-color: {colors['secondary']};
-                color: {colors['text']};
-                padding: 5px;
-                border: none;
-            }}
-            
-            /* Tabs */
-            QTabWidget::pane {{ 
-                border: 1px solid {colors['accent']}; 
-                border-radius: 4px;
-            }}
-            QTabBar::tab {{ 
-                background: {colors['secondary']}; 
-                color: {colors['text']};
+            /* Floating Tree/List Widgets */
+            QTreeWidget, QListWidget {
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 16px;
                 padding: 8px;
+                alternate-background-color: rgba(255, 255, 255, 0.05);
+                color: #2d3748;
+                font-weight: 500;
+            }
+            QTreeWidget::item, QListWidget::item {
+                padding: 8px 12px;
+                border-radius: 8px;
+                margin: 2px 0px;
+            }
+            QTreeWidget::item:hover, QListWidget::item:hover {
+                background: rgba(74, 144, 226, 0.15);
+                color: #1a202c;
+            }
+            QTreeWidget::item:selected, QListWidget::item:selected {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(74, 144, 226, 0.8),
+                    stop:1 rgba(80, 227, 194, 0.8));
+                color: white;
+                font-weight: 600;
+            }
+            
+            /* Modern Headers */
+            QHeaderView::section {
+                background: rgba(255, 255, 255, 0.12);
+                border: none;
+                border-radius: 8px;
+                padding: 12px;
+                font-weight: 600;
+                color: #4a5568;
                 margin: 2px;
-                border-radius: 4px;
-            }}
-            QTabBar::tab:selected {{ 
-                background: {colors['accent']}; 
-                color: white;
-            }}
-            QTabBar::tab:hover {{
-                background: {colors['tree_hover']};
-            }}
+            }
             
-            /* Labels */
-            QLabel {{ 
-                color: {colors['text']}; 
-            }}
-            
-            /* Menus */
-            QMenuBar {{
-                background-color: {colors['background']};
-                color: {colors['text']};
-            }}
-            QMenuBar::item {{
-                background-color: transparent;
-            }}
-            QMenuBar::item:selected {{
-                background-color: {colors['tree_hover']};
-            }}
-            QMenu {{
-                background-color: {colors['background']};
-                color: {colors['text']};
-                border: 1px solid {colors['accent']};
-            }}
-            QMenu::item:selected {{
-                background-color: {colors['tree_selected']};
-                color: white;
-            }}
-            
-            /* Combo Boxes */
-            QComboBox {{
-                background-color: {colors['secondary']};
-                color: {colors['text']};
-                border: 1px solid {colors['accent']};
-                border-radius: 4px;
-                padding: 5px;
-            }}
-            QComboBox:hover {{
-                border-color: {colors['tree_selected']};
-            }}
-            QComboBox::drop-down {{
+            /* Invisible Tabs (handled by sidebar) */
+            QTabWidget::pane {
+                background: transparent;
                 border: none;
-            }}
-            QComboBox::down-arrow {{
-                image: none;
+            }
+            QTabBar::tab {
+                background: transparent;
                 border: none;
-            }}
-            QComboBox QAbstractItemView {{
-                background-color: {colors['background']};
-                color: {colors['text']};
-                selection-background-color: {colors['tree_selected']};
-                selection-color: white;
-            }}
-            
-            /* Spin Boxes */
-            QSpinBox {{
-                background-color: {colors['secondary']};
-                color: {colors['text']};
-                border: 1px solid {colors['accent']};
-                border-radius: 4px;
-                padding: 5px;
-            }}
-            
-            /* Check Boxes */
-            QCheckBox {{
-                color: {colors['text']};
-            }}
-            QCheckBox::indicator {{
-                width: 13px;
-                height: 13px;
-            }}
-            
-            /* Scroll Bars */
-            QScrollBar:vertical {{
-                background-color: {colors['secondary']};
-                width: 12px;
+                padding: 0px;
                 margin: 0px;
-                border-radius: 6px;
-            }}
-            QScrollBar::handle:vertical {{
-                background-color: {colors['accent']};
+            }
+            
+            /* Floating Labels */
+            QLabel {
+                background: transparent;
+                color: #2d3748;
+                font-weight: 500;
+                border: none;
+            }
+            
+            /* Glass Menu Bar */
+            QMenuBar {
+                background: rgba(255, 255, 255, 12%);
+                border: none;
+                border-radius: 12px;
+                padding: 4px 8px;
+                color: #2d3748;
+                font-weight: 500;
+            }
+            QMenuBar::item {
+                background: transparent;
+                padding: 8px 16px;
+                border-radius: 8px;
+            }
+            QMenuBar::item:selected {
+                background: rgba(74, 144, 226, 0.15);
+            }
+            QMenu {
+                background: rgba(255, 255, 255, 95%);
+                border: 1px solid rgba(255, 255, 255, 30%);
+                border-radius: 12px;
+                padding: 8px;
+            }
+            QMenu::item {
+                padding: 10px 20px;
+                border-radius: 8px;
+                color: #2d3748;
+            }
+            QMenu::item:selected {
+                background: rgba(74, 144, 226, 0.15);
+            }
+            
+            /* Modern Combo Boxes */
+            QComboBox {
+                background: rgba(255, 255, 255, 0.12);
+                border: 2px solid rgba(255, 255, 255, 0.2);
+                border-radius: 12px;
+                padding: 10px 16px;
+                font-weight: 500;
+                color: #2d3748;
+            }
+            QComboBox:hover {
+                background: rgba(255, 255, 255, 0.18);
+                border-color: rgba(74, 144, 226, 0.4);
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 30px;
+            }
+            QComboBox QAbstractItemView {
+                background: rgba(255, 255, 255, 95%);
+                border: 1px solid rgba(255, 255, 255, 30%);
+                border-radius: 12px;
+                selection-background-color: rgba(74, 144, 226, 20%);
+            }
+            
+            /* Elegant Scroll Bars */
+            QScrollBar:vertical {
+                background: rgba(255, 255, 255, 0.1);
+                width: 8px;
+                border-radius: 4px;
+                margin: 0px;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(74, 144, 226, 0.6);
+                border-radius: 4px;
                 min-height: 20px;
-                border-radius: 6px;
-            }}
-            QScrollBar:horizontal {{
-                background-color: {colors['secondary']};
-                height: 12px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: rgba(74, 144, 226, 0.8);
+            }
+            QScrollBar:horizontal {
+                background: rgba(255, 255, 255, 0.1);
+                height: 8px;
+                border-radius: 4px;
                 margin: 0px;
-                border-radius: 6px;
-            }}
-            QScrollBar::handle:horizontal {{
-                background-color: {colors['accent']};
+            }
+            QScrollBar::handle:horizontal {
+                background: rgba(74, 144, 226, 0.6);
+                border-radius: 4px;
                 min-width: 20px;
-                border-radius: 6px;
-            }}
+            }
             
-            /* Tool Tips */
-            QToolTip {{
-                background-color: {colors['background']};
-                color: {colors['text']};
-                border: 1px solid {colors['accent']};
-                border-radius: 4px;
-                padding: 5px;
-            }}
+            /* Floating Tooltips */
+            QToolTip {
+                background: rgba(45, 55, 72, 95%);
+                color: white;
+                border: 1px solid rgba(255, 255, 255, 20%);
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-weight: 500;
+            }
             
-            /* Status Bar */
-            QStatusBar {{
-                background-color: {colors['secondary']};
-                color: {colors['text']};
-            }}
-            
-            /* Tool Bar */
-            QToolBar {{
-                background-color: {colors['background']};
+            /* Modern Status Bar */
+            QStatusBar {
+                background: rgba(255, 255, 255, 0.08);
                 border: none;
-                spacing: 10px;
-            }}
-            QToolBar::separator {{
-                background-color: {colors['accent']};
-                width: 1px;
-                margin: 4px;
-            }}
+                border-radius: 12px;
+                color: #4a5568;
+                font-weight: 500;
+            }
             
-            /* Group Box */
-            QGroupBox {{
-                border: 1px solid {colors['accent']};
-                border-radius: 4px;
-                margin-top: 1ex;
-                padding: 5px;
-                color: {colors['text']};
-            }}
-            QGroupBox::title {{
+            /* Glass Group Boxes */
+            QGroupBox {
+                background: rgba(255, 255, 255, 12%);
+                border: 1px solid rgba(255, 255, 255, 20%);
+                border-radius: 16px;
+                margin-top: 12px;
+                padding-top: 12px;
+                font-weight: 600;
+                color: #2d3748;
+            }
+            QGroupBox::title {
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 0 3px;
-                color: {colors['text']};
-            }}
+                padding: 4px 12px;
+                background: rgba(74, 144, 226, 10%);
+                border-radius: 8px;
+                color: #2d3748;
+            }
         """)
 
     def setup_ui(self):
         """Setup the main UI"""
-        self.setWindowTitle("PKG Tool Box v1.5.3(dev version)")
+        self.setWindowTitle("PKG Tool Box v1.4.0")
         self.setGeometry(100, 100, 1200, 800)
         
         # Central widget
@@ -353,54 +378,133 @@ class MainWindow(QMainWindow):
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
         
-        # PKG icon and info
+        # PKG icon and info - Revolutionary glass card
         self.image_label = QLabel()
-        self.image_label.setFixedSize(300, 300)
+        self.image_label.setFixedSize(320, 320)
         self.image_label.setAlignment(Qt.AlignCenter)
-        self.image_label.setStyleSheet("background-color: white; border: 1px solid #3498db; border-radius: 5px;")
+        self.image_label.setStyleSheet("""
+            QLabel {
+                background: rgba(255, 255, 255, 15%);
+                border: 2px solid rgba(74, 144, 226, 30%);
+                border-radius: 24px;
+                padding: 20px;
+            }
+        """)
         
         self.content_id_label = QLabel()
-        self.content_id_label.setStyleSheet("font-size: 14px; font-weight: bold;")
+        self.content_id_label.setStyleSheet("""
+            QLabel {
+                font-size: 16px;
+                font-weight: 600;
+                color: #2d3748;
+                padding: 16px 20px;
+                background: rgba(255, 255, 255, 12%);
+                border: 1px solid rgba(255, 255, 255, 20%);
+                border-radius: 16px;
+                margin: 8px 0px;
+            }
+        """)
         
         left_layout.addWidget(self.image_label)
         left_layout.addWidget(self.content_id_label)
         
-        # Add drag-drop label
-        self.drag_drop_label = QLabel("Drag PKG files here")
+        # Revolutionary drag-drop zone with glassmorphism
+        self.drag_drop_label = QLabel("✨ Drop PKG files here or Browse")
         self.drag_drop_label.setAlignment(Qt.AlignCenter)
         self.drag_drop_label.setStyleSheet("""
             QLabel {
-                font-size: 16px;
-                color: #7f8c8d;
-                padding: 20px;
-                border: 2px dashed #bdc3c7;
-                border-radius: 10px;
-                background-color: rgba(236, 240, 241, 0.5);
+                font-size: 20px;
+                font-weight: 600;
+                color: #4a5568;
+                padding: 40px;
+                border: 3px dashed rgba(74, 144, 226, 40%);
+                border-radius: 24px;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(74, 144, 226, 8%),
+                    stop:0.5 rgba(80, 227, 194, 6%),
+                    stop:1 rgba(196, 113, 237, 8%));
             }
         """)
         left_layout.addWidget(self.drag_drop_label)
         
-        # File selection
+        # Revolutionary file selection with glassmorphism
         pkg_layout = QHBoxLayout()
         self.pkg_entry = QLineEdit()
-        self.pkg_entry.setPlaceholderText("Select PKG file")
-        browse_button = QPushButton("Browse")
+        self.pkg_entry.setPlaceholderText("🎯 Select your PKG file...")
+        self.pkg_entry.setStyleSheet("""
+            QLineEdit {
+                padding: 16px 20px;
+                border: 2px solid rgba(74, 144, 226, 20%);
+                border-radius: 16px;
+                font-size: 15px;
+                font-weight: 500;
+                background: rgba(255, 255, 255, 12%);
+                color: #2d3748;
+            }
+            QLineEdit:focus {
+                border-color: rgba(74, 144, 226, 60%);
+                background: rgba(255, 255, 255, 18%);
+            }
+            QLineEdit:hover {
+                background: rgba(255, 255, 255, 15%);
+            }
+        """)
+        
+        browse_button = QPushButton("🚀 BROWSE")
         browse_button.clicked.connect(self.browse_pkg)
+        browse_button.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(74, 144, 226, 90%),
+                    stop:1 rgba(80, 227, 194, 90%));
+                color: white;
+                font-weight: 700;
+                padding: 16px 28px;
+                border: none;
+                border-radius: 16px;
+                font-size: 15px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(74, 144, 226, 100%),
+                    stop:1 rgba(80, 227, 194, 100%));
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(74, 144, 226, 85%),
+                    stop:1 rgba(80, 227, 194, 85%));
+            }
+        """)
+        
         pkg_layout.addWidget(self.pkg_entry)
         pkg_layout.addWidget(browse_button)
         left_layout.addLayout(pkg_layout)
         
         left_layout.addStretch()
         
-        # Right panel with tabs
+        # Revolutionary tab widget with glassmorphism
         self.tab_widget = QTabWidget()
-        
+        self.tab_widget.setStyleSheet("""
+            QTabWidget::pane {
+                background: rgba(255, 255, 255, 8%);
+                border: 1px solid rgba(255, 255, 255, 15%);
+                border-radius: 24px;
+                padding: 20px;
+            }
+            QTabBar::tab {
+                background: transparent;
+                border: none;
+                padding: 0px;
+                margin: 0px;
+            }
+        """)
+
         # Info tab
-        self.info_tab = QWidget()
-        self.setup_info_tab()
+        self.info_tab = InfoTab(self)
         self.tab_widget.addTab(self.info_tab, "Info")
         
         # File Browser tab
+
         self.file_browser = FileBrowser(self)
         self.tab_widget.addTab(self.file_browser, "File Browser")
         
@@ -409,14 +513,12 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(self.wallpaper_viewer, "Wallpaper")
         
         # Extract tab
-        self.extract_tab = QWidget()
-        self.setup_extract_tab()
+        self.extract_tab = ExtractTab(self)
         self.tab_widget.addTab(self.extract_tab, "Extract")
         
-        # Dump tab
-        self.dump_tab = QWidget()
-        self.setup_dump_tab()
-        self.tab_widget.addTab(self.dump_tab, "Dump")
+        # PFS Info tab
+        self.pfs_info_tab = PfsInfoTab(self)
+        self.tab_widget.addTab(self.pfs_info_tab, "PFS Info")
         
         # Inject tab
         self.inject_tab = QWidget()
@@ -449,10 +551,14 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(self.ps5_game_info_tab, "PS5 Game Info")
         
         # Passcode Bruteforcer tab
-        self.bruteforce_tab = QWidget()
-        self.setup_bruteforce_tab()
+        self.bruteforce_tab = BruteforceTab(self)
         self.tab_widget.addTab(self.bruteforce_tab, "Passcode Bruteforcer")
+
+        # Hide native tab bar – navigation handled by sidebar and build sidebar
+        self.tab_widget.tabBar().hide()
+        self.create_sidebar()
         
+        split_layout.addWidget(self.sidebar_frame)
         split_layout.addWidget(left_panel, 1)
         split_layout.addWidget(self.tab_widget, 2)
         main_layout.addLayout(split_layout)
@@ -461,32 +567,39 @@ class MainWindow(QMainWindow):
         credits_layout = QHBoxLayout()
         
         # Left side - Credits label
-        credits_label = QLabel("Created by SeregonWar")
+        credits_label = QLabel()
+        credits_label.setText('<a href="https://github.com/seregonwar" style="text-decoration:none; color:#2d3748;">Created by <b>SeregonWar</b></a>')
+        credits_label.setTextFormat(Qt.RichText)
+        credits_label.setOpenExternalLinks(True)
         credits_label.setStyleSheet("""
             QLabel {
-                font-size: 12px;
-                color: #7f8c8d;
-                padding: 5px;
+                font-size: 14px;
+                font-weight: 600;
+                color: #2d3748;
+                padding: 6px 8px;
+                background: rgba(255, 255, 255, 12%);
+                border: 1px solid rgba(0,0,0,8%);
+                border-radius: 8px;
             }
         """)
-        credits_layout.addWidget(credits_label)
+        credits_layout.addWidget(credits_label, 0, Qt.AlignLeft)
         
         # Center - Social buttons
         social_layout = QHBoxLayout()
-        social_layout.setSpacing(5)  # Riduce lo spazio tra i pulsanti
+        social_layout.setSpacing(12)
         
-        # Stile comune per i pulsanti social
+        # Stile comune per i pulsanti social (pill buttons)
         social_button_style = """
             QPushButton {
-                font-size: 11px;
+                font-size: 12px;
                 color: white;
                 background-color: #3498db;
                 border: none;
-                border-radius: 3px;
-                padding: 3px 8px;
-                min-width: 60px;
-                max-width: 60px;
-                height: 20px;
+                border-radius: 14px;
+                padding: 6px 14px;
+                min-width: 88px;
+                height: 28px;
+                font-weight: 600;
             }
             QPushButton:hover {
                 background-color: #2980b9;
@@ -494,8 +607,11 @@ class MainWindow(QMainWindow):
         """
         
         x_button = QPushButton("X")
+        x_button.setToolTip("Open X / Twitter")
         github_button = QPushButton("GitHub")
+        github_button.setToolTip("Open GitHub profile")
         reddit_button = QPushButton("Reddit")
+        reddit_button.setToolTip("Open Reddit profile")
         
         for button in [x_button, github_button, reddit_button]:
             button.setStyleSheet(social_button_style)
@@ -508,28 +624,29 @@ class MainWindow(QMainWindow):
         
         social_widget = QWidget()
         social_widget.setLayout(social_layout)
-        credits_layout.addWidget(social_widget)
+        credits_layout.addWidget(social_widget, 1, Qt.AlignCenter)
         
         # Right side - Ko-fi button
         kofi_button = QPushButton("Support on Ko-fi")
+        kofi_button.setToolTip("Buy me a coffee on Ko-fi")
         kofi_button.setStyleSheet("""
             QPushButton {
-                font-size: 11px;
+                font-size: 12px;
                 color: white;
                 background-color: #e74c3c;
                 border: none;
-                border-radius: 3px;
-                padding: 3px 8px;
-                min-width: 100px;
-                max-width: 100px;
-                height: 20px;
+                border-radius: 14px;
+                padding: 6px 14px;
+                min-width: 140px;
+                height: 28px;
+                font-weight: 700;
             }
             QPushButton:hover {
                 background-color: #c0392b;
             }
         """)
         kofi_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://ko-fi.com/seregon")))
-        credits_layout.addWidget(kofi_button)
+        credits_layout.addWidget(kofi_button, 0, Qt.AlignRight)
         
         # Aggiungi il layout dei credits al layout principale
         main_layout.addLayout(credits_layout)
@@ -562,10 +679,6 @@ class MainWindow(QMainWindow):
         extract_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.extract_tab))
         self.tools_menu.addAction(extract_action)
         
-        dump_action = QAction('Dump PKG', self)
-        dump_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.dump_tab))
-        self.tools_menu.addAction(dump_action)
-        
         inject_action = QAction('Inject File', self)
         inject_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.inject_tab))
         self.tools_menu.addAction(inject_action)
@@ -595,7 +708,7 @@ class MainWindow(QMainWindow):
         self.tools_menu.addAction(bruteforce_action)
         
         # View menu
-        view_menu = menubar.addMenu('View')
+        view_menu = self.view_menu
         
         file_browser_action = QAction('File Browser', self)
         file_browser_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.file_browser))
@@ -606,7 +719,7 @@ class MainWindow(QMainWindow):
         view_menu.addAction(wallpaper_action)
         
         # Links menu
-        links_menu = menubar.addMenu('Links')
+        links_menu = self.links_menu
         
         github_action = QAction('GitHub', self)
         github_action.triggered.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/seregonwar")))
@@ -627,29 +740,33 @@ class MainWindow(QMainWindow):
         links_menu.addAction(kofi_action)
         
         # Help menu
-        help_menu = menubar.addMenu('Help')
+        help_menu = self.help_menu
         
         about_action = QAction('About', self)
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
         
-        # Aggiungi un menu View con opzioni per il tema
+        # Theme submenu and actions
         theme_menu = view_menu.addMenu('Theme')
         theme_group = QActionGroup(self)
-        
+        self.theme_actions = {}
         themes = {
             'Light': {'bg': '#ffffff', 'text': '#000000', 'accent': '#3498db'},
             'Dark': {'bg': '#2f3640', 'text': '#f5f6fa', 'accent': '#3498db'},
             'Nord': {'bg': '#2e3440', 'text': '#eceff4', 'accent': '#88c0d0'},
             'Solarized': {'bg': '#fdf6e3', 'text': '#657b83', 'accent': '#268bd2'}
         }
-        
         for theme_name, colors in themes.items():
             action = QAction(theme_name, self)
             action.setCheckable(True)
             action.triggered.connect(lambda checked, t=theme_name, c=colors: self.change_theme(t, c))
             theme_group.addAction(action)
             theme_menu.addAction(action)
+            self.theme_actions[theme_name] = action
+        # Mark saved theme as checked
+        saved_theme = self.settings_dict.get("appearance", {}).get("theme", "Light")
+        if saved_theme in self.theme_actions:
+            self.theme_actions[saved_theme].setChecked(True)
         
         # Status bar
         self.status_bar = self.statusBar()
@@ -662,37 +779,172 @@ class MainWindow(QMainWindow):
         self.progress_bar.hide()
         self.status_bar.addPermanentWidget(self.progress_bar)
 
+    def change_theme(self, theme_name, colors):
+        """Change and persist theme selection"""
+        try:
+            # Map provided colors to StyleManager schema
+            new_settings = self.settings_dict or {}
+            if "appearance" not in new_settings:
+                new_settings["appearance"] = {}
+            if "colors" not in new_settings["appearance"]:
+                new_settings["appearance"]["colors"] = {}
+            new_settings["appearance"]["theme"] = theme_name
+            new_settings["appearance"]["colors"].update({
+                "background": colors.get('bg', '#ffffff'),
+                "text": colors.get('text', '#000000'),
+                "accent": colors.get('accent', '#3498db')
+            })
+            # Save and apply
+            StyleManager.save_settings(new_settings)
+            self.settings_dict = new_settings
+            StyleManager.apply_theme(self, self.settings_dict)
+            # Reflect selection in menu
+            if hasattr(self, 'theme_actions') and theme_name in self.theme_actions:
+                self.theme_actions[theme_name].setChecked(True)
+        except Exception as e:
+            logging.error(f"Failed to change theme: {e}")
+
+    def create_sidebar(self):
+        """Create sidebar with navigation; theme control moved to top toolbar"""
+        self.sidebar_frame = QFrame()
+        self.sidebar_frame.setObjectName("sidebar")
+        self.sidebar_frame.setStyleSheet("""
+            QFrame#sidebar {
+                background: rgba(255, 255, 255, 12%);
+                border: 1px solid rgba(255, 255, 255, 20%);
+                border-radius: 24px;
+            }
+            QPushButton#navBtn {
+                text-align: left;
+                padding: 10px 14px;
+                border: none;
+                border-radius: 12px;
+                font-weight: 500;
+                color: #2d3748;
+                background: transparent;
+                font-size: 14px;
+            }
+            QPushButton#navBtn:hover {
+                background: rgba(74, 144, 226, 15%);
+                color: #1a202c;
+            }
+            QPushButton#navBtn:pressed {
+                background: rgba(74, 144, 226, 25%);
+            }
+        """)
+        layout = QVBoxLayout(self.sidebar_frame)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(6)
+
+        # Hamburger toggle
+        self.sidebar_expanded = True
+        self.sidebar_width_expanded = 260
+        self.sidebar_width_collapsed = 52
+        self.sidebar_frame.setFixedWidth(self.sidebar_width_expanded)
+
+        toggle_btn = QPushButton("☰")
+        toggle_btn.setToolTip("Toggle menu")
+        toggle_btn.setFixedHeight(40)
+        toggle_btn.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(74, 144, 226, 20%),
+                    stop:1 rgba(80, 227, 194, 20%));
+                border: 1px solid rgba(74, 144, 226, 30%);
+                border-radius: 12px;
+                font-size: 18px;
+                font-weight: bold;
+                color: #2d3748;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(74, 144, 226, 30%),
+                    stop:1 rgba(80, 227, 194, 30%));
+            }
+        """)
+        toggle_btn.clicked.connect(self.toggle_sidebar)
+        layout.addWidget(toggle_btn)
+
+        # Navigation buttons
+        def add_nav(text, widget):
+            btn = QPushButton(text)
+            btn.setObjectName("navBtn")
+            btn.setFixedHeight(36)
+            btn.setMinimumWidth(220)
+            btn.clicked.connect(lambda: self.tab_widget.setCurrentWidget(widget))
+            layout.addWidget(btn)
+            return btn
+
+        # Ensure widgets exist before wiring
+        add_nav("🏷️ Info", self.info_tab)
+        add_nav("📁 File Browser", self.file_browser)
+        add_nav("🖼️ Wallpaper", self.wallpaper_viewer)
+        add_nav("📦 Extract", self.extract_tab)
+        add_nav("🧩 PFS Info", self.pfs_info_tab)
+        add_nav("📥 Inject", self.inject_tab)
+        add_nav("🛠️ Modify", self.modify_tab)
+        add_nav("🏆 Trophy", self.trophy_tab)
+        add_nav("🔓 ESMF Decrypter", self.esmf_decrypter_tab)
+        add_nav("📦 Create TRP", self.trp_create_tab)
+        add_nav("🕹️ PS5 Game Info", self.ps5_game_info_tab)
+        add_nav("🔢 Passcode Bruteforcer", self.bruteforce_tab)
+
+        layout.addStretch(1)
+
+    def toggle_sidebar(self):
+        """Toggle sidebar width between expanded and collapsed states"""
+        self.sidebar_expanded = not getattr(self, 'sidebar_expanded', True)
+        new_w = self.sidebar_width_expanded if self.sidebar_expanded else self.sidebar_width_collapsed
+        self.sidebar_frame.setFixedWidth(new_w)
+
     def setup_settings_button(self):
-        """Add settings button to toolbar"""
+        """Add top-left 'Tema' button and settings button to toolbar"""
+        # Theme toolbar (left-most)
+        theme_toolbar = QToolBar()
+        theme_toolbar.setIconSize(QSize(24, 24))
+        theme_toolbar.setStyleSheet("""
+            QToolBar { spacing: 10px; border: none; background: transparent; }
+            QToolButton { border: none; border-radius: 6px; padding: 6px 10px; font-weight: 600; }
+            QToolButton:hover { background-color: rgba(52, 152, 219, 20%); }
+        """)
+        theme_action = QAction("Tema", self)
+        theme_action.setToolTip("Cambia tema")
+        theme_action.triggered.connect(self.show_theme_menu)
+        theme_toolbar.addAction(theme_action)
+        self.addToolBar(Qt.TopToolBarArea, theme_toolbar)
+        theme_toolbar.setMovable(False)
+
+        # Settings toolbar (kept, to the right)
         settings_toolbar = QToolBar()
         settings_toolbar.setIconSize(QSize(24, 24))
-        
-        # Crea un'icona personalizzata che si adatta al tema
         settings_icon = self.style().standardIcon(QStyle.SP_FileDialogDetailedView)
         settings_button = QAction(settings_icon, "", self)
         settings_button.setToolTip("Settings")
         settings_button.triggered.connect(self.show_settings_dialog)
-        
-        # Applica lo stile che si adatta al tema
         settings_toolbar.setStyleSheet("""
-            QToolBar {
-                spacing: 10px;
-                border: none;
-                background: transparent;
-            }
-            QToolButton {
-                border: none;
-                border-radius: 4px;
-                padding: 4px;
-            }
-            QToolButton:hover {
-                background-color: rgba(52, 152, 219, 0.2);
-            }
+            QToolBar { spacing: 10px; border: none; background: transparent; }
+            QToolButton { border: none; border-radius: 6px; padding: 6px; }
+            QToolButton:hover { background-color: rgba(52, 152, 219, 20%); }
         """)
-        
         settings_toolbar.addAction(settings_button)
         self.addToolBar(Qt.TopToolBarArea, settings_toolbar)
         settings_toolbar.setMovable(False)
+
+    def show_theme_menu(self):
+        """Show a theme selection menu and apply chosen theme"""
+        from PyQt5.QtWidgets import QMenu
+        menu = QMenu(self)
+        themes = {
+            'Light': {'bg': '#ffffff', 'text': '#000000', 'accent': '#3498db'},
+            'Dark': {'bg': '#2f3640', 'text': '#f5f6fa', 'accent': '#3498db'},
+            'Nord': {'bg': '#2e3440', 'text': '#eceff4', 'accent': '#88c0d0'},
+            'Solarized': {'bg': '#fdf6e3', 'text': '#657b83', 'accent': '#268bd2'}
+        }
+        for name, colors in themes.items():
+            act = menu.addAction(name)
+            act.triggered.connect(lambda checked, n=name, c=colors: self.change_theme(n, c))
+        # Position menu under the mouse or near top-left
+        menu.exec_(self.mapToGlobal(self.rect().topLeft() + self.menuBar().pos()))
 
     def show_settings_dialog(self):
         """Show settings dialog"""
@@ -707,12 +959,15 @@ class MainWindow(QMainWindow):
                     event.acceptProposedAction()
                     self.drag_drop_label.setStyleSheet("""
                         QLabel {
-                            font-size: 16px;
-                            color: #2ecc71;
-                            padding: 20px;
-                            border: 2px dashed #27ae60;
-                            border-radius: 10px;
-                            background-color: rgba(46, 204, 113, 0.1);
+                            font-size: 18px;
+                            color: #27ae60;
+                            padding: 30px;
+                            border: 3px dashed #27ae60;
+                            border-radius: 15px;
+                            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 rgba(46, 204, 113, 0.2),
+                                stop:1 rgba(39, 174, 96, 0.1));
+                            font-weight: 600;
                         }
                     """)
                     return
@@ -722,12 +977,15 @@ class MainWindow(QMainWindow):
         """Handle drag leave event"""
         self.drag_drop_label.setStyleSheet("""
             QLabel {
-                font-size: 16px;
+                font-size: 18px;
                 color: #7f8c8d;
-                padding: 20px;
-                border: 2px dashed #bdc3c7;
-                border-radius: 10px;
-                background-color: rgba(236, 240, 241, 0.5);
+                padding: 30px;
+                border: 3px dashed #bdc3c7;
+                border-radius: 15px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(236, 240, 241, 0.8),
+                    stop:1 rgba(189, 195, 199, 0.3));
+                font-weight: 500;
             }
         """)
         event.accept()
@@ -746,12 +1004,15 @@ class MainWindow(QMainWindow):
             
             self.drag_drop_label.setStyleSheet("""
                 QLabel {
-                    font-size: 16px;
+                    font-size: 18px;
                     color: #7f8c8d;
-                    padding: 20px;
-                    border: 2px dashed #bdc3c7;
-                    border-radius: 10px;
-                    background-color: rgba(236, 240, 241, 0.5);
+                    padding: 30px;
+                    border: 3px dashed #bdc3c7;
+                    border-radius: 15px;
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 rgba(236, 240, 241, 0.8),
+                        stop:1 rgba(189, 195, 199, 0.3));
+                    font-weight: 500;
                 }
             """)
         
@@ -949,6 +1210,21 @@ class MainWindow(QMainWindow):
         output_layout.addWidget(browse_button)
         layout.addLayout(output_layout)
         
+        # PFS Info controls
+        pfs_controls = QHBoxLayout()
+        self.pfs_info_button = QPushButton("PFS Info (shadPKG)")
+        self.pfs_info_button.setToolTip("Show PFS structure without extracting files")
+        self.pfs_info_button.clicked.connect(self.run_pfs_info)
+        pfs_controls.addWidget(self.pfs_info_button)
+        pfs_controls.addStretch(1)
+        layout.addLayout(pfs_controls)
+
+        # PFS Info output
+        self.pfs_info_view = QTextEdit()
+        self.pfs_info_view.setReadOnly(True)
+        self.pfs_info_view.setPlaceholderText("Output PFS Info (shadPKG)")
+        layout.addWidget(self.pfs_info_view)
+
         # Extract log
         self.extract_log = QTextEdit()
         self.extract_log.setReadOnly(True)
@@ -959,53 +1235,25 @@ class MainWindow(QMainWindow):
         extract_button.clicked.connect(self.extract_pkg)
         layout.addWidget(extract_button)
 
-    def setup_dump_tab(self):
-        """Setup the dump tab"""
-        layout = QVBoxLayout(self.dump_tab)
-        
-        # Output directory selection
-        output_layout = QHBoxLayout()
-        self.dump_out_entry = QLineEdit()
-        self.dump_out_entry.setPlaceholderText("Select output directory")
-        browse_button = QPushButton("Browse")
-        browse_button.clicked.connect(lambda: self.browse_directory(self.dump_out_entry))
-        output_layout.addWidget(self.dump_out_entry)
-        output_layout.addWidget(browse_button)
-        layout.addLayout(output_layout)
-        
-        # Dump button
-        dump_button = QPushButton("Dump")
-        dump_button.clicked.connect(self.dump_pkg)
-        layout.addWidget(dump_button)
-
     def setup_inject_tab(self):
-        """Setup the inject tab"""
+        """Setup the inject tab (Work in Progress placeholder)"""
         layout = QVBoxLayout(self.inject_tab)
-        
-        # File selection
-        file_layout = QHBoxLayout()
-        self.inject_file_entry = QLineEdit()
-        self.inject_file_entry.setPlaceholderText("Select file to inject")
-        browse_button = QPushButton("Browse")
-        browse_button.clicked.connect(lambda: self.browse_file(self.inject_file_entry))
-        file_layout.addWidget(self.inject_file_entry)
-        file_layout.addWidget(browse_button)
-        layout.addLayout(file_layout)
-        
-        # Input file selection
-        input_layout = QHBoxLayout()
-        self.inject_input_entry = QLineEdit()
-        self.inject_input_entry.setPlaceholderText("Select input file")
-        input_browse = QPushButton("Browse")
-        input_browse.clicked.connect(lambda: self.browse_file(self.inject_input_entry))
-        input_layout.addWidget(self.inject_input_entry)
-        input_layout.addWidget(input_browse)
-        layout.addLayout(input_layout)
-        
-        # Inject button
-        inject_button = QPushButton("Inject")
-        inject_button.clicked.connect(self.inject_file)
-        layout.addWidget(inject_button)
+        wip = QLabel("🚧 Inject - Work in progress")
+        wip.setAlignment(Qt.AlignCenter)
+        wip.setStyleSheet("""
+            QLabel {
+                font-size: 18px;
+                font-weight: 700;
+                color: #2d3748;
+                padding: 24px;
+                background: rgba(255, 255, 255, 12%);
+                border: 1px solid rgba(0,0,0,8%);
+                border-radius: 12px;
+            }
+        """)
+        layout.addStretch(1)
+        layout.addWidget(wip)
+        layout.addStretch(1)
 
     def setup_modify_tab(self):
         """Setup the modify tab"""
@@ -1431,15 +1679,43 @@ class MainWindow(QMainWindow):
         
         passcode_layout.addLayout(manual_layout)
         
+        # Threads selector, Seed, and Stop button
+        control_layout = QHBoxLayout()
+        control_layout.addWidget(QLabel("Threads:"))
+        self.brute_threads_spin = QSpinBox()
+        self.brute_threads_spin.setRange(1, 32)
+        self.brute_threads_spin.setValue(1)
+        self.brute_threads_spin.setToolTip("Number of parallel workers")
+        control_layout.addWidget(self.brute_threads_spin)
+
+        control_layout.addWidget(QLabel("Seed:"))
+        self.brute_seed_edit = QLineEdit()
+        self.brute_seed_edit.setPlaceholderText("optional integer")
+        self.brute_seed_edit.setToolTip("Optional integer seed for deterministic traversal")
+        self.brute_seed_edit.setMaximumWidth(160)
+        control_layout.addWidget(self.brute_seed_edit)
+
+        self.brute_stop_button = QPushButton("Stop")
+        self.brute_stop_button.setEnabled(False)
+        self.brute_stop_button.clicked.connect(self.stop_bruteforce)
+        control_layout.addWidget(self.brute_stop_button)
+        
+        # Reset button
+        self.brute_reset_button = QPushButton("Reset")
+        self.brute_reset_button.setToolTip("Stop and clear progress (.brutestate/.success)")
+        self.brute_reset_button.clicked.connect(self.reset_bruteforce)
+        control_layout.addWidget(self.brute_reset_button)
+        passcode_layout.addLayout(control_layout)
+
         # Or label
         or_label = QLabel("- OR -")
         or_label.setAlignment(Qt.AlignCenter)
         passcode_layout.addWidget(or_label)
         
         # Bruteforce button
-        start_button = QPushButton("Start Bruteforce")
-        start_button.clicked.connect(self.run_bruteforce)
-        passcode_layout.addWidget(start_button)
+        self.brute_start_button = QPushButton("Start Bruteforce")
+        self.brute_start_button.clicked.connect(self.run_bruteforce)
+        passcode_layout.addWidget(self.brute_start_button)
         
         passcode_group.setLayout(passcode_layout)
         layout.addWidget(passcode_group)
@@ -1448,6 +1724,26 @@ class MainWindow(QMainWindow):
         self.bruteforce_log = QTextEdit()
         self.bruteforce_log.setReadOnly(True)
         layout.addWidget(self.bruteforce_log)
+
+        # Live stats labels
+        stats_layout = QHBoxLayout()
+        self.brute_attempts_label = QLabel("Attempts: 0")
+        self.brute_rate_label = QLabel("Rate: 0/s")
+        stats_layout.addWidget(self.brute_attempts_label)
+        stats_layout.addWidget(self.brute_rate_label)
+        stats_layout.addStretch(1)
+        layout.addLayout(stats_layout)
+
+        # Live tested keys list (bounded)
+        tested_group = QGroupBox("Tested Keys (live)")
+        tested_layout = QVBoxLayout()
+        self.tested_keys_list = QListWidget()
+        self.tested_keys_list.setAlternatingRowColors(True)
+        tested_layout.addWidget(self.tested_keys_list)
+        self.tested_count_label = QLabel("Shown: 0 (max 1000)")
+        tested_layout.addWidget(self.tested_count_label)
+        tested_group.setLayout(tested_layout)
+        layout.addWidget(tested_group)
 
     def try_manual_passcode(self):
         """Try decrypting with manual passcode"""
@@ -1661,49 +1957,126 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Warning", "Please select an output directory")
             return
 
+        # Run extraction in background to keep UI responsive
         try:
-            result = self.package.dump(output_dir)
-            self.extract_log.append(result)
-            QMessageBox.information(self, "Success", "PKG extracted successfully")
+            self.extract_log.append(f"[+] Starting extraction to: {output_dir}")
+
+            class ExtractWorker(QObject):
+                progress = pyqtSignal(str)
+                finished = pyqtSignal(str)
+                failed = pyqtSignal(str)
+
+                def __init__(self, pkg, out_dir):
+                    super().__init__()
+                    self._pkg = pkg
+                    self._out = out_dir
+
+                def run(self):
+                    try:
+                        # Prefer shadPKG for PS4, fallback to internal dump
+                        if isinstance(self._pkg, PackagePS4):
+                            try:
+                                result = self._pkg.extract_via_shadpkg(self._out)
+                            except Exception as e:
+                                Logger.log_warning(f"shadPKG failed, using internal extraction: {e}")
+                                self.progress.emit(f"[-] shadPKG failed, using internal extraction: {e}")
+                                result = self._pkg.dump(self._out)
+                        else:
+                            result = self._pkg.dump(self._out)
+                        self.finished.emit(result)
+                    except Exception as e:
+                        self.failed.emit(str(e))
+
+            # Create thread and worker
+            self.extract_thread = QThread(self)
+            self.extract_worker = ExtractWorker(self.package, output_dir)
+            self.extract_worker.moveToThread(self.extract_thread)
+            self.extract_thread.started.connect(self.extract_worker.run)
+            self.extract_worker.progress.connect(self.extract_log.append)
+
+            def on_extract_finished(msg: str):
+                try:
+                    self.extract_log.append(msg)
+                    QMessageBox.information(self, "Success", "PKG extracted successfully")
+                finally:
+                    self.extract_thread.quit()
+
+            def on_extract_failed(err: str):
+                try:
+                    QMessageBox.critical(self, "Error", f"Failed to extract PKG: {err}")
+                finally:
+                    self.extract_thread.quit()
+
+            self.extract_worker.finished.connect(on_extract_finished)
+            self.extract_worker.failed.connect(on_extract_failed)
+            self.extract_thread.finished.connect(self.extract_thread.deleteLater)
+            self.extract_thread.start()
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to extract PKG: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to start extraction: {str(e)}")
 
-    def dump_pkg(self):
-        """Dump PKG contents"""
-        if not self.package:
-            QMessageBox.warning(self, "Warning", "Please load a PKG file first")
-            return
-
-        output_dir = self.dump_out_entry.text()
-        if not output_dir:
-            QMessageBox.warning(self, "Warning", "Please select an output directory")
-            return
-
-        try:
-            result = self.package.dump(output_dir)
-            QMessageBox.information(self, "Success", result)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to dump PKG: {str(e)}")
 
     def inject_file(self):
-        """Inject file into PKG"""
+        """Inject file into PKG (WIP placeholder)"""
+        QMessageBox.information(self, "Work in Progress", "The Inject feature is currently under development.")
+        return
+
+    def run_pfs_info(self):
+        """Run shadPKG pfs-info in background and display result"""
         if not self.package:
-            QMessageBox.warning(self, "Warning", "Please load a PKG file first")
+            QMessageBox.warning(self, "PFS Info", "Please load a PKG file first")
+            return
+        if not isinstance(self.package, PackagePS4):
+            QMessageBox.warning(self, "PFS Info", "PFS Info è disponibile solo per PKG PS4")
             return
 
-        file_path = self.inject_file_entry.text()
-        input_path = self.inject_input_entry.text()
+        # Disable button to prevent multiple runs
+        self.pfs_info_button.setEnabled(False)
+        self.pfs_info_view.clear()
+        self.pfs_info_view.append("[+] Running shadPKG pfs-info...\n")
 
-        if not file_path or not input_path:
-            QMessageBox.warning(self, "Warning", "Please select both file to inject and input file")
-            return
+        class PfsInfoWorker(QObject):
+            finished = pyqtSignal(str)
+            failed = pyqtSignal(str)
+
+            def __init__(self, pkg):
+                super().__init__()
+                self._pkg = pkg
+
+            def run(self):
+                try:
+                    output = self._pkg.get_pfs_info(as_json=False)
+                    self.finished.emit(output)
+                except Exception as e:
+                    self.failed.emit(str(e))
 
         try:
-            file_info = self.package.get_file_info(file_path)
-            result = inject_file(self.package.original_file, file_info, input_path)
-            QMessageBox.information(self, "Success", f"File injected: {result} bytes")
+            self.pfs_thread = QThread(self)
+            self.pfs_worker = PfsInfoWorker(self.package)
+            self.pfs_worker.moveToThread(self.pfs_thread)
+            self.pfs_thread.started.connect(self.pfs_worker.run)
+
+            def on_done(text: str):
+                try:
+                    self.pfs_info_view.clear()
+                    self.pfs_info_view.append(text or "<no output>")
+                finally:
+                    self.pfs_thread.quit()
+                    self.pfs_info_button.setEnabled(True)
+
+            def on_fail(err: str):
+                try:
+                    QMessageBox.critical(self, "PFS Info", f"Failed: {err}")
+                finally:
+                    self.pfs_thread.quit()
+                    self.pfs_info_button.setEnabled(True)
+
+            self.pfs_worker.finished.connect(on_done)
+            self.pfs_worker.failed.connect(on_fail)
+            self.pfs_thread.finished.connect(self.pfs_thread.deleteLater)
+            self.pfs_thread.start()
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to inject file: {str(e)}")
+            self.pfs_info_button.setEnabled(True)
+            QMessageBox.critical(self, "PFS Info", f"Failed to start pfs-info: {e}")
 
     def modify_pkg(self):
         """Modify PKG header"""
@@ -1755,23 +2128,169 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Warning", "Please select an output directory")
             return
 
+        # Start background bruteforce in QThread
         try:
-            bruteforcer = PS4PasscodeBruteforcer()
-            result = bruteforcer.brute_force_passcode(
-                self.package.original_file,
-                output_dir,
-                lambda msg: self.bruteforce_log.append(msg)
-            )
-            self.bruteforce_log.append(result)
-            QMessageBox.information(self, "Success", result)
+            # Prepare UI state
+            self.brute_start_button.setEnabled(False)
+            self.brute_stop_button.setEnabled(True)
+            self.bruteforce_log.clear()
+            self.tested_keys_list.clear()
+            self.tested_count_label.setText("Shown: 0 (max 1000)")
+
+            # Create bruteforcer and thread
+            self.bruteforcer = PS4PasscodeBruteforcer()
+
+            class BruteforceWorker(QObject):
+                progress = pyqtSignal(str)
+                tested = pyqtSignal(str)
+                finished = pyqtSignal(str)
+
+                def __init__(self, bruteforcer, input_file, output_dir, threads, seed_val):
+                    super().__init__()
+                    self._bf = bruteforcer
+                    self._in = input_file
+                    self._out = output_dir
+                    self._threads = threads
+                    self._seed = seed_val
+
+                def run(self):
+                    try:
+                        result = self._bf.brute_force_passcode(
+                            self._in,
+                            self._out,
+                            progress_callback=self.progress.emit,
+                            manual_passcode=None,
+                            num_workers=self._threads,
+                            tested_callback=self.tested.emit,
+                            seed=self._seed
+                        )
+                        self.finished.emit(result)
+                    except Exception as e:
+                        self.finished.emit(f"[-] Error: {str(e)}")
+
+            # Parse seed (optional)
+            seed_text = self.brute_seed_edit.text().strip()
+            seed_val = None
+            if seed_text:
+                try:
+                    seed_val = int(seed_text)
+                except ValueError:
+                    QMessageBox.warning(self, "Seed", "Seed must be an integer")
+                    self.brute_start_button.setEnabled(True)
+                    self.brute_stop_button.setEnabled(False)
+                    return
+
+            self.brute_thread = QThread(self)
+            self.brute_worker = BruteforceWorker(self.bruteforcer, self.package.original_file, output_dir, self.brute_threads_spin.value(), seed_val)
+            self.brute_worker.moveToThread(self.brute_thread)
+            self.brute_thread.started.connect(self.brute_worker.run)
+            self.brute_worker.progress.connect(self.bruteforce_log.append)
+            self.brute_worker.progress.connect(self.on_bruteforce_progress)
+            self.brute_worker.tested.connect(self.on_tested_key)
+            self.brute_worker.finished.connect(self.on_bruteforce_finished)
+            self.brute_worker.finished.connect(self.brute_thread.quit)
+            self.brute_thread.finished.connect(self.brute_thread.deleteLater)
+            self.brute_thread.start()
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to bruteforce passcode: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to start bruteforce: {str(e)}")
+
+    def stop_bruteforce(self):
+        try:
+            if hasattr(self, 'bruteforcer') and self.bruteforcer:
+                # Prefer a stop() method if available, else set internal flag
+                if hasattr(self.bruteforcer, 'stop') and callable(self.bruteforcer.stop):
+                    self.bruteforcer.stop()
+                else:
+                    setattr(self.bruteforcer, '_stop', True)
+            self.brute_stop_button.setEnabled(False)
+        except Exception as e:
+            logging.error(f"Failed to stop bruteforce: {e}")
+
+    def reset_bruteforce(self):
+        """Stop any running bruteforce, delete saved state/success files, and reset UI."""
+        try:
+            # 1) Stop current run if any
+            self.stop_bruteforce()
+
+            # 2) Determine current input file
+            input_file = None
+            try:
+                if hasattr(self, 'package') and self.package and hasattr(self.package, 'original_file'):
+                    input_file = self.package.original_file
+            except Exception:
+                input_file = None
+            if not input_file:
+                # fallback from UI text
+                input_file = self.pkg_entry.text().strip()
+
+            # 3) Delete state and success files
+            if input_file:
+                state_path = f"{input_file}.brutestate.json"
+                success_path = f"{input_file}.success"
+                try:
+                    if os.path.exists(state_path):
+                        os.remove(state_path)
+                        self.bruteforce_log.append(f"[+] Removed state file: {state_path}")
+                except Exception as e:
+                    self.bruteforce_log.append(f"[-] Could not remove state file: {e}")
+                try:
+                    if os.path.exists(success_path):
+                        os.remove(success_path)
+                        self.bruteforce_log.append(f"[+] Removed success file: {success_path}")
+                except Exception as e:
+                    self.bruteforce_log.append(f"[-] Could not remove success file: {e}")
+
+            # 4) Reset UI elements
+            self.bruteforce_log.clear()
+            self.tested_keys_list.clear()
+            self.tested_count_label.setText("Shown: 0 (max 1000)")
+            self.brute_attempts_label.setText("Attempts: 0")
+            self.brute_rate_label.setText("Rate: 0/s")
+            self.brute_start_button.setEnabled(True)
+            self.brute_stop_button.setEnabled(False)
+
+            QMessageBox.information(self, "Reset", "Bruteforce state has been reset.")
+        except Exception as e:
+            logging.error(f"Failed to reset bruteforce: {e}")
+            QMessageBox.critical(self, "Reset", f"Failed to reset: {e}")
+
+    def on_tested_key(self, key: str):
+        # Append with bounded size to avoid memory growth
+        MAX_ITEMS = 1000
+        self.tested_keys_list.addItem(key)
+        if self.tested_keys_list.count() > MAX_ITEMS:
+            # Remove from top (oldest)
+            item = self.tested_keys_list.takeItem(0)
+            del item
+        self.tested_count_label.setText(f"Shown: {self.tested_keys_list.count()} (max {MAX_ITEMS})")
+
+    def on_bruteforce_finished(self, result: str):
+        # Re-enable UI and show result
+        self.brute_start_button.setEnabled(True)
+        self.brute_stop_button.setEnabled(False)
+        if result:
+            self.bruteforce_log.append(result)
+            if "successfully" in result.lower() or "[+]" in result:
+                QMessageBox.information(self, "Success", result)
+            elif result.lower().startswith("[-]"):
+                # Show warning for negative outcome
+                QMessageBox.warning(self, "Bruteforce", result)
+
+    def on_bruteforce_progress(self, msg: str):
+        # Parse attempts/rate lines like: "[~] Attempts: N | Rate: R/s" or with Threads
+        try:
+            m = re.search(r"Attempts:\s*(\d+).*Rate:\s*([0-9]+(?:\.[0-9]+)?)", msg)
+            if m:
+                self.brute_attempts_label.setText(f"Attempts: {m.group(1)}")
+                self.brute_rate_label.setText(f"Rate: {m.group(2)}/s")
+        except Exception:
+            pass
 
     def show_about(self):
         """Show about dialog"""
         QMessageBox.about(self, 
             "About PKG Tool Box",
-            """<h3>PKG Tool Box v1.5.2</h3>
+            """<h3>PKG Tool Box v1.4.02</h3>
             <p>Created by SeregonWar</p>
             <p>A tool for managing PS3/PS4/PS5 PKG files.</p>
             <p><a href="https://github.com/seregonwar">GitHub</a> | 
@@ -1780,45 +2299,8 @@ class MainWindow(QMainWindow):
 
     def update_info(self, info_dict):
         """Update info tab with package information"""
-        self.info_tree.clear()
-        
-        # Dizionario delle descrizioni per ogni chiave
-        descriptions = {
-            "pkg_magic": "Magic number identifying the PKG file format",
-            "pkg_type": "Type of the PKG (e.g., 0x1 for PS4)",
-            "pkg_file_count": "Number of files contained in the PKG",
-            "pkg_entry_count": "Number of entries in the PKG table",
-            "pkg_sc_entry_count": "Number of entries in the SC table",
-            "pkg_entry_data_size": "Size of the entry data in bytes",
-            "pkg_body_size": "Size of the PKG body in bytes",
-            "pkg_content_id": "Unique identifier for the PKG content",
-            "pkg_content_type": "Type of content in the PKG",
-            "pkg_content_flags": "Flags describing the content",
-            "pkg_promote_size": "Size of promotional content",
-            "pkg_version_date": "Version date of the PKG",
-            "pkg_version": "Package version",
-            "pkg_revision": "PKG format revision",
-            "title_id": "Title ID",
-            "system_version": "Minimum required system version",
-            "app_version": "Application version",
-            "total_size": "Total package size",
-            "pkg_size": "Package size",
-            "install_directory": "Installation directory",
-            "content_id": "Content ID",
-            # ... aggiungi altre descrizioni secondo necessità ...
-        }
-        
-        # Aggiungi le informazioni al tree widget
-        for key, value in info_dict.items():
-            item = QTreeWidgetItem(self.info_tree)
-            item.setText(0, str(key))  # Chiave
-            item.setText(1, str(value))  # Valore
-            item.setText(2, descriptions.get(key, ""))  # Descrizione
-        
-        # Ridimensiona le colonne per adattarsi al contenuto
-        self.info_tree.resizeColumnToContents(0)
-        self.info_tree.resizeColumnToContents(1)
-        self.info_tree.resizeColumnToContents(2)
+        if hasattr(self.info_tab, 'update_info'):
+            self.info_tab.update_info(info_dict)
 
     def update_pkg_entries(self, filename):
         """Update all PKG-related entries with the new filename"""
@@ -1828,30 +2310,44 @@ class MainWindow(QMainWindow):
         output_dir = os.path.join(os.path.dirname(filename), "output")
         
         # Update entries in various tabs
-        if hasattr(self, 'extract_out_entry'):
-            self.extract_out_entry.setText(output_dir)
-        if hasattr(self, 'dump_out_entry'):
-            self.dump_out_entry.setText(output_dir)
-        if hasattr(self, 'bruteforce_out_entry'):
-            self.bruteforce_out_entry.setText(output_dir)
+        if hasattr(self.extract_tab, 'extract_out_entry'):
+            self.extract_tab.extract_out_entry.setText(output_dir)
+        if hasattr(self.bruteforce_tab, 'bruteforce_out_entry'):
+            self.bruteforce_tab.bruteforce_out_entry.setText(output_dir)
 
     def setup_shortcuts(self):
         """Setup keyboard shortcuts"""
         shortcuts = {
             'Ctrl+O': self.browse_pkg,
             'Ctrl+E': lambda: self.tab_widget.setCurrentWidget(self.extract_tab),
-            'Ctrl+D': lambda: self.tab_widget.setCurrentWidget(self.dump_tab),
             'Ctrl+I': lambda: self.tab_widget.setCurrentWidget(self.info_tab),
             'Ctrl+F': self.file_browser.file_search.setFocus,
-            'Ctrl+B': lambda: self.tab_widget.setCurrentWidget(self.file_browser),
+            'Ctrl+B': self.toggle_sidebar,  # Toggle sidebar
             'Ctrl+W': lambda: self.tab_widget.setCurrentWidget(self.wallpaper_viewer),
+            'Ctrl+T': self.show_theme_menu,  # Open theme menu
             'F5': self.refresh_all,
             'F11': self.toggle_fullscreen
         }
-        
+
         for key, func in shortcuts.items():
-            shortcut = QShortcut(QKeySequence(key), self)
-            shortcut.activated.connect(func)
+            sc = QShortcut(QKeySequence(key), self)
+            sc.activated.connect(func)
+
+        # Alt+1..9 to jump to primary sections
+        tab_widgets = [
+            self.info_tab,
+            self.file_browser,
+            self.wallpaper_viewer,
+            self.extract_tab,
+            self.inject_tab,
+            self.modify_tab,
+            self.trophy_tab,
+            self.esmf_decrypter_tab,
+        ]
+        for i, widget in enumerate(tab_widgets, start=1):
+            seq = QKeySequence(f"Alt+{i}")
+            qs = QShortcut(seq, self)
+            qs.activated.connect(lambda w=widget: self.tab_widget.setCurrentWidget(w))
 
     def setup_search(self):
         """Setup global search"""
@@ -2263,7 +2759,7 @@ class MainWindow(QMainWindow):
     def retranslate_ui(self):
         """Update UI text with current language"""
         # Update window title
-        self.setWindowTitle(self.translator.translate("PKG Tool Box v1.5.2"))
+        self.setWindowTitle(self.translator.translate("PKG Tool Box v1.4.0"))
         
         # Update menu items
         self.file_menu.setTitle(self.translator.translate("File"))
@@ -2278,7 +2774,7 @@ class MainWindow(QMainWindow):
         # Update tab names
         self.tab_widget.setTabText(0, self.translator.translate("Info"))
         self.tab_widget.setTabText(1, self.translator.translate("File Browser"))
-        # ... aggiorna altri tab ...
+
         
         # Force update
         self.update()

@@ -1,11 +1,14 @@
 import struct
 from .package_base import PackageBase
 from .enums import DRMType, ContentType, IROTag
-from utils import Logger
+from tools.utils import Logger
 import os
 import shutil
 import logging
+import subprocess
 from .crypto_utils import AES_ctx, AES_set_key, AES_cbc_decrypt, AES_KEY_LEN_128
+ 
+
 
 class PackagePS4(PackageBase):
     MAGIC_PS4 = 0x7f434E54  # ?CNT for PS4
@@ -208,6 +211,37 @@ class PackagePS4(PackageBase):
             Logger.log_error(f"Error reading file data: {str(e)}")
             raise
 
+    def get_pfs_info(self, as_json: bool = False) -> str:
+        """Esegue 'shadPKG.exe pfs-info' sul PKG corrente e restituisce l'output.
+
+        Se as_json è True, aggiunge l'opzione '--json' e restituisce lo stdout (stringa JSON).
+        Lancia un'eccezione se shadPKG non è disponibile o il comando fallisce.
+        """
+        exe = self._find_shadpkg_exe()
+        if not exe:
+            raise FileNotFoundError("shadPKG.exe non trovato nel percorso previsto.")
+
+        cmd = [exe, 'pfs-info']
+        if as_json:
+            cmd.append('--json')
+        cmd.append(self.original_file)
+
+        try:
+            Logger.log_information(f"Running shadPKG pfs-info: {' '.join(cmd)}")
+            proc = subprocess.run(cmd, cwd=os.path.dirname(exe), capture_output=True, text=True, timeout=120)
+            if proc.stdout:
+                Logger.log_information(proc.stdout.strip())
+            if proc.stderr:
+                # shadPKG prints some info to stderr; keep as warning without failing
+                Logger.log_warning(proc.stderr.strip())
+            if proc.returncode != 0:
+                raise RuntimeError(f"pfs-info failed with code {proc.returncode}")
+            return (proc.stdout or '').strip()
+        except subprocess.TimeoutExpired:
+            raise TimeoutError("pfs-info timeout")
+        except Exception as e:
+            raise RuntimeError(f"pfs-info error: {e}")
+
     def is_encrypted(self):
         """Check if package is encrypted"""
         try:
@@ -296,10 +330,90 @@ class PackagePS4(PackageBase):
                     f.write(decrypted_pkg)
                 
                 # Estrai i file dal PKG decifrato
-                self.extract_all_files(output_dir)
+                # 1) Prova con lo strumento esterno shadPKG.exe se disponibile
+                used_external = False
+                try:
+                    if self._extract_with_shadpkg(decrypted_path, output_dir):
+                        Logger.log_information("Extraction via shadPKG.exe completed.")
+                        used_external = True
+                except Exception as e:
+                    Logger.log_warning(f"shadPKG.exe extraction failed, falling back to internal: {e}")
+
+                # 2) In caso di indisponibilità/errore, fallback all'estrattore interno
+                if not used_external:
+                    self.extract_all_files(output_dir)
                 
             except Exception as e:
                 raise Exception(f"Error in AES decryption: {str(e)}")
             
         except Exception as e:
             raise Exception(f"Error decrypting PKG: {str(e)}")
+
+    def _find_shadpkg_exe(self):
+        """Restituisce il percorso di shadPKG.exe se presente nel progetto, altrimenti None."""
+        try:
+            base_dir = os.path.dirname(__file__)
+            candidate = os.path.join(base_dir, 'ps3lib', 'shadPKG.exe')
+            if os.path.isfile(candidate):
+                return candidate
+        except Exception:
+            pass
+        return None
+
+    def _extract_with_shadpkg(self, pkg_path: str, output_dir: str) -> bool:
+        """Prova ad estrarre usando shadPKG.exe con la sintassi corretta.
+
+        Usa il comando 'extract' e specifica la directory di output con '-o' o come
+        argomento posizionale, come da help dello strumento.
+        Ritorna True su successo (exit code 0), altrimenti False.
+        """
+        exe = self._find_shadpkg_exe()
+        if not exe:
+            return False
+
+        commands = [
+            [exe, 'extract', '-o', output_dir, pkg_path],
+            [exe, 'extract', pkg_path, output_dir],
+            [exe, 'extract', pkg_path],  # lascia a shadPKG scegliere la cartella
+        ]
+
+        for cmd in commands:
+            try:
+                Logger.log_information(f"Running shadPKG: {' '.join(cmd)}")
+                # Esegui dal suo folder per sicurezza
+                cwd = os.path.dirname(exe)
+                proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=300)
+                if proc.stdout:
+                    Logger.log_information(proc.stdout.strip())
+                if proc.stderr:
+                    Logger.log_warning(proc.stderr.strip())
+                if proc.returncode == 0:
+                    # Considera riuscito se la tool è terminato con exit code 0
+                    return True
+            except FileNotFoundError:
+                # Non trovato o parametri non validi; prova il prossimo formato
+                continue
+            except subprocess.TimeoutExpired:
+                Logger.log_warning("shadPKG.exe timed out")
+                continue
+            except Exception as e:
+                Logger.log_warning(f"shadPKG.exe invocation error: {e}")
+                continue
+
+        return False
+
+    def extract_via_shadpkg(self, output_dir: str) -> str:
+        """Estrae direttamente dall'originale PKG usando shadPKG.exe.
+
+        Usato dall'UI per instradare le operazioni di Extract/Dump su PS4 attraverso
+        lo strumento esterno quando disponibile. Non modifica il loader delle info di base.
+        """
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+            if self._extract_with_shadpkg(self.original_file, output_dir):
+                Logger.log_information(f"Extraction completed via shadPKG. Output: {output_dir}")
+                return f"Extraction completed. Output: {output_dir}"
+            raise ValueError("shadPKG.exe unavailable or extraction failed")
+        except Exception as e:
+            Logger.log_error(f"extract_via_shadpkg failed: {e}")
+            raise

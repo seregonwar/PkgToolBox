@@ -3,7 +3,7 @@ import os
 import json
 from .package_base import PackageBase
 from .enums import DRMType, ContentType, IROTag
-from utils import Logger
+from tools.utils import Logger
 
 class PackagePS5(PackageBase):
     MAGIC_PS5 = 0x7F464948  # ?FIH for PS5
@@ -118,7 +118,37 @@ class PackagePS5(PackageBase):
         self.version_file_uri = None
 
     def _find_file_by_name(self, name):
-        return next((file for file in self.files.values() if file.get("name") == name), None)
+        """Find a file by name with tolerant matching for PS5 packages.
+
+        Normalizes path separators and allows suffix-based matches to account for
+        cases where file names are stored without a stable root or with variant separators.
+        """
+        try:
+            def _norm(p: str) -> str:
+                if not p:
+                    return ""
+                p = p.replace("\\", "/")
+                # strip common leading prefixes
+                while p.startswith("./"):
+                    p = p[2:]
+                if p.startswith("/"):
+                    p = p[1:]
+                # Heuristic: fix inverted directory name 'sys_sce' -> 'sce_sys'
+                p = p.replace("sys_sce/", "sce_sys/")
+                p = p.replace("/sys_sce/", "/sce_sys/")
+                return p
+
+            target = _norm(name).lower()
+            for file in self.files.values():
+                n = _norm(file.get("name", "")).lower()
+                if not n:
+                    continue
+                if n == target or n.endswith(target):
+                    return file
+            return None
+        except Exception:
+            # Fallback to exact match if anything goes wrong
+            return next((file for file in self.files.values() if file.get("name") == name), None)
 
     def _parse_param_json(self, fp, param_json):
         try:
@@ -173,6 +203,10 @@ class PackagePS5(PackageBase):
             Logger.log_error(f"Error parsing param.json: {str(e)}")
 
     def _find_important_files(self):
+        # If files table is empty or missing, skip noisy warnings (likely encrypted/corrupted)
+        if not getattr(self, 'files', None):
+            Logger.log_information("Skipping important files check: no file index available (package may be encrypted)")
+            return
         important_files = [
             "eboot.bin",
             "sce_sys/icon0.png",

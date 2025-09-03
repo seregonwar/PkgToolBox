@@ -24,13 +24,22 @@ crypto_datas, crypto_binaries, crypto_hiddenimports = collect_all('Crypto')
 utilities_datas, utilities_binaries, utilities_hiddenimports = collect_all('Utilities')
 file_operations_datas, file_operations_binaries, file_operations_hiddenimports = collect_all('file_operations')
 
+# Includi il pacchetto dell'interfaccia grafica (serve per bundlare i JSON delle traduzioni)
+gui_datas, gui_binaries, gui_hiddenimports = collect_all('GraphicUserInterface')
+
+# Includi la cartella con gli strumenti PS3 necessari a runtime
+ps3lib_tree = Tree(os.path.join('packages', 'ps3lib'), prefix=os.path.join('packages', 'ps3lib'))
+
+# Percorso icona eseguibile
+icon_path = resource_path(os.path.join('icons', 'icon.ico'))
+
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('PS4PKGToolTemp', 'PS4PKGToolTemp')] + utilities_datas + file_operations_datas,
+    datas=[('PS4PKGToolTemp', 'PS4PKGToolTemp')] + utilities_datas + file_operations_datas + gui_datas,
     hiddenimports=['repack', 'gui', 'package', 'PS4_Passcode_Bruteforcer', 'PS5_Game_Info'] + 
-                  utilities_hiddenimports + file_operations_hiddenimports,
+                  utilities_hiddenimports + file_operations_hiddenimports + gui_hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -59,6 +68,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=icon_path,
 )
 
 # Crea le DLL separate
@@ -67,6 +77,7 @@ coll = COLLECT(
     a.binaries,
     a.zipfiles,
     a.datas,
+    ps3lib_tree,
     strip=False,
     upx=True,
     upx_exclude=[],

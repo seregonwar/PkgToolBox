@@ -6,7 +6,7 @@ import re
 import unicodedata
 from PIL import Image
 from .enums import DRMType, ContentType, IROTag
-from utils import Logger
+from tools.utils import Logger
 
 class PackageBase:
     TYPE_MASK = 0x0000FFFF
@@ -81,3 +81,48 @@ class PackageBase:
             data = f.read(file_info['size'])
         
         return data
+
+    def extract_all_files(self, output_dir: str):
+        """Extract all files listed in self.files to the specified output directory.
+
+        This is a generic implementation used by package types. It expects
+        `self.files` to be a mapping of file_id -> dict with at least:
+          - 'offset': byte offset in the source package
+          - 'size': size in bytes
+          - optional 'name': output relative path
+        """
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+
+            if not isinstance(self.files, dict) or not self.files:
+                Logger.log_warning("No files table available for extraction.")
+                return f"No files to extract. Output: {output_dir}"
+
+            with open(self.original_file, 'rb') as src:
+                for file_id, info in self.files.items():
+                    try:
+                        name = info.get('name', f'file_{file_id}')
+                        # Normalize any path-like names to avoid traversal
+                        safe_name = os.path.normpath(name).lstrip(os.sep).replace('..', '_')
+                        out_path = os.path.join(output_dir, safe_name)
+                        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+                        offset = info.get('offset')
+                        size = info.get('size')
+                        if offset is None or size is None:
+                            Logger.log_warning(f"Skipping file_id {file_id}: missing offset/size")
+                            continue
+
+                        src.seek(offset)
+                        chunk = src.read(size)
+                        with open(out_path, 'wb') as dst:
+                            dst.write(chunk)
+                        Logger.log_information(f"Extracted: {safe_name}")
+                    except Exception as e:
+                        Logger.log_error(f"Error extracting file_id {file_id}: {e}")
+
+            Logger.log_information(f"Extraction completed. Output: {output_dir}")
+            return f"Extraction completed. Output: {output_dir}"
+        except Exception as e:
+            Logger.log_error(f"Extraction failed: {e}")
+            raise
