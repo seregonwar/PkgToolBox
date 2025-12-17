@@ -46,7 +46,7 @@ If I forgot to add anyone below, please let me know on [X](https://x.com/Seregon
 ## Installation
 1. Clone the repository:
     ```sh
-    git clone https://github.com/seregonwar/PS4-PKG-Tool-Box.git
+    git clone https://github.com/seregonwar/PkgToolBox.git
     cd PkgToolBox
     ```
 
@@ -105,7 +105,6 @@ If I forgot to add anyone below, please let me know on [X](https://x.com/Seregon
   - [ ] Decryption of `.ESFM` files.
 
 ## GUI
+<img width="1340" height="944" alt="Screenshot 2025-12-17 alle 13 44 38" src="https://github.com/user-attachments/assets/890e9463-7241-4ad2-a5e7-2c1b1cc5c9d9" />
 
-![image](https://github.com/user-attachments/assets/ba7a84cf-bb8e-41a9-b57c-0d74e0eee3ef)
-![image](https://github.com/user-attachments/assets/599a354e-c276-4542-bb1a-f571945d6897)
 
