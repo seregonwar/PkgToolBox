@@ -1,6 +1,12 @@
-﻿import ctypes
-import os
-import winreg
+﻿import os
+import sys
+
+if sys.platform == "win32":
+    import winreg
+    import ctypes
+else:
+    winreg = None
+    ctypes = None
 import tempfile
 from enum import Enum
 
@@ -16,6 +22,8 @@ class Wallpaper:
 
     @staticmethod
     def set(style: Style):
+        if sys.platform != "win32":
+            return
         path = os.path.join(tempfile.gettempdir(), "Saved image", "wallpaper.JPG")
         
         # Assicurarsi che la directory esista

@@ -3,3 +3,4 @@ Pillow>=9.0.0
 kiwisolver>=1.3.0
 PyQt5-stubs>=5.15.0
 requests>=2.31.0
+pycryptodome>=3.0.0
