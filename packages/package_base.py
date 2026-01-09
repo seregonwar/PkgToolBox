@@ -6,7 +6,7 @@ import re
 import unicodedata
 from PIL import Image
 from .enums import DRMType, ContentType, IROTag
-from tools.utils import Logger
+from Utilities import Logger
 
 class PackageBase:
     TYPE_MASK = 0x0000FFFF

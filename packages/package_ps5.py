@@ -3,7 +3,7 @@ import os
 import json
 from .package_base import PackageBase
 from .enums import DRMType, ContentType, IROTag
-from tools.utils import Logger
+from Utilities import Logger
 
 class PackagePS5(PackageBase):
     MAGIC_PS5 = 0x7F464948  # ?FIH for PS5

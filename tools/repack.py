@@ -2,7 +2,7 @@ import struct
 import os
 import logging
 import shutil
-from tools.utils import Logger
+from Utilities import Logger
 from tools.PS5_Game_Info import PS5GameInfo
 import json
 

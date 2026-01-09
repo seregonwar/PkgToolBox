@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=PkgToolBox
-AppVersion=1.0.0
+AppVersion=1.4.0
 AppPublisher=Seregonwar
 AppPublisherURL=https://github.com/Seregonwar
 AppSupportURL=https://github.com/Seregonwar/PkgToolBox

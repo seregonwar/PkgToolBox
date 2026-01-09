@@ -11,17 +11,12 @@ from contextlib import redirect_stdout
 # Aggiungi la directory root al path di Python
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Import dei moduli usando percorsi assoluti
+# Import dei moduli
 from GraphicUserInterface.main_window import MainWindow
 from packages import PackagePS4, PackagePS5, PackagePS3
-from packages import (
-    AES_ctx, AES_set_key, AES_encrypt, AES_KEY_LEN_128, AES_cbc_decrypt,
-    PGD_HEADER, MAC_KEY, sceDrmBBMacInit, sceDrmBBMacUpdate, bbmac_getkey,
-    kirk_init, decrypt_pgd
-)
 from Utilities.Trophy import Archiver, TrophyFile, TRPCreator, TRPReader
 from file_operations import extract_file, inject_file, modify_file_header
-from Utilities import Logger, SettingsManager, Utils
+from Utilities import Logger, SettingsManager
 from tools.repack import Repack
 from tools.PS5_Game_Info import PS5GameInfo
 from PyQt5.QtWidgets import QApplication

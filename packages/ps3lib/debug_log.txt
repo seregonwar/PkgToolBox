@@ -2557,3 +2557,9 @@
 [2025-09-03 18:33:00] [DEBUG] Dirent.ino==0, break ciclo
 [2025-09-03 18:33:00] [DEBUG] end_reached=true, break ciclo blocchi
 [2025-09-03 18:33:00] [DEBUG] Fine parsing blocchi PFS
+[2026-01-08 01:42:49] [START] Avvio estrattore PKG con generatore RIF
+[2026-01-08 01:42:49] [DEBUG] Inizio PKG::Scan su C:/Users/marco/Downloads/PS4_CUSA02012_v4.01.pkg
+[2026-01-08 01:42:49] [DEBUG] Fine PKG::Scan, entries: 384
+[2026-01-08 01:43:06] [START] Avvio estrattore PKG con generatore RIF
+[2026-01-08 01:43:06] [DEBUG] Inizio PKG::Scan su C:/Users/marco/Downloads/PS4_CUSA02012_v4.01.pkg
+[2026-01-08 01:43:06] [DEBUG] Fine PKG::Scan, entries: 384

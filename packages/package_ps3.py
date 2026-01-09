@@ -254,16 +254,15 @@ class PackagePS3(PackageBase):
                 self.pkg_type = pkg.read(1)[0]
                 
                 # Leggi metadata
-                pkg.seek(0x0C)
+                pkg.seek(0x08)
                 self.pkg_metadata_offset = struct.unpack('>I', pkg.read(4))[0]
                 self.pkg_metadata_count = struct.unpack('>I', pkg.read(4))[0]
                 self.pkg_metadata_size = struct.unpack('>I', pkg.read(4))[0]
-                
-                # Leggi informazioni sui file
-                pkg.seek(0x18)
                 self.item_count = struct.unpack('>I', pkg.read(4))[0]
+                
+                # Leggi informazioni sui file e dati
                 self.total_size = struct.unpack('>Q', pkg.read(8))[0]
-                self.data_offset = struct.unpack('>I', pkg.read(4))[0]
+                self.data_offset = struct.unpack('>Q', pkg.read(8))[0]
                 self.data_size = struct.unpack('>Q', pkg.read(8))[0]
                 
                 # Leggi content ID (0x30)

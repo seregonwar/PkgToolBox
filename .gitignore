@@ -1,1 +1,7 @@
 *.pyc
+/build
+/dist
+/installer_output
+/installer_output
+/PS4PKGToolTemp
+packages/ps3lib/debug_log.txt

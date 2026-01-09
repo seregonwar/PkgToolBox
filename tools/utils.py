@@ -1,3 +1,6 @@
+from Utilities.Logger import Logger
+
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -12,17 +15,3 @@ class bcolors:
 
 def print_aligned(name: str, text: str, color: str = ''):
     print(f"{name:>20}  {color}{bcolors.BOLD}{text}{bcolors.ENDC}")
-
-
-class Logger:
-    @staticmethod
-    def log_information(message):
-        print(f"INFO: {message}")
-
-    @staticmethod
-    def log_warning(message):
-        print(f"WARNING: {message}")
-
-    @staticmethod
-    def log_error(message):
-        print(f"ERROR: {message}")
