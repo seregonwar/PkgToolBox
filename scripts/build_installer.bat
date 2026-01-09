@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0\.."
 echo ========================================
 echo Building PkgToolBox Installer
 echo ========================================
@@ -29,7 +30,7 @@ if not exist "installer_output" mkdir installer_output
 
 :: Compila l'installer
 echo Compilazione installer in corso...
-"%ISCC%" "PkgToolBox.iss"
+"%ISCC%" "scripts\PkgToolBox.iss"
 
 if %ERRORLEVEL% EQU 0 (
     echo.

@@ -2,6 +2,7 @@
 ; Questo script crea un installer per l'applicazione PkgToolBox
 
 [Setup]
+SourceDir=..
 AppName=PkgToolBox
 AppVersion=1.4.0
 AppPublisher=Seregonwar
@@ -14,7 +15,7 @@ AllowNoIcons=yes
 LicenseFile=
 OutputDir=installer_output
 OutputBaseFilename=PkgToolBox_Setup
-SetupIconFile=icons\icon.ico
+SetupIconFile=..\icons\icon.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -23,8 +24,8 @@ ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 
 ; Immagini per l'installer
-WizardImageFile=installer_assets\welcome.bmp
-WizardSmallImageFile=installer_assets\logo.bmp
+WizardImageFile=..\installer_assets\welcome.bmp
+WizardSmallImageFile=..\installer_assets\logo.bmp
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
