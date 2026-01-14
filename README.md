@@ -1,7 +1,13 @@
 # PKG Tool Box
 [![Github All Releases](https://img.shields.io/github/downloads/seregonwar/PkgToolBox/total.svg)]()
 --
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/seregon)
+## ☕ Support PkgToolBox Development
+
+PkgToolBox is actively developed and maintained over time.  
+If you find this tool useful and want to support its continued development, you can buy me a coffee on Ko-fi.
+
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/seregon)
+
 
 ## 🤝 Contributions Welcome!
 
