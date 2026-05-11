@@ -1,5 +1,6 @@
 # PKG Tool Box
 [![Github All Releases](https://img.shields.io/github/downloads/seregonwar/PkgToolBox/total.svg)]()
+[![Repository views](https://hits.sh/github.com/seregonwar/PkgToolBox.svg?label=views)](https://hits.sh/github.com/seregonwar/PkgToolBox/)
 --
 ## Description
 PkgToolBox is a tool for manipulating PS4 PKG files. It allows you to extract, inject, modify, and obtain information about PKG files.
