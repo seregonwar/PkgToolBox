@@ -12,6 +12,7 @@ import struct
 from GraphicUserInterface.components import FileBrowser, WallpaperViewer
 from GraphicUserInterface.dialogs import SettingsDialog
 from GraphicUserInterface.utils import StyleManager, ImageUtils, FileUtils
+from GraphicUserInterface.utils.icons import get_icon, get_sidebar_icons
 from GraphicUserInterface.widgets import ExtractTab, InfoTab, BruteforceTab
 from GraphicUserInterface.widgets.pfs_info_tab import PfsInfoTab
 from tools.PS5_Game_Info import PS5GameInfo
@@ -409,7 +410,7 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self.content_id_label)
         
         # Revolutionary drag-drop zone with glassmorphism
-        self.drag_drop_label = QLabel("✨ Drop PKG files here or Browse")
+        self.drag_drop_label = QLabel("Drop PKG files here or Browse")
         self.drag_drop_label.setAlignment(Qt.AlignCenter)
         self.drag_drop_label.setStyleSheet("""
             QLabel {
@@ -430,7 +431,7 @@ class MainWindow(QMainWindow):
         # Revolutionary file selection with glassmorphism
         pkg_layout = QHBoxLayout()
         self.pkg_entry = QLineEdit()
-        self.pkg_entry.setPlaceholderText("🎯 Select your PKG file...")
+        self.pkg_entry.setPlaceholderText("Select your PKG file...")
         self.pkg_entry.setStyleSheet("""
             QLineEdit {
                 padding: 16px 20px;
@@ -450,7 +451,7 @@ class MainWindow(QMainWindow):
             }
         """)
         
-        browse_button = QPushButton("🚀 BROWSE")
+        browse_button = QPushButton("BROWSE")
         browse_button.clicked.connect(self.browse_pkg)
         browse_button.setStyleSheet("""
             QPushButton {
@@ -750,13 +751,9 @@ class MainWindow(QMainWindow):
         theme_menu = view_menu.addMenu('Theme')
         theme_group = QActionGroup(self)
         self.theme_actions = {}
-        themes = {
-            'Light': {'bg': '#ffffff', 'text': '#000000', 'accent': '#3498db'},
-            'Dark': {'bg': '#2f3640', 'text': '#f5f6fa', 'accent': '#3498db'},
-            'Nord': {'bg': '#2e3440', 'text': '#eceff4', 'accent': '#88c0d0'},
-            'Solarized': {'bg': '#fdf6e3', 'text': '#657b83', 'accent': '#268bd2'}
-        }
-        for theme_name, colors in themes.items():
+        themes = StyleManager.get_available_themes()
+        for theme_name in themes:
+            colors = StyleManager.get_theme_colors(theme_name)
             action = QAction(theme_name, self)
             action.setCheckable(True)
             action.triggered.connect(lambda checked, t=theme_name, c=colors: self.change_theme(t, c))
@@ -782,27 +779,51 @@ class MainWindow(QMainWindow):
     def change_theme(self, theme_name, colors):
         """Change and persist theme selection"""
         try:
-            # Map provided colors to StyleManager schema
             new_settings = self.settings_dict or {}
             if "appearance" not in new_settings:
                 new_settings["appearance"] = {}
             if "colors" not in new_settings["appearance"]:
                 new_settings["appearance"]["colors"] = {}
             new_settings["appearance"]["theme"] = theme_name
+            new_settings["appearance"]["night_mode"] = StyleManager.is_dark_theme(theme_name, colors)
             new_settings["appearance"]["colors"].update({
-                "background": colors.get('bg', '#ffffff'),
+                "background": colors.get('background', '#ffffff'),
                 "text": colors.get('text', '#000000'),
-                "accent": colors.get('accent', '#3498db')
+                "accent": colors.get('accent', '#3498db'),
+                "secondary_bg": colors.get('secondary_bg', colors.get('background', '#f1f5f9')),
+                "secondary_text": colors.get('secondary_text', colors.get('text', '#475569')),
+                "border": colors.get('border', '#cbd5e1'),
+                "selection": colors.get('selection', colors.get('accent', '#3b82f6')),
+                "hover": colors.get('hover', '#e2e8f0'),
+                "error": colors.get('error', '#dc2626'),
+                "success": colors.get('success', '#16a34a'),
+                "warning": colors.get('warning', '#d97706')
             })
             # Save and apply
             StyleManager.save_settings(new_settings)
             self.settings_dict = new_settings
             StyleManager.apply_theme(self, self.settings_dict)
+            # Recolor sidebar icons for the new theme
+            self._recolor_sidebar_icons(colors)
             # Reflect selection in menu
             if hasattr(self, 'theme_actions') and theme_name in self.theme_actions:
                 self.theme_actions[theme_name].setChecked(True)
         except Exception as e:
             logging.error(f"Failed to change theme: {e}")
+
+    def _recolor_sidebar_icons(self, colors):
+        """Recolor sidebar navigation icons to match current theme."""
+        if not hasattr(self, '_nav_buttons'):
+            return
+        icon_color = colors.get('secondary_text', colors.get('text', '#475569'))
+        sidebar_icons = get_sidebar_icons(icon_color, 18)
+        toggle_menu_icon = get_icon('menu', icon_color, 20)
+        for btn, icon_key in self._nav_buttons:
+            new_icon = sidebar_icons.get(icon_key, get_icon('file', icon_color, 18))
+            btn.setIcon(new_icon)
+        # Recolor the hamburger toggle button
+        if hasattr(self, 'sidebar_toggle_btn') and self.sidebar_toggle_btn:
+            self.sidebar_toggle_btn.setIcon(toggle_menu_icon)
 
     def create_sidebar(self):
         """Create sidebar with navigation; theme control moved to top toolbar"""
@@ -842,7 +863,14 @@ class MainWindow(QMainWindow):
         self.sidebar_width_collapsed = 52
         self.sidebar_frame.setFixedWidth(self.sidebar_width_expanded)
 
-        toggle_btn = QPushButton("☰")
+        # Get current theme icon color from saved settings
+        theme_name = self.settings_dict.get("appearance", {}).get("theme", "Light")
+        theme_colors = StyleManager.get_theme_colors(theme_name)
+        icon_color = theme_colors.get('secondary_text', theme_colors.get('text', '#475569'))
+
+        toggle_btn = QPushButton()
+        toggle_btn.setIcon(get_icon('menu', icon_color, 20))
+        self.sidebar_toggle_btn = toggle_btn  # Store for recoloring
         toggle_btn.setToolTip("Toggle menu")
         toggle_btn.setFixedHeight(40)
         toggle_btn.setStyleSheet("""
@@ -852,9 +880,6 @@ class MainWindow(QMainWindow):
                     stop:1 rgba(80, 227, 194, 20%));
                 border: 1px solid rgba(74, 144, 226, 30%);
                 border-radius: 12px;
-                font-size: 18px;
-                font-weight: bold;
-                color: #2d3748;
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -865,29 +890,33 @@ class MainWindow(QMainWindow):
         toggle_btn.clicked.connect(self.toggle_sidebar)
         layout.addWidget(toggle_btn)
 
-        # Navigation buttons
-        def add_nav(text, widget):
+        # Navigation buttons with SVG icons (colored to match saved theme)
+        self._nav_buttons = []  # Track for theme-based recoloring
+        sidebar_icons = get_sidebar_icons(icon_color, 18)
+        def add_nav(icon_key, text, widget):
             btn = QPushButton(text)
             btn.setObjectName("navBtn")
+            btn.setIcon(sidebar_icons.get(icon_key, get_icon('file', icon_color, 18)))
             btn.setFixedHeight(36)
             btn.setMinimumWidth(220)
             btn.clicked.connect(lambda: self.tab_widget.setCurrentWidget(widget))
             layout.addWidget(btn)
+            self._nav_buttons.append((btn, icon_key))
             return btn
 
         # Ensure widgets exist before wiring
-        add_nav("🏷️ Info", self.info_tab)
-        add_nav("📁 File Browser", self.file_browser)
-        add_nav("🖼️ Wallpaper", self.wallpaper_viewer)
-        add_nav("📦 Extract", self.extract_tab)
-        add_nav("🧩 PFS Info", self.pfs_info_tab)
-        add_nav("📥 Inject", self.inject_tab)
-        add_nav("🛠️ Modify", self.modify_tab)
-        add_nav("🏆 Trophy", self.trophy_tab)
-        add_nav("🔓 ESMF Decrypter", self.esmf_decrypter_tab)
-        add_nav("📦 Create TRP", self.trp_create_tab)
-        add_nav("🕹️ PS5 Game Info", self.ps5_game_info_tab)
-        add_nav("🔢 Passcode Bruteforcer", self.bruteforce_tab)
+        add_nav('info', 'Info', self.info_tab)
+        add_nav('file_browser', 'File Browser', self.file_browser)
+        add_nav('wallpaper', 'Wallpaper', self.wallpaper_viewer)
+        add_nav('extract', 'Extract', self.extract_tab)
+        add_nav('pfs_info', 'PFS Info', self.pfs_info_tab)
+        add_nav('inject', 'Inject', self.inject_tab)
+        add_nav('modify', 'Modify', self.modify_tab)
+        add_nav('trophy', 'Trophy', self.trophy_tab)
+        add_nav('esmf', 'ESMF Decrypter', self.esmf_decrypter_tab)
+        add_nav('trp', 'Create TRP', self.trp_create_tab)
+        add_nav('ps5_info', 'PS5 Game Info', self.ps5_game_info_tab)
+        add_nav('bruteforce', 'Passcode Bruteforcer', self.bruteforce_tab)
 
         layout.addStretch(1)
 
@@ -934,13 +963,9 @@ class MainWindow(QMainWindow):
         """Show a theme selection menu and apply chosen theme"""
         from PyQt5.QtWidgets import QMenu
         menu = QMenu(self)
-        themes = {
-            'Light': {'bg': '#ffffff', 'text': '#000000', 'accent': '#3498db'},
-            'Dark': {'bg': '#2f3640', 'text': '#f5f6fa', 'accent': '#3498db'},
-            'Nord': {'bg': '#2e3440', 'text': '#eceff4', 'accent': '#88c0d0'},
-            'Solarized': {'bg': '#fdf6e3', 'text': '#657b83', 'accent': '#268bd2'}
-        }
-        for name, colors in themes.items():
+        themes = StyleManager.get_available_themes()
+        for name in themes:
+            colors = StyleManager.get_theme_colors(name)
             act = menu.addAction(name)
             act.triggered.connect(lambda checked, n=name, c=colors: self.change_theme(n, c))
         # Position menu under the mouse or near top-left
@@ -1238,7 +1263,7 @@ class MainWindow(QMainWindow):
     def setup_inject_tab(self):
         """Setup the inject tab (Work in Progress placeholder)"""
         layout = QVBoxLayout(self.inject_tab)
-        wip = QLabel("🚧 Inject - Work in progress")
+        wip = QLabel("Inject - Work in progress")
         wip.setAlignment(Qt.AlignCenter)
         wip.setStyleSheet("""
             QLabel {

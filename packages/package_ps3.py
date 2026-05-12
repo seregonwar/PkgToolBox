@@ -7,10 +7,10 @@ from PIL import Image
 import io
 from .package_base import PackageBase
 import shutil
-import subprocess
 import time
 import datetime
 import sys
+import tempfile
 
 class PackagePS3(PackageBase):
     MAGIC_PS3 = 0x7f504b47  # ?PKG per PS3
@@ -30,7 +30,7 @@ class PackagePS3(PackageBase):
             self._closed = False
             
             # Crea directory temporanea in AppData/Local con timestamp
-            appdata_local = os.getenv('LOCALAPPDATA')
+            appdata_local = os.getenv('LOCALAPPDATA') or tempfile.gettempdir()
             base_temp_dir = os.path.join(appdata_local, "PkgToolBox", "temp_output")
             os.makedirs(base_temp_dir, exist_ok=True)
             
@@ -47,6 +47,9 @@ class PackagePS3(PackageBase):
             
             # Carica le informazioni di base
             self.load_pkg_info()
+            
+            # Inizializza le chiavi crittografiche
+            self._init_crypto()
             
             # Avvia l'estrazione e attendi il completamento
             self.extract_and_wait()
@@ -92,92 +95,97 @@ class PackagePS3(PackageBase):
         except Exception as e:
             logging.error(f"Error in _cache_important_files: {str(e)}")
 
-    def decrypt_and_extract(self, progress=None):
-        """Decripta il PKG ed estrae i file usando Ps3DebugLib.exe"""
-        try:
-            if getattr(sys, 'frozen', False):
-                # Se l'app è "frozen" (compilata con PyInstaller)
-                base_path = sys._MEIPASS
-            else:
-                # Se l'app è in esecuzione da script
-                base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                
-            ps3lib_path = os.path.join(base_path, "packages", "ps3lib", "Ps3DebugLib.exe")
-            
-            if not os.path.exists(ps3lib_path):
-                logging.error(f"Ps3DebugLib.exe not found at: {ps3lib_path}")
-                raise FileNotFoundError(f"Ps3DebugLib.exe not found at: {ps3lib_path}")
+    def _init_crypto(self):
+        """Inizializza chiavi e parametri per la decrittazione PS3"""
+        self.ui_encrypted_file_start_offset = self.data_offset
+        
+        with open(self.original_file, 'rb') as f:
+            f.seek(0x70)
+            self.pkg_file_key = bytearray(f.read(16))
+        
+        if self.pkg_type == 0x01:
+            self.ps3_aes_key = bytes.fromhex(
+                '4C8E8E4C8E8E4C8E8E4C8E8E4C8E8E4C'
+            )
+        else:
+            self.ps3_aes_key = None
 
-            # Crea directory di output nel temp_dir
+    @staticmethod
+    def _process_events():
+        """Consente alla GUI di rimanere reattiva durante l'estrazione"""
+        try:
+            from PyQt5.QtWidgets import QApplication
+            QApplication.processEvents()
+        except ImportError:
+            pass
+
+    def _prepare_decrypted_data(self, output_path):
+        """Prepara i dati decriptati della sezione file table in un file temporaneo.
+        Per PKG debug copia direttamente, per PKG retail decripta."""
+        file_size = os.path.getsize(self.original_file)
+        logging.info(f"_prepare_decrypted_data: data_offset={self.data_offset}, data_size={self.data_size}, file_size={file_size}")
+        
+        if self.data_offset >= file_size:
+            raise ValueError(f"data_offset ({self.data_offset}) is beyond file size ({file_size})")
+        
+        with open(self.original_file, 'rb') as src:
+            src.seek(self.data_offset)
+            chunk_size = min(self.data_size, file_size - self.data_offset, 1048576)
+            encrypted_data = src.read(chunk_size)
+        
+        logging.info(f"_prepare_decrypted_data: read {len(encrypted_data)} bytes, pkg_type={self.pkg_type}")
+        
+        if self.pkg_type == 0x01 and self.ps3_aes_key:
+            decrypted = bytearray()
+            inc_key = bytearray(self.pkg_file_key)
+            cipher = AES.new(self.ps3_aes_key, AES.MODE_ECB)
+            for i in range(0, len(encrypted_data), 16):
+                xor_key = cipher.encrypt(bytes(inc_key))
+                chunk = encrypted_data[i:i + 16]
+                decrypted.extend(bytes(a ^ b for a, b in zip(chunk, xor_key)))
+                self.increment_array(inc_key, 15)
+            data = bytes(decrypted[:len(encrypted_data)])
+        else:
+            data = encrypted_data
+        
+        with open(output_path, 'wb') as dst:
+            dst.write(data)
+        logging.info(f"_prepare_decrypted_data: wrote {len(data)} bytes to {output_path}")
+
+    def decrypt_and_extract(self, progress=None):
+        """Decripta il PKG ed estrae i file usando estrazione nativa Python"""
+        try:
             self.output_dir = os.path.join(self.temp_dir, "pkg_files")
             os.makedirs(self.output_dir, exist_ok=True)
-
-            # Costruisci il comando
-            cmd = [ps3lib_path, "-o", self.output_dir, self.original_file]
-
+            
+            decrypted_table_path = os.path.join(self.temp_dir, "decrypted_table.bin")
+            logging.info("Preparing decrypted data...")
+            self._process_events()
+            self._prepare_decrypted_data(decrypted_table_path)
+            
+            logging.info("Extracting files from decrypted table...")
+            self._process_events()
+            self.extract_files(decrypted_table_path, self.output_dir)
+            
+            self._process_events()
+            file_list = [item for item in self.files.items() if not item[1].get('is_directory')]
+            for idx, (relative_path, file_info) in enumerate(file_list):
+                if idx % 50 == 0:
+                    self._process_events()
+                file_size = file_info.get('size', 0)
+                if file_size < 1024*1024 or relative_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    if 'path' in file_info and os.path.exists(file_info['path']):
+                        with open(file_info['path'], 'rb') as f:
+                            file_info['content'] = f.read()
+            
             try:
-                process = subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    universal_newlines=True,
-                    creationflags=subprocess.CREATE_NO_WINDOW
-                )
+                os.remove(decrypted_table_path)
+            except OSError:
+                pass
                 
-                # Monitora l'output
-                for line in process.stdout:
-                    line = line.strip()
-                    if "%" in line and progress:
-                        try:
-                            progress_str = line.split('%')[0].strip().split()[-1]
-                            current_progress = int(progress_str)
-                            progress.setValue(current_progress)
-                        except:
-                            pass
-
-                process.wait()
-                
-                if process.returncode != 0:
-                    error = process.stderr.read()
-                    raise RuntimeError(f"Ps3DebugLib.exe failed with error: {error}")
-
-                # Aggiorna la lista dei file
-                self.files = {}
-                for root, _, files in os.walk(self.output_dir):
-                    for file in sorted(files):
-                        file_path = os.path.join(root, file)
-                        relative_path = os.path.relpath(file_path, self.output_dir)
-                        file_size = os.path.getsize(file_path)
-                        
-                        # Leggi subito il contenuto per file piccoli o immagini
-                        if file_size < 1024*1024 or file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                            with open(file_path, 'rb') as f:
-                                content = f.read()
-                        else:
-                            content = None
-                            
-                        self.files[relative_path] = {
-                            'id': len(self.files),
-                            'name': relative_path,
-                            'size': file_size,
-                            'path': file_path,
-                            'content': content
-                        }
-
-                if progress:
-                    progress.setValue(100)
-
-            except subprocess.SubprocessError as e:
-                logging.error(f"Error executing Ps3DebugLib.exe: {str(e)}")
-                raise RuntimeError(f"Error executing Ps3DebugLib.exe: {str(e)}")
-
         except Exception as e:
             logging.error(f"Error in decrypt_and_extract: {str(e)}")
             raise
-
-    def _decrypt_retail_pkg(self, pkg_file_name):
-        """Mantiene la logica esistente per PKG retail"""
-   
 
     def get_info(self):
         """Restituisce le informazioni del pacchetto in un formato leggibile"""
@@ -521,6 +529,7 @@ class PackagePS3(PackageBase):
         """Estrae i file dal PKG decriptato"""
         try:
             twenty_mb = 1024 * 1024 * 20
+            is_retail = self.pkg_type == 0x01
             
             with open(decrypted_pkg_file_name, "rb") as decr_pkg_read_stream:
                 # Leggi la tabella dei file
@@ -533,13 +542,18 @@ class PackagePS3(PackageBase):
                 decr_pkg_read_stream.seek(0)
                 file_table = decr_pkg_read_stream.read(uifirst_file_offset)
 
-                if ui_file_nr < 0:
-                    raise ValueError("Decryption error detected during file extraction")
+                if ui_file_nr < 0 or ui_file_nr > 100000:
+                    raise ValueError(f"Invalid file count from file table: {ui_file_nr}")
+                
+                logging.info(f"Extracting {ui_file_nr} files from PKG...")
 
                 # Reset del dizionario files
                 self.files.clear()
 
                 for ii in range(ui_file_nr):
+                    if ii % 10 == 0:
+                        self._process_events()
+                    
                     position_idx = ii * 32
                     extracted_file_offset = struct.unpack(">I", file_table[position_idx + 12:position_idx + 16])[0]
                     extracted_file_size = struct.unpack(">I", file_table[position_idx + 20:position_idx + 24])[0]
@@ -550,18 +564,15 @@ class PackagePS3(PackageBase):
 
                     name = file_table[extracted_file_name_offset:extracted_file_name_offset + extracted_file_name_size]
                     
-                    # Gestione corretta dei nomi dei file
-                    if content_type == 0x90:
-                        # File/directory PSP
-                        extracted_file_name = self.byte_array_to_ascii(name, True)
-                    else:
-                        # File/directory PS3 - necessita decriptazione
+                    if is_retail and content_type != 0x90:
                         decrypted_name = self.decrypt_data(extracted_file_name_size, 
                                                          extracted_file_name_offset,
                                                          self.ui_encrypted_file_start_offset,
                                                          self.ps3_aes_key,
                                                          open(self.original_file, "rb"))
                         extracted_file_name = self.byte_array_to_ascii(decrypted_name, True)
+                    else:
+                        extracted_file_name = self.byte_array_to_ascii(name, True)
 
                     # Determina se è un file o una directory
                     is_file = not (file_type == 0x04 and extracted_file_size == 0x00)
@@ -570,7 +581,6 @@ class PackagePS3(PackageBase):
                         file_path = os.path.join(output_dir, extracted_file_name)
                         if not is_file:
                             os.makedirs(file_path, exist_ok=True)
-                            # Aggiungi la directory al dizionario files
                             self.files[extracted_file_name] = {
                                 'id': ii,
                                 'name': extracted_file_name,
@@ -583,7 +593,6 @@ class PackagePS3(PackageBase):
 
                         os.makedirs(os.path.dirname(file_path), exist_ok=True)
                         
-                        # Aggiungi il file al dizionario files
                         self.files[extracted_file_name] = {
                             'id': ii,
                             'name': extracted_file_name,
@@ -591,12 +600,11 @@ class PackagePS3(PackageBase):
                             'size': extracted_file_size,
                             'is_directory': False,
                             'content_type': content_type,
-                            'path': file_path  # Aggiungi il percorso completo
+                            'path': file_path
                         }
                         
                         with open(file_path, "wb") as extracted_file_write_stream:
-                            if content_type == 0x90:
-                                # Copia diretta per file PSP
+                            if not is_retail or content_type == 0x90:
                                 decr_pkg_read_stream.seek(extracted_file_offset)
                                 remaining = extracted_file_size
                                 while remaining > 0:
@@ -605,7 +613,6 @@ class PackagePS3(PackageBase):
                                     extracted_file_write_stream.write(chunk)
                                     remaining -= chunk_size
                             else:
-                                # Decripta per file PS3
                                 remaining = extracted_file_size
                                 offset = 0
                                 with open(self.original_file, "rb") as encr_pkg_read_stream:
@@ -667,82 +674,30 @@ class PackagePS3(PackageBase):
         try:
             os.makedirs(output_dir, exist_ok=True)
             
-            # Modifica il modo in cui otteniamo il percorso di Ps3DebugLib.exe
-            if getattr(sys, 'frozen', False):
-                # Se l'app è "frozen" (compilata con PyInstaller)
-                base_path = sys._MEIPASS
-            else:
-                # Se l'app è in esecuzione da script
-                base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                
-            ps3lib_path = os.path.join(base_path, "packages", "ps3lib", "Ps3DebugLib.exe")
-            
-            if not os.path.exists(ps3lib_path):
-                logging.error(f"Ps3DebugLib.exe not found at: {ps3lib_path}")
-                raise FileNotFoundError(f"Ps3DebugLib.exe not found at: {ps3lib_path}")
-
-            # Costruisci il comando
-            cmd = [ps3lib_path, "-o", output_dir, self.original_file]
-
-            # Crea una progress bar usando QProgressDialog
-            from PyQt5.QtWidgets import QProgressDialog
+            from PyQt5.QtWidgets import QProgressDialog, QApplication
             from PyQt5.QtCore import Qt
-            progress = QProgressDialog("Extracting PKG...", None, 0, 100)
-            progress.setWindowModality(Qt.WindowModal)
+            progress = QProgressDialog("Extracting PKG...", None, 0, 0)
+            progress.setWindowModality(Qt.NonModal)
             progress.setWindowTitle("Extracting")
             progress.setMinimumDuration(0)
-            progress.setValue(0)
+            progress.setCancelButton(None)
             progress.show()
+            QApplication.processEvents()
 
             try:
-                process = subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    universal_newlines=True,
-                    creationflags=subprocess.CREATE_NO_WINDOW
-                )
+                decrypted_table_path = os.path.join(output_dir, ".decrypted_table.bin")
+                self._prepare_decrypted_data(decrypted_table_path)
+                QApplication.processEvents()
                 
-                # Monitora l'output
-                for line in process.stdout:
-                    line = line.strip()
-                    
-                    if "%" in line:
-                        try:
-                            progress_str = line.split('%')[0].strip().split()[-1]
-                            current_progress = int(progress_str)
-                            progress.setValue(current_progress)
-                        except:
-                            pass
+                self.extract_files(decrypted_table_path, output_dir)
                 
-                # Attendi il completamento
-                process.wait()
-                
-                if process.returncode != 0:
-                    error = process.stderr.read()
-                    raise RuntimeError(f"Ps3DebugLib.exe failed with error: {error}")
+                try:
+                    os.remove(decrypted_table_path)
+                except OSError:
+                    pass
 
-                # Aggiorna la lista dei file
-                self.files = {}
-                for root, _, files in os.walk(output_dir):
-                    for file in sorted(files):
-                        file_path = os.path.join(root, file)
-                        relative_path = os.path.relpath(file_path, output_dir)
-                        
-                        file_size = os.path.getsize(file_path)
-                        self.files[relative_path] = {
-                            'id': len(self.files),
-                            'name': relative_path,
-                            'size': file_size,
-                            'path': file_path
-                        }
-
-                progress.setValue(100)
                 return f"Package extracted successfully to: {output_dir}"
 
-            except subprocess.SubprocessError as e:
-                logging.error(f"Error executing Ps3DebugLib.exe: {str(e)}")
-                raise RuntimeError(f"Error executing Ps3DebugLib.exe: {str(e)}")
             finally:
                 progress.close()
 
@@ -753,27 +708,23 @@ class PackagePS3(PackageBase):
     def extract_and_wait(self):
         """Estrae i file e attendi il completamento"""
         try:
-            # Crea una progress bar usando QProgressDialog
-            from PyQt5.QtWidgets import QProgressDialog
+            from PyQt5.QtWidgets import QProgressDialog, QApplication
             from PyQt5.QtCore import Qt
-            progress = QProgressDialog("Extracting PKG...", None, 0, 100)
-            progress.setWindowModality(Qt.WindowModal)
+            progress = QProgressDialog("Extracting PKG...", None, 0, 0)
+            progress.setWindowModality(Qt.NonModal)
             progress.setWindowTitle("Extracting")
             progress.setMinimumDuration(0)
-            progress.setValue(0)
+            progress.setCancelButton(None)
             progress.show()
+            QApplication.processEvents()
 
             try:
-                # Blocca il cleanup durante l'estrazione
                 self._cleanup_lock = True
                 
-                # Esegui l'estrazione
                 self.decrypt_and_extract(progress)
                 
-                # Attendi un momento per assicurarsi che tutti i file siano scritti
                 time.sleep(0.5)
                 
-                # Imposta i flag quando l'estrazione è completata
                 self.is_ready = True
                 self.extraction_complete = True
                 logging.info("PS3 PKG file loaded.")
@@ -783,7 +734,7 @@ class PackagePS3(PackageBase):
                 raise
             finally:
                 progress.close()
-                self._cleanup_lock = False  # Sblocca il cleanup
+                self._cleanup_lock = False
 
         except Exception as e:
             logging.error(f"Error in extract_and_wait: {str(e)}")

@@ -63,7 +63,9 @@ class SettingsDialog(QDialog):
         
         theme_layout.addWidget(QLabel("Theme:"), 0, 0)
         self.theme_combo = QComboBox()
-        self.theme_combo.addItems(["Light", "Dark", "System", "Custom"])
+        # Load all themes from themes.json
+        available_themes = StyleManager.get_available_themes()
+        self.theme_combo.addItems(available_themes + ["System", "Custom"])
         self.theme_combo.currentTextChanged.connect(self.on_theme_changed)
         theme_layout.addWidget(self.theme_combo, 0, 1)
         
@@ -258,7 +260,7 @@ class SettingsDialog(QDialog):
             settings = {
                 "appearance": {
                     "theme": self.theme_combo.currentText(),
-                    "night_mode": self.theme_combo.currentText() == "Dark",
+                    "night_mode": StyleManager.is_dark_theme(self.theme_combo.currentText()),
                     "font_family": self.current_font.family() if hasattr(self, 'current_font') else "Arial",
                     "font_size": self.current_font.pointSize() if hasattr(self, 'current_font') else 12,
                     "colors": {
@@ -404,19 +406,21 @@ class SettingsDialog(QDialog):
         """Handle theme change"""
         self.colors_group.setEnabled(theme == "Custom")
         if theme != "Custom":
-            # Imposta i colori predefiniti per il tema selezionato
-            if theme == "Light":
-                self.set_theme_colors("#ffffff", "#000000", "#3498db")
-            elif theme == "Dark":
-                self.set_theme_colors("#1e1e1e", "#ffffff", "#3498db")
-            elif theme == "System":
-                # Usa i colori di sistema
+            if theme == "System":
                 from PyQt5.QtGui import QPalette
                 palette = QApplication.palette()
                 self.set_theme_colors(
                     palette.color(QPalette.Window).name(),
                     palette.color(QPalette.WindowText).name(),
                     palette.color(QPalette.Highlight).name()
+                )
+            else:
+                # Use theme colors from themes.json
+                colors = StyleManager.get_theme_colors(theme)
+                self.set_theme_colors(
+                    colors.get('background', '#ffffff'),
+                    colors.get('text', '#000000'),
+                    colors.get('accent', '#3498db')
                 )
 
     def set_theme_colors(self, bg, text, accent):
