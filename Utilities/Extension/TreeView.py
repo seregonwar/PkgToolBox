@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QTreeWidgetItem
+from PySide6.QtWidgets import QTreeWidgetItem
 
 class TreeView:
     @staticmethod

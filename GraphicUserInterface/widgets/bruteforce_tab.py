@@ -3,10 +3,10 @@ Bruteforce tab widget for PS4 passcode bruteforcing functionality
 """
 import os
 import logging
-from PyQt5.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
                             QPushButton, QTextEdit, QGroupBox, QSpinBox,
                             QListWidget, QMessageBox)
-from PyQt5.QtCore import Qt, QThread, QObject, pyqtSignal
+from PySide6.QtCore import Qt, QThread, QObject, Signal
 from .base_tab import BaseTab
 from tools.PS4_Passcode_Bruteforcer import PS4PasscodeBruteforcer
 import re
@@ -184,7 +184,7 @@ class BruteforceTab(BaseTab):
         
     def browse_output_directory(self):
         """Browse for output directory"""
-        from PyQt5.QtWidgets import QFileDialog
+        from PySide6.QtWidgets import QFileDialog
         directory = QFileDialog.getExistingDirectory(
             self,
             "Select Output Directory"
@@ -251,9 +251,9 @@ class BruteforceTab(BaseTab):
             self.bruteforcer = PS4PasscodeBruteforcer()
 
             class BruteforceWorker(QObject):
-                progress = pyqtSignal(str)
-                tested = pyqtSignal(str)
-                finished = pyqtSignal(str)
+                progress = Signal(str)
+                tested = Signal(str)
+                finished = Signal(str)
 
                 def __init__(self, bruteforcer, input_file, output_dir, threads, seed_val):
                     super().__init__()

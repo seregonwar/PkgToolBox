@@ -1,7 +1,7 @@
 """
 PFS Info tab widget for inspecting PS4 PKG PFS structure via shadPKG
 """
-from PyQt5.QtWidgets import (
+from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QLineEdit,
@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (
     QGroupBox,
     QCheckBox,
 )
-from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal
+from PySide6.QtCore import Qt, QObject, QThread, Signal
 from .base_tab import BaseTab
 from packages import PackagePS4
 
@@ -64,8 +64,8 @@ class PfsInfoTab(BaseTab):
         self.output_view.append("[+] Running shadPKG pfs-info{}...\n".format(" --json" if as_json else ""))
 
         class Worker(QObject):
-            finished = pyqtSignal(str)
-            failed = pyqtSignal(str)
+            finished = Signal(str)
+            failed = Signal(str)
 
             def __init__(self, pkg, json_flag):
                 super().__init__()

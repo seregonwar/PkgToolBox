@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                             QPushButton, QTreeWidget, QTreeWidgetItem, QDialog, QMessageBox, QApplication)
-from PyQt5.QtCore import Qt
+from PySide6.QtCore import Qt
 from ..utils import FileUtils, ImageUtils
 
 class WallpaperViewer(QWidget):

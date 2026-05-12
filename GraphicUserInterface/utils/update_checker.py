@@ -2,13 +2,13 @@ import requests
 import json
 import os
 import re
-from PyQt5.QtWidgets import QMessageBox, QCheckBox
-from PyQt5.QtCore import QThread, pyqtSignal
+from PySide6.QtWidgets import QMessageBox, QCheckBox
+from PySide6.QtCore import QThread, Signal
 import webbrowser
 
 class UpdateChecker(QThread):
-    update_available = pyqtSignal(str, str)  # version, download_url
-    error_occurred = pyqtSignal(str)
+    update_available = Signal(str, str)  # version, download_url
+    error_occurred = Signal(str)
 
     CURRENT_VERSION = "1.4.03"  # Versione corrente
     GITHUB_API_URL = "https://api.github.com/repos/seregonwar/PkgToolBox/releases/latest"

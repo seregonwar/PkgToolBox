@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
-from PyQt5.QtCore import Qt
+from PySide6.QtWidgets import QTreeWidget, QTreeWidgetItem
+from PySide6.QtCore import Qt
 
 class CustomTreeWidget(QTreeWidget):
     def __init__(self, parent=None):

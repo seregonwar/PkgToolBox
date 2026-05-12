@@ -1,10 +1,10 @@
 """
 Extract tab widget for PKG extraction functionality
 """
-from PyQt5.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
                             QPushButton, QTextEdit, QFileDialog, QMessageBox,
                             QGroupBox)
-from PyQt5.QtCore import Qt
+from PySide6.QtCore import Qt
 from .base_tab import BaseTab
 from packages import PackagePS4
 from Utilities import Logger

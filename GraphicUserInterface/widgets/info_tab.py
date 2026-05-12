@@ -1,9 +1,9 @@
 """
 Info tab widget for displaying PKG information
 """
-from PyQt5.QtWidgets import (QVBoxLayout, QTreeWidget, QTreeWidgetItem, 
+from PySide6.QtWidgets import (QVBoxLayout, QTreeWidget, QTreeWidgetItem, 
                             QGroupBox, QLabel)
-from PyQt5.QtCore import Qt
+from PySide6.QtCore import Qt
 from .base_tab import BaseTab
 
 class InfoTab(BaseTab):

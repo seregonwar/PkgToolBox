@@ -19,7 +19,8 @@ from file_operations import extract_file, inject_file, modify_file_header
 from Utilities import Logger, SettingsManager
 from tools.repack import Repack
 from tools.PS5_Game_Info import PS5GameInfo
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication
+from qt_material import apply_stylesheet
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -187,12 +188,16 @@ def main():
     # Setup directories and settings
     temp_directory, settings_file_path = check_settings_file_presence()
     
+    # Apply Material Design theme (qt-material)
+    # Choose 'light_blue.xml' as default - looks modern and professional
+    apply_stylesheet(app, theme='light_blue.xml')
+    
     # Create and show main window
     window = MainWindow(temp_directory)
     window.show()
     
     # Start application
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 if __name__ == "__main__":
     main()

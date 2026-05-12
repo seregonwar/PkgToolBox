@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
-from PyQt5.QtGui import QColor, QBrush
+from PySide6.QtWidgets import QTreeWidget, QTreeWidgetItem
+from PySide6.QtGui import QColor, QBrush
 
 class ListViewDraw:
     @staticmethod

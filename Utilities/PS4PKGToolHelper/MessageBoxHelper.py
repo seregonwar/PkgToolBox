@@ -1,5 +1,5 @@
 from logging import Logger
-from PyQt5.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox
 
 class MessageBoxHelper:
     @staticmethod

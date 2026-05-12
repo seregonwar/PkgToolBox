@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QTranslator, QLocale
+from PySide6.QtCore import QTranslator, QLocale
 import json
 import os
 import sys

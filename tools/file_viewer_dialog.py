@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QTextEdit
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QTextEdit
 
 class FileViewerDialog(QDialog):
     def __init__(self, data, file_name, mode="text", parent=None):

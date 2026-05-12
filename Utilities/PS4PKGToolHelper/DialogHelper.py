@@ -1,11 +1,11 @@
-from PyQt5.QtWidgets import QFileDialog
+from PySide6.QtWidgets import QFileDialog
 
 class DialogHelper:
     @staticmethod
     def show_folder_browser_dialog():
         dialog = QFileDialog()
         dialog.setFileMode(QFileDialog.Directory)
-        if dialog.exec_():
+        if dialog.exec():
             return dialog.selectedFiles()[0]
         return None
 
@@ -15,6 +15,6 @@ class DialogHelper:
         dialog.setAcceptMode(QFileDialog.AcceptSave)
         dialog.setNameFilter(filter)
         dialog.setWindowTitle(title)
-        if dialog.exec_():
+        if dialog.exec():
             return dialog.selectedFiles()[0]
         return None

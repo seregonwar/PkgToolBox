@@ -1,5 +1,5 @@
 import os
-from PyQt5.QtCore import QSize
+from PySide6.QtCore import QSize
 
 class FileUtils:
     @staticmethod
@@ -41,7 +41,7 @@ class FileUtils:
     @staticmethod
     def get_file_icon(file_type):
         """Get appropriate icon for file type"""
-        from PyQt5.QtWidgets import QStyle, QApplication
+        from PySide6.QtWidgets import QStyle, QApplication
         style = QApplication.style()
         
         icon_map = {

@@ -2,10 +2,10 @@
 Material Design inspired SVG icons for PkgToolBox.
 Provides QIcon objects from inline SVG paths - no external dependencies.
 """
-from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor
-from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtSvg import QSvgRenderer
-from PyQt5.QtWidgets import QStyle, QApplication
+from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtSvg import QSvgRenderer
+from PySide6.QtWidgets import QStyle, QApplication
 import io
 
 

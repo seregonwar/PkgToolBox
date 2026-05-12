@@ -2,12 +2,11 @@ import logging
 import sys
 import os
 import re
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                             QHBoxLayout, QLabel, QLineEdit, QPushButton, QTabWidget,
-                            QMessageBox, QToolBar, QAction, QTreeWidget, QTextEdit, QTableWidget, QFileDialog, QGroupBox, QGridLayout, QSpinBox, QTreeWidgetItem, QDialog, QProgressBar, QShortcut, QActionGroup, QComboBox, QCheckBox, QListWidget, QFrame)
-from PyQt5.QtCore import Qt, QSize, QUrl, QObject, pyqtSignal, QThread
-from PyQt5.QtGui import QFont, QDesktopServices
-from PyQt5.QtWidgets import QStyle
+                            QMessageBox, QToolBar, QTreeWidget, QTextEdit, QTableWidget, QTableWidgetItem, QFileDialog, QGroupBox, QGridLayout, QSpinBox, QTreeWidgetItem, QDialog, QProgressBar, QComboBox, QCheckBox, QListWidget, QFrame, QStyle)
+from PySide6.QtCore import Qt, QSize, QUrl, QObject, Signal, QThread
+from PySide6.QtGui import QFont, QDesktopServices, QAction, QShortcut, QActionGroup, QKeySequence
 import struct
 from GraphicUserInterface.components import FileBrowser, WallpaperViewer
 from GraphicUserInterface.dialogs import SettingsDialog
@@ -23,40 +22,13 @@ from tools.PS4_Passcode_Bruteforcer import PS4PasscodeBruteforcer
 import re
 from Utilities import Logger
 import json
-from PyQt5.QtWidgets import QTableWidgetItem
-from PyQt5.QtGui import QKeySequence
+
 import traceback
 from Utilities import Logger, SettingsManager, TRPReader  
 from .locales.translator import Translator
 from GraphicUserInterface.utils.update_checker import UpdateChecker, UpdateDialog
 
 class MainWindow(QMainWindow):
-    COLORS = {
-        'light': {
-            'background': '#f5f6fa',
-            'text': '#2f3640',
-            'accent': '#3498db',
-            'secondary': '#e1e5eb',
-            'success': '#2ecc71',
-            'warning': '#f1c40f',
-            'error': '#e74c3c',
-            'tree_alternate': '#f1f2f6',
-            'tree_hover': '#dcdde1',
-            'tree_selected': '#3498db'
-        },
-        'dark': {
-            'background': '#2f3640',
-            'text': '#f5f6fa',
-            'accent': '#3498db',
-            'secondary': '#353b48',
-            'success': '#27ae60',
-            'warning': '#f39c12',
-            'error': '#c0392b',
-            'tree_alternate': '#353b48',
-            'tree_hover': '#485460',
-            'tree_selected': '#3498db'
-        }
-    }
 
     def __init__(self, temp_directory):
         super().__init__()
@@ -78,8 +50,7 @@ class MainWindow(QMainWindow):
             appearance.get("font_size", 12)
         )
         QApplication.setFont(self.font)
-        # Theme
-        StyleManager.apply_theme(self, self.settings_dict)
+        # Theme is handled by qt-material (Material Design) globally
         
         # Setup UI
         self.setup_ui()
@@ -119,248 +90,6 @@ class MainWindow(QMainWindow):
             if self.translator.change_language(code):
                 if hasattr(self, 'retranslate_ui'):
                     self.retranslate_ui()
-
-    def set_style(self):
-        """Modern UI styling using Qt-supported properties only"""
-        self.setStyleSheet("""
-            /* Main Window */
-            QMainWindow {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 rgba(74, 144, 226, 25%),
-                    stop:0.3 rgba(80, 227, 194, 15%),
-                    stop:0.7 rgba(245, 101, 101, 15%),
-                    stop:1 rgba(196, 113, 237, 25%));
-            }
-            
-            /* Cards */
-            QWidget {
-                background: rgba(255, 255, 255, 20%);
-                border: 1px solid rgba(255, 255, 255, 30%);
-                border-radius: 16px;
-            }
-            
-            /* Modern Input Fields */
-            QLineEdit, QTextEdit, QPlainTextEdit {
-                background: rgba(255, 255, 255, 18%);
-                border: 2px solid transparent;
-                border-radius: 12px;
-                padding: 14px 18px;
-                font-size: 14px;
-                font-weight: 500;
-                color: #2d3748;
-                selection-background-color: rgba(74, 144, 226, 30%);
-            }
-            QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {
-                border: 2px solid rgba(74, 144, 226, 60%);
-                background: rgba(255, 255, 255, 24%);
-            }
-            
-            /* Revolutionary Buttons */
-            QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 rgba(74, 144, 226, 90%),
-                    stop:1 rgba(80, 227, 194, 90%));
-                border: none;
-                border-radius: 14px;
-                padding: 12px 24px;
-                font-size: 14px;
-                font-weight: 600;
-                color: white;
-            }
-            QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 rgba(74, 144, 226, 100%),
-                    stop:1 rgba(80, 227, 194, 100%));
-            }
-            QPushButton:pressed {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 rgba(74, 144, 226, 85%),
-                    stop:1 rgba(80, 227, 194, 85%));
-            }
-            QPushButton:disabled {
-                background: rgba(160, 174, 192, 0.4);
-                color: rgba(160, 174, 192, 0.8);
-            }
-            
-            /* Floating Tree/List Widgets */
-            QTreeWidget, QListWidget {
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                border-radius: 16px;
-                padding: 8px;
-                alternate-background-color: rgba(255, 255, 255, 0.05);
-                color: #2d3748;
-                font-weight: 500;
-            }
-            QTreeWidget::item, QListWidget::item {
-                padding: 8px 12px;
-                border-radius: 8px;
-                margin: 2px 0px;
-            }
-            QTreeWidget::item:hover, QListWidget::item:hover {
-                background: rgba(74, 144, 226, 0.15);
-                color: #1a202c;
-            }
-            QTreeWidget::item:selected, QListWidget::item:selected {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 rgba(74, 144, 226, 0.8),
-                    stop:1 rgba(80, 227, 194, 0.8));
-                color: white;
-                font-weight: 600;
-            }
-            
-            /* Modern Headers */
-            QHeaderView::section {
-                background: rgba(255, 255, 255, 0.12);
-                border: none;
-                border-radius: 8px;
-                padding: 12px;
-                font-weight: 600;
-                color: #4a5568;
-                margin: 2px;
-            }
-            
-            /* Invisible Tabs (handled by sidebar) */
-            QTabWidget::pane {
-                background: transparent;
-                border: none;
-            }
-            QTabBar::tab {
-                background: transparent;
-                border: none;
-                padding: 0px;
-                margin: 0px;
-            }
-            
-            /* Floating Labels */
-            QLabel {
-                background: transparent;
-                color: #2d3748;
-                font-weight: 500;
-                border: none;
-            }
-            
-            /* Glass Menu Bar */
-            QMenuBar {
-                background: rgba(255, 255, 255, 12%);
-                border: none;
-                border-radius: 12px;
-                padding: 4px 8px;
-                color: #2d3748;
-                font-weight: 500;
-            }
-            QMenuBar::item {
-                background: transparent;
-                padding: 8px 16px;
-                border-radius: 8px;
-            }
-            QMenuBar::item:selected {
-                background: rgba(74, 144, 226, 0.15);
-            }
-            QMenu {
-                background: rgba(255, 255, 255, 95%);
-                border: 1px solid rgba(255, 255, 255, 30%);
-                border-radius: 12px;
-                padding: 8px;
-            }
-            QMenu::item {
-                padding: 10px 20px;
-                border-radius: 8px;
-                color: #2d3748;
-            }
-            QMenu::item:selected {
-                background: rgba(74, 144, 226, 0.15);
-            }
-            
-            /* Modern Combo Boxes */
-            QComboBox {
-                background: rgba(255, 255, 255, 0.12);
-                border: 2px solid rgba(255, 255, 255, 0.2);
-                border-radius: 12px;
-                padding: 10px 16px;
-                font-weight: 500;
-                color: #2d3748;
-            }
-            QComboBox:hover {
-                background: rgba(255, 255, 255, 0.18);
-                border-color: rgba(74, 144, 226, 0.4);
-            }
-            QComboBox::drop-down {
-                border: none;
-                width: 30px;
-            }
-            QComboBox QAbstractItemView {
-                background: rgba(255, 255, 255, 95%);
-                border: 1px solid rgba(255, 255, 255, 30%);
-                border-radius: 12px;
-                selection-background-color: rgba(74, 144, 226, 20%);
-            }
-            
-            /* Elegant Scroll Bars */
-            QScrollBar:vertical {
-                background: rgba(255, 255, 255, 0.1);
-                width: 8px;
-                border-radius: 4px;
-                margin: 0px;
-            }
-            QScrollBar::handle:vertical {
-                background: rgba(74, 144, 226, 0.6);
-                border-radius: 4px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: rgba(74, 144, 226, 0.8);
-            }
-            QScrollBar:horizontal {
-                background: rgba(255, 255, 255, 0.1);
-                height: 8px;
-                border-radius: 4px;
-                margin: 0px;
-            }
-            QScrollBar::handle:horizontal {
-                background: rgba(74, 144, 226, 0.6);
-                border-radius: 4px;
-                min-width: 20px;
-            }
-            
-            /* Floating Tooltips */
-            QToolTip {
-                background: rgba(45, 55, 72, 95%);
-                color: white;
-                border: 1px solid rgba(255, 255, 255, 20%);
-                border-radius: 8px;
-                padding: 8px 12px;
-                font-weight: 500;
-            }
-            
-            /* Modern Status Bar */
-            QStatusBar {
-                background: rgba(255, 255, 255, 0.08);
-                border: none;
-                border-radius: 12px;
-                color: #4a5568;
-                font-weight: 500;
-            }
-            
-            /* Glass Group Boxes */
-            QGroupBox {
-                background: rgba(255, 255, 255, 12%);
-                border: 1px solid rgba(255, 255, 255, 20%);
-                border-radius: 16px;
-                margin-top: 12px;
-                padding-top: 12px;
-                font-weight: 600;
-                color: #2d3748;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 4px 12px;
-                background: rgba(74, 144, 226, 10%);
-                border-radius: 8px;
-                color: #2d3748;
-            }
-        """)
 
     def setup_ui(self):
         """Setup the main UI"""
@@ -961,7 +690,7 @@ class MainWindow(QMainWindow):
 
     def show_theme_menu(self):
         """Show a theme selection menu and apply chosen theme"""
-        from PyQt5.QtWidgets import QMenu
+        from PySide6.QtWidgets import QMenu
         menu = QMenu(self)
         themes = StyleManager.get_available_themes()
         for name in themes:
@@ -969,12 +698,12 @@ class MainWindow(QMainWindow):
             act = menu.addAction(name)
             act.triggered.connect(lambda checked, n=name, c=colors: self.change_theme(n, c))
         # Position menu under the mouse or near top-left
-        menu.exec_(self.mapToGlobal(self.rect().topLeft() + self.menuBar().pos()))
+        menu.exec(self.mapToGlobal(self.rect().topLeft() + self.menuBar().pos()))
 
     def show_settings_dialog(self):
         """Show settings dialog"""
         dialog = SettingsDialog(self)
-        dialog.exec_()
+        dialog.exec()
 
     def dragEnterEvent(self, event):
         """Handle drag enter event"""
@@ -1200,15 +929,6 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logging.error(f"Error getting content ID: {str(e)}")
             return None
-
-    def load_settings(self):
-        """Load application settings"""
-        try:
-            settings = StyleManager.load_settings()
-            self.night_mode = settings.get("night_mode", False)
-            StyleManager.apply_theme(self, settings)
-        except Exception as e:
-            logging.error(f"Error loading settings: {str(e)}")
 
     def setup_info_tab(self):
         """Setup the info tab"""
@@ -1987,9 +1707,9 @@ class MainWindow(QMainWindow):
             self.extract_log.append(f"[+] Starting extraction to: {output_dir}")
 
             class ExtractWorker(QObject):
-                progress = pyqtSignal(str)
-                finished = pyqtSignal(str)
-                failed = pyqtSignal(str)
+                progress = Signal(str)
+                finished = Signal(str)
+                failed = Signal(str)
 
                 def __init__(self, pkg, out_dir):
                     super().__init__()
@@ -2060,8 +1780,8 @@ class MainWindow(QMainWindow):
         self.pfs_info_view.append("[+] Running shadPKG pfs-info...\n")
 
         class PfsInfoWorker(QObject):
-            finished = pyqtSignal(str)
-            failed = pyqtSignal(str)
+            finished = Signal(str)
+            failed = Signal(str)
 
             def __init__(self, pkg):
                 super().__init__()
@@ -2166,9 +1886,9 @@ class MainWindow(QMainWindow):
             self.bruteforcer = PS4PasscodeBruteforcer()
 
             class BruteforceWorker(QObject):
-                progress = pyqtSignal(str)
-                tested = pyqtSignal(str)
-                finished = pyqtSignal(str)
+                progress = Signal(str)
+                tested = Signal(str)
+                finished = Signal(str)
 
                 def __init__(self, bruteforcer, input_file, output_dir, threads, seed_val):
                     super().__init__()
@@ -2422,7 +2142,7 @@ class MainWindow(QMainWindow):
             msg.setDetailedText(details)
         
         msg.setStandardButtons(QMessageBox.Ok)
-        return msg.exec_()
+        return msg.exec()
 
     def handle_error(self, error, operation="Operation"):
         """Handle errors with logging and user feedback"""
@@ -2715,7 +2435,7 @@ class MainWindow(QMainWindow):
             buttons.addWidget(cancel_btn)
             layout.addLayout(buttons)
             
-            if dialog.exec_() == QDialog.Accepted:
+            if dialog.exec() == QDialog.Accepted:
                 # Aggiorna i dati del trofeo
                 trophy_data['name'] = name_edit.text()
                 trophy_data['description'] = desc_edit.toPlainText()
@@ -2819,7 +2539,7 @@ class MainWindow(QMainWindow):
     def show_update_dialog(self, version, download_url):
         """Show update dialog when new version is available"""
         dialog = UpdateDialog(version, download_url, self)
-        dialog.exec_()
+        dialog.exec()
 
     def handle_update_error(self, error_msg):
         """Handle errors during update check"""

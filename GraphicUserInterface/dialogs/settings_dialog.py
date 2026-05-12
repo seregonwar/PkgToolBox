@@ -1,9 +1,9 @@
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QTabWidget, QWidget, QGroupBox, 
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QTabWidget, QWidget, QGroupBox, 
                             QGridLayout, QLabel, QComboBox, QSpinBox, QPushButton,
                             QCheckBox, QLineEdit, QHBoxLayout, QColorDialog, QFontDialog,
                             QFileDialog, QMessageBox, QApplication)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QColor, QFontDatabase
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont, QColor, QFontDatabase
 import os
 import json
 
@@ -407,7 +407,7 @@ class SettingsDialog(QDialog):
         self.colors_group.setEnabled(theme == "Custom")
         if theme != "Custom":
             if theme == "System":
-                from PyQt5.QtGui import QPalette
+                from PySide6.QtGui import QPalette
                 palette = QApplication.palette()
                 self.set_theme_colors(
                     palette.color(QPalette.Window).name(),

@@ -1,11 +1,11 @@
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTreeWidget,
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTreeWidget,
                             QLineEdit, QTreeWidgetItem, QMenu, QMessageBox, QFileDialog, 
                             QDialog, QVBoxLayout, QTextEdit, QLabel, QPushButton, QProgressBar,
                             QSlider)
-from PyQt5.QtCore import Qt, QSize, QThread, pyqtSignal, QUrl
-from PyQt5.QtWidgets import QStyle, QSplitter, QTabWidget
-from PyQt5.QtGui import QFont, QIcon, QPixmap
-from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
+from PySide6.QtCore import Qt, QSize, QThread, Signal, QUrl
+from PySide6.QtWidgets import QStyle, QSplitter, QTabWidget
+from PySide6.QtGui import QFont, QIcon, QPixmap
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from ..utils import FileUtils, ImageUtils
 import os
 import threading
@@ -13,8 +13,8 @@ import queue
 import time
 
 class FileLoadWorker(QThread):
-    progress = pyqtSignal(int)
-    finished = pyqtSignal()
+    progress = Signal(int)
+    finished = Signal()
     
     def __init__(self, package, file_structure):
         super().__init__()
@@ -84,6 +84,8 @@ class FileBrowser(QWidget):
         self.file_queue = queue.Queue()
         self.preview_cache = {}
         self.media_player = QMediaPlayer()
+        self.audio_output = QAudioOutput()
+        self.media_player.setAudioOutput(self.audio_output)
         self.setup_ui()
 
     def add_file_item(self, parent_item, name, file_info):
@@ -351,7 +353,7 @@ class FileBrowser(QWidget):
                         f.write(data)
                         
                     # Set up media player
-                    self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(temp_file)))
+                    self.media_player.setSource(QUrl.fromLocalFile(temp_file))
                     
                     # Add controls
                     play_btn = QPushButton("Play/Pause")
@@ -383,7 +385,7 @@ class FileBrowser(QWidget):
             self.preview_tabs.addTab(error_widget, "Error")
 
     def toggle_playback(self):
-        if self.media_player.state() == QMediaPlayer.PlayingState:
+        if self.media_player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
             self.media_player.pause()
         else:
             self.media_player.play()
@@ -412,7 +414,7 @@ class FileBrowser(QWidget):
         hex_view_action.triggered.connect(self.view_file_as_hex)
         text_view_action.triggered.connect(self.view_file_as_text)
         
-        menu.exec_(self.file_tree.viewport().mapToGlobal(position))
+        menu.exec(self.file_tree.viewport().mapToGlobal(position))
 
     def extract_selected_file(self):
         selected_items = self.file_tree.selectedItems()
@@ -472,7 +474,7 @@ class FileBrowser(QWidget):
             text_edit.setStyleSheet("background-color: #f8f9fa;")
             
             layout.addWidget(text_edit)
-            dialog.exec_()
+            dialog.exec()
             
         except Exception as e:
             QMessageBox.critical(self.parent, "Error", f"Error viewing file: {str(e)}")
@@ -508,7 +510,7 @@ class FileBrowser(QWidget):
             text_edit.setStyleSheet("background-color: white;")
             
             layout.addWidget(text_edit)
-            dialog.exec_()
+            dialog.exec()
             
         except Exception as e:
             QMessageBox.critical(self.parent, "Error", f"Error viewing file: {str(e)}")
@@ -539,7 +541,7 @@ class FileBrowser(QWidget):
                 label.setAlignment(Qt.AlignCenter)
                 
                 layout.addWidget(label)
-                dialog.exec_()
+                dialog.exec()
                 
             except Exception as e:
                 QMessageBox.critical(self.parent, "Error", f"Error showing preview: {str(e)}")

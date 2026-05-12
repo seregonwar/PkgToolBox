@@ -1,6 +1,6 @@
 import os
 import json
-from PyQt5.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox
 from Utilities.PS4PKGToolHelper.Helper import Helper
 from Utilities.PS4PKGToolHelper.MessageBoxHelper import MessageBoxHelper
 from Utilities.Settings.AppSettings import AppSettings

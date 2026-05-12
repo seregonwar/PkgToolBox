@@ -1,7 +1,7 @@
 """
 Base tab widget for modular UI architecture
 """
-from PyQt5.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout
 
 
 class BaseTab(QWidget):

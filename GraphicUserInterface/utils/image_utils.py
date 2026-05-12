@@ -1,5 +1,5 @@
 from PIL import Image
-from PyQt5.QtGui import QImage, QPixmap
+from PySide6.QtGui import QImage, QPixmap
 import io
 
 class ImageUtils:

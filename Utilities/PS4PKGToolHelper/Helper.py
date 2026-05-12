@@ -1,9 +1,9 @@
 import os
 import json
 from datetime import datetime
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import QByteArray, Qt
+from PySide6.QtWidgets import QMessageBox
+from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QByteArray, Qt
 
 class Helper:
     first_launch = True

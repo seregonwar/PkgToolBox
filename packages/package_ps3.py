@@ -114,7 +114,7 @@ class PackagePS3(PackageBase):
     def _process_events():
         """Consente alla GUI di rimanere reattiva durante l'estrazione"""
         try:
-            from PyQt5.QtWidgets import QApplication
+            from PySide6.QtWidgets import QApplication
             QApplication.processEvents()
         except ImportError:
             pass
@@ -674,8 +674,8 @@ class PackagePS3(PackageBase):
         try:
             os.makedirs(output_dir, exist_ok=True)
             
-            from PyQt5.QtWidgets import QProgressDialog, QApplication
-            from PyQt5.QtCore import Qt
+            from PySide6.QtWidgets import QProgressDialog, QApplication
+            from PySide6.QtCore import Qt
             progress = QProgressDialog("Extracting PKG...", None, 0, 0)
             progress.setWindowModality(Qt.NonModal)
             progress.setWindowTitle("Extracting")
@@ -708,8 +708,8 @@ class PackagePS3(PackageBase):
     def extract_and_wait(self):
         """Estrae i file e attendi il completamento"""
         try:
-            from PyQt5.QtWidgets import QProgressDialog, QApplication
-            from PyQt5.QtCore import Qt
+            from PySide6.QtWidgets import QProgressDialog, QApplication
+            from PySide6.QtCore import Qt
             progress = QProgressDialog("Extracting PKG...", None, 0, 0)
             progress.setWindowModality(Qt.NonModal)
             progress.setWindowTitle("Extracting")
