@@ -44,7 +44,7 @@ If I forgot to add anyone below, please let me know on [X](https://x.com/Seregon
 
 ## Requirements
 - Python 3.13+
-- PyQt5
+- Pyside6
 - pyinstaller (use only pyinstaller, tools like cx_freeze will compromise the proper functioning of the project)
 - `orbis-pub-cmd.exe` (included in the OpenOrbis toolchain)
 
