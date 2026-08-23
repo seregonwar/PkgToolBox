@@ -101,7 +101,7 @@ class MainWindow(QMainWindow):
 
     def setup_ui(self):
         """Setup the main UI"""
-        self.setWindowTitle("PKG Tool Box v1.4.0")
+        self.setWindowTitle("PKG Tool Box v1.5.0")
         self.setGeometry(100, 100, 1200, 800)
         
         # Central widget
@@ -2105,7 +2105,7 @@ class MainWindow(QMainWindow):
         """Show about dialog"""
         QMessageBox.about(self, 
             "About PKG Tool Box",
-            """<h3>PKG Tool Box v1.4.02</h3>
+            """<h3>PKG Tool Box v1.5.0</h3>
             <p>Created by SeregonWar</p>
             <p>A tool for managing PS3/PS4/PS5 PKG files.</p>
             <p><a href="https://github.com/seregonwar">GitHub</a> | 
@@ -2820,7 +2820,7 @@ class MainWindow(QMainWindow):
     def retranslate_ui(self):
         """Update UI text with current language"""
         # Update window title
-        self.setWindowTitle(self.translator.translate("PKG Tool Box v1.4.0"))
+        self.setWindowTitle(self.translator.translate("PKG Tool Box v1.5.0"))
         
         # Update menu items
         self.file_menu.setTitle(self.translator.translate("File"))

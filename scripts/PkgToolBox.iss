@@ -6,7 +6,7 @@ SourceDir=..
 AppName=PkgToolBox
 ; Default versione: sovrascrivibile dalla CI con /DMyAppVersion=...
 #ifndef MyAppVersion
-  #define MyAppVersion "1.4.0"
+  #define MyAppVersion "1.5.0"
 #endif
 AppVersion={#MyAppVersion}
 AppPublisher=Seregonwar

@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version, for example 1.4.0 or v1.4.0"
+        description: "Release version, for example 1.5.0 or v1.5.0"
         required: false
         type: string
       nightly:

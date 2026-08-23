@@ -18,7 +18,7 @@ class UpdateChecker(QObject):
     update_available = Signal(str, str)  # version, download_url
     error_occurred = Signal(str)
 
-    CURRENT_VERSION = "1.4.03"  # Versione corrente
+    CURRENT_VERSION = "1.5.0"  # Versione corrente
     GITHUB_API_URL = "https://api.github.com/repos/seregonwar/PkgToolBox/releases/latest"
     REQUEST_HEADERS = {
         b"Accept": b"application/vnd.github+json",

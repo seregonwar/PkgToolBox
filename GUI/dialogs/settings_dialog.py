@@ -484,7 +484,7 @@ class SettingsDialog(QDialog):
 
         about_group = QGroupBox("PkgToolBox")
         about_layout = QVBoxLayout()
-        about_layout.addWidget(QLabel("Version: 1.4.03"))
+        about_layout.addWidget(QLabel("Version: 1.5.0"))
         link = QLabel(
             '<a href="https://github.com/seregonwar/PkgToolBox" '
             'style="color:#3b82f6; text-decoration:none;">'

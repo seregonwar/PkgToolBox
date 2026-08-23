@@ -34,7 +34,7 @@ body:
   attributes:
     label: Version or commit
     description: Release tag, commit SHA, or branch name.
-    placeholder: "v1.4.0, main@abcdef0, or local branch name"
+    placeholder: "v1.5.0, main@abcdef0, or local branch name"
   validations:
     required: true
 - type: textarea
