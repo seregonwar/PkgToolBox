@@ -4,7 +4,7 @@ import re
 import shutil
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                             QHBoxLayout, QLabel, QLineEdit, QPushButton, QTabWidget,
-                            QMessageBox, QToolBar, QTreeWidget, QTextEdit, QTableWidget, QTableWidgetItem, QFileDialog, QGroupBox, QGridLayout, QSpinBox, QTreeWidgetItem, QDialog, QProgressBar, QComboBox, QCheckBox, QListWidget, QFrame)
+                            QMessageBox, QToolBar, QTreeWidget, QTextEdit, QTableWidget, QTableWidgetItem, QFileDialog, QGroupBox, QGridLayout, QSpinBox, QTreeWidgetItem, QDialog, QProgressBar, QComboBox, QCheckBox, QListWidget, QFrame, QSplitter)
 from PySide6.QtCore import Qt, QSize, QUrl, QObject, Signal, QThread
 from PySide6.QtGui import QFont, QDesktopServices, QAction, QShortcut, QActionGroup, QKeySequence
 import struct
@@ -57,6 +57,8 @@ class MainWindow(QMainWindow):
 
         # Highlight the sidebar button of the active tab (all switch paths)
         self.tab_widget.currentChanged.connect(self._update_nav_highlight)
+        # Modify sub-tabs keep the sidebar highlight in sync too
+        self.modify_tab.sub_tabs.currentChanged.connect(lambda _i: self._update_nav_highlight())
         self._update_nav_highlight()
         
         # Apply saved language after UI is built (menus/tabs exist)
@@ -110,14 +112,15 @@ class MainWindow(QMainWindow):
         # Split layout
         split_layout = QHBoxLayout()
         
-        # Left panel for PKG info
-        left_panel = QWidget()
-        left_layout = QVBoxLayout(left_panel)
+        # Left panel for PKG info (collapsible via the toolbar toggle / splitter)
+        self.left_panel = QWidget()
+        self.left_panel.setMinimumWidth(140)
+        left_layout = QVBoxLayout(self.left_panel)
         
         # PKG icon and info — minimal card styled with theme colors
         tc = StyleManager.get_theme_colors(self.settings_dict.get("appearance", {}).get("theme", "Dark"))
         self.image_label = QLabel()
-        self.image_label.setFixedSize(320, 320)
+        self.image_label.setFixedSize(180, 180)
         self.image_label.setAlignment(Qt.AlignCenter)
         self.image_label.setStyleSheet(f"""
             QLabel {{
@@ -225,9 +228,24 @@ class MainWindow(QMainWindow):
         self.create_sidebar()
         
         split_layout.addWidget(self.sidebar_frame)
-        split_layout.addWidget(left_panel, 1)
-        split_layout.addWidget(self.tab_widget, 2)
+
+        # PKG panel + tab area in a draggable splitter; the left panel can be
+        # dragged to 0 or hidden entirely with the toolbar toggle button
+        self.splitter = QSplitter(Qt.Horizontal)
+        self.splitter.addWidget(self.left_panel)
+        self.splitter.addWidget(self.tab_widget)
+        self.splitter.setStretchFactor(0, 0)
+        self.splitter.setStretchFactor(1, 1)
+        self.splitter.setCollapsible(0, True)
+        self.splitter.setCollapsible(1, False)
+        self.splitter.setSizes([300, 900])
+        split_layout.addWidget(self.splitter, 1)
         main_layout.addLayout(split_layout)
+
+        # Restore the persisted panel visibility (hidden by default in the toggle)
+        layout_state = self.settings_dict.get("layout", {})
+        if layout_state.get("left_panel_visible", True) is False:
+            self.left_panel.hide()
         
         # Credits and social buttons
         credits_layout = QHBoxLayout()
@@ -562,7 +580,9 @@ class MainWindow(QMainWindow):
             self._nav_group_labels.append(label)
             return label
 
-        def add_nav(icon_key, text, widget):
+        def add_nav(icon_key, text, widget, sub_index=None):
+            """Add a nav button. sub_index selects an inner QTabWidget page
+            (used by the Modify sub-sections)."""
             btn = QPushButton(text)
             btn.setObjectName("navBtn")
             btn.setIcon(sidebar_icons.get(icon_key, get_icon('file', icon_color, 18)))
@@ -571,8 +591,14 @@ class MainWindow(QMainWindow):
             btn.setMinimumWidth(194)
             btn.setCheckable(True)
             btn.setAutoExclusive(True)
-            btn._nav_target = widget  # used by _update_nav_highlight
-            btn.clicked.connect(lambda: self.tab_widget.setCurrentWidget(widget))
+            btn._nav_match = (widget, sub_index)  # used by _update_nav_highlight
+
+            def select():
+                self.tab_widget.setCurrentWidget(widget)
+                if sub_index is not None and hasattr(widget, 'sub_tabs'):
+                    widget.sub_tabs.setCurrentIndex(sub_index)
+
+            btn.clicked.connect(select)
             layout.addWidget(btn)
             self._nav_buttons.append((btn, icon_key, text))
             return btn
@@ -584,7 +610,8 @@ class MainWindow(QMainWindow):
                 ('file_browser', 'File Browser', self.file_browser),
                 ('extract', 'Extract', self.extract_tab),
                 ('pfs_info', 'PFS Info', self.pfs_info_tab),
-                ('modify', 'Modify', self.modify_tab),
+                ('modify', 'Hex Editor', self.modify_tab, 0),
+                ('edit', 'Header Fields', self.modify_tab, 1),
                 ('bruteforce', 'Passcode Bruteforcer', self.bruteforce_tab),
             ]),
             ("Strumenti", [
@@ -600,8 +627,8 @@ class MainWindow(QMainWindow):
 
         for group, items in sections:
             add_section_label(group)
-            for icon_key, text, widget in items:
-                add_nav(icon_key, text, widget)
+            for item in items:
+                add_nav(*item)
 
         layout.addStretch(1)
 
@@ -617,7 +644,14 @@ class MainWindow(QMainWindow):
             return
         widget = self.tab_widget.widget(index)
         for btn, _icon_key, _text in self._nav_buttons:
-            btn.setChecked(getattr(btn, '_nav_target', None) is widget)
+            target, sub_index = getattr(btn, '_nav_match', (None, None))
+            if target is not widget:
+                checked = False
+            elif sub_index is None:
+                checked = True
+            else:
+                checked = hasattr(widget, 'sub_tabs') and widget.sub_tabs.currentIndex() == sub_index
+            btn.setChecked(checked)
 
     def _apply_sidebar_style(self, tc):
         """(Re)apply sidebar stylesheet from a theme color dict."""
@@ -680,7 +714,7 @@ class MainWindow(QMainWindow):
             label.setVisible(self.sidebar_expanded)
 
     def setup_settings_button(self):
-        """Top toolbar: settings (gear) first, then the theme dropdown (with icon)."""
+        """Top toolbar: panel toggle, settings (gear), then the theme dropdown."""
         icon_color = self._toolbar_icon_color()
         style = """
             QToolBar { spacing: 10px; border: none; background: transparent; }
@@ -688,7 +722,18 @@ class MainWindow(QMainWindow):
             QToolButton:hover { background-color: rgba(52, 152, 219, 20%); }
         """
 
-        # Settings button — gear icon, left-most
+        # Panel toggle — show/hide the left PKG panel, left-most
+        panel_toolbar = QToolBar()
+        panel_toolbar.setIconSize(QSize(22, 22))
+        self.panel_action = QAction(get_icon('columns', icon_color, 22), "", self)
+        self.panel_action.setToolTip("Hide/show the PKG panel")
+        self.panel_action.triggered.connect(self.toggle_left_panel)
+        panel_toolbar.setStyleSheet(style)
+        panel_toolbar.addAction(self.panel_action)
+        self.addToolBar(Qt.TopToolBarArea, panel_toolbar)
+        panel_toolbar.setMovable(False)
+
+        # Settings button — gear icon
         settings_toolbar = QToolBar()
         settings_toolbar.setIconSize(QSize(22, 22))
         self.settings_action = QAction(get_icon('settings', icon_color, 22), "", self)
@@ -717,12 +762,24 @@ class MainWindow(QMainWindow):
         return tc.get('secondary_text', tc.get('text', '#475569'))
 
     def _recolor_toolbar_icons(self, colors):
-        """Ricolora le icone della toolbar (rotellina e tema) al cambio tema."""
+        """Ricolora le icone della toolbar (pannello, rotellina e tema)."""
         if not hasattr(self, 'settings_action'):
             return
         icon_color = colors.get('secondary_text', colors.get('text', '#475569'))
+        self.panel_action.setIcon(get_icon('columns', icon_color, 22))
         self.settings_action.setIcon(get_icon('settings', icon_color, 22))
         self.theme_action.setIcon(get_icon('theme', icon_color, 22))
+
+    def toggle_left_panel(self):
+        """Hide/show the left PKG panel (persisted in settings)."""
+        visible = not self.left_panel.isVisible()
+        self.left_panel.setVisible(visible)
+        layout_state = self.settings_dict.setdefault("layout", {})
+        layout_state["left_panel_visible"] = visible
+        try:
+            StyleManager.save_settings(self.settings_dict)
+        except Exception as e:
+            logging.error(f"Failed to persist panel visibility: {e}")
 
     def show_theme_menu(self):
         """Show a theme selection menu and apply chosen theme"""
@@ -928,9 +985,10 @@ class MainWindow(QMainWindow):
                             f.get('name', '').lower() in ['icon0.png', 'ICON0.PNG']), None)
             
             if icon_file:
-                # Load and display icon
+                # Load and display icon (scaled to the 180px panel card)
                 icon_data = self.package.read_file(icon_file['id'])
                 pixmap = ImageUtils.create_thumbnail(icon_data)
+                pixmap = pixmap.scaled(180, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.image_label.setPixmap(pixmap)
                 self.image_label.setAlignment(Qt.AlignCenter)
                 

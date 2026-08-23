@@ -76,6 +76,10 @@ ICON_LOADER = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fil
 
 ICON_HEART = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'''
 
+ICON_COLUMNS = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/></svg>'''
+
+ICON_EDIT = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>'''
+
 
 # ──────────────────────────────────────────────────────────
 # Icon Registry: maps icon names to SVG strings
@@ -107,6 +111,8 @@ NAV_ICONS = {
     'upload': ICON_UPLOAD,
     'download': ICON_DOWNLOAD,
     'package': ICON_PACKAGE,
+    'columns': ICON_COLUMNS,
+    'edit': ICON_EDIT,
 }
 
 
@@ -140,5 +146,6 @@ def get_sidebar_icons(color: str = "#4a5568", size: int = 20) -> dict:
         'trp': ICON_PACKAGE,
         'ps5_info': ICON_GAMEPAD,
         'bruteforce': ICON_HASH,
+        'edit': ICON_EDIT,
     }
     return {k: _svg_colored(v, color, size) for k, v in tab_icons.items()}

@@ -4,9 +4,10 @@ import shutil
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QDialog, QFileDialog, QFrame, QGroupBox,
+from PySide6.QtWidgets import (QDialog, QFileDialog, QGroupBox,
                                QHBoxLayout, QLabel, QLineEdit, QMessageBox,
-                               QPushButton, QRadioButton, QTextEdit, QVBoxLayout)
+                               QPushButton, QRadioButton, QTabWidget, QTextEdit,
+                               QVBoxLayout, QWidget)
 
 from .base_tab import BaseTab
 from GUI.utils import StyleManager
@@ -58,7 +59,7 @@ class ModifyTab(BaseTab):
 
     # ------------------------------------------------------------------
     def setup_ui(self):
-        # ── Target ──
+        # ── Target (always visible) ──
         target_group = QGroupBox("Target")
         target_layout = QVBoxLayout(target_group)
 
@@ -87,10 +88,15 @@ class ModifyTab(BaseTab):
         target_layout.addLayout(file_row)
         self.layout.addWidget(target_group)
 
-        # ── Hex viewer ──
+        # ── Sub-sections: Hex Editor / Header Fields ──
+        self.sub_tabs = QTabWidget()
+
+        # Hex Editor page
+        hex_page = QWidget()
+        hex_page_layout = QVBoxLayout(hex_page)
+
         hex_group = QGroupBox("Hex Viewer")
         hex_layout = QVBoxLayout(hex_group)
-
         nav = QHBoxLayout()
         self.go_entry = QLineEdit()
         self.go_entry.setPlaceholderText("Offset (hex)")
@@ -117,9 +123,8 @@ class ModifyTab(BaseTab):
         font.setStyleHint(QFont.Monospace)
         self.hex_view.setFont(font)
         hex_layout.addWidget(self.hex_view)
-        self.layout.addWidget(hex_group, 3)
+        hex_page_layout.addWidget(hex_group, 3)
 
-        # ── Edit bytes ──
         edit_group = QGroupBox("Edit bytes")
         edit_layout = QHBoxLayout(edit_group)
         self.offset_entry = QLineEdit()
@@ -133,24 +138,8 @@ class ModifyTab(BaseTab):
         edit_layout.addWidget(QLabel("Data:"))
         edit_layout.addWidget(self.data_entry, 1)
         edit_layout.addWidget(stage_btn)
-        self.layout.addWidget(edit_group)
+        hex_page_layout.addWidget(edit_group)
 
-        # ── Header fields ──
-        self.fields_group = QGroupBox("Known header fields")
-        fields_layout = QHBoxLayout(self.fields_group)
-        self.content_id_edit = QLineEdit()
-        self.title_id_edit = QLineEdit()
-        stage_fields_btn = QPushButton("Stage field edits")
-        stage_fields_btn.clicked.connect(self._stage_field_edits)
-        fields_layout.addWidget(QLabel("Content ID:"))
-        fields_layout.addWidget(self.content_id_edit, 1)
-        fields_layout.addWidget(QLabel("Title ID:"))
-        fields_layout.addWidget(self.title_id_edit, 1)
-        fields_layout.addWidget(stage_fields_btn)
-        self.fields_group.setVisible(False)
-        self.layout.addWidget(self.fields_group)
-
-        # ── Pending + actions ──
         pending_row = QHBoxLayout()
         self.pending_label = QLabel("Pending changes: 0")
         pending_btn = QPushButton("View pending")
@@ -161,7 +150,7 @@ class ModifyTab(BaseTab):
         pending_row.addStretch(1)
         pending_row.addWidget(pending_btn)
         pending_row.addWidget(clear_btn)
-        self.layout.addLayout(pending_row)
+        hex_page_layout.addLayout(pending_row)
 
         actions = QHBoxLayout()
         self.write_btn = QPushButton("Write to copy")
@@ -174,7 +163,42 @@ class ModifyTab(BaseTab):
         actions.addWidget(self.saveas_btn)
         actions.addWidget(self.reload_btn)
         actions.addStretch(1)
-        self.layout.addLayout(actions)
+        hex_page_layout.addLayout(actions)
+        hex_page_layout.addStretch(1)
+        self.sub_tabs.addTab(hex_page, "Hex Editor")
+
+        # Header Fields page
+        fields_page = QWidget()
+        fields_page_layout = QVBoxLayout(fields_page)
+        self.fields_group = QGroupBox("Known header fields")
+        fields_layout = QVBoxLayout(self.fields_group)
+        fields_row = QHBoxLayout()
+        self.content_id_edit = QLineEdit()
+        self.title_id_edit = QLineEdit()
+        fields_row.addWidget(QLabel("Content ID:"))
+        fields_row.addWidget(self.content_id_edit, 1)
+        fields_row.addWidget(QLabel("Title ID:"))
+        fields_row.addWidget(self.title_id_edit, 1)
+        fields_layout.addLayout(fields_row)
+        fields_hint = QLabel(
+            "The values above are read from the loaded PKG and edited in place:\n"
+            "'Stage field edits' locates each current value in the first 0x40000 bytes "
+            "of the file, keeps its width (including trailing nulls) and adds it to the "
+            "pending changes of the Hex Editor section."
+        )
+        fields_hint.setWordWrap(True)
+        fields_layout.addWidget(fields_hint)
+        stage_fields_btn = QPushButton("Stage field edits")
+        stage_fields_btn.clicked.connect(self._stage_field_edits)
+        fields_layout.addWidget(stage_fields_btn, alignment=Qt.AlignLeft)
+        fields_page_layout.addWidget(self.fields_group)
+        fields_page_layout.addWidget(
+            QLabel("Pending edits are reviewed and written from the Hex Editor section."),
+            alignment=Qt.AlignLeft,
+        )
+        fields_page_layout.addStretch(1)
+        self.sub_tabs.addTab(fields_page, "Header Fields")
+        self.layout.addWidget(self.sub_tabs, 3)
 
         self.status_label = QLabel("")
         self.status_label.setWordWrap(True)
