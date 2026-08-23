@@ -1,0 +1,40 @@
+name: Translation or localization
+description: Report missing, broken, or incomplete localization.
+title: "[i18n]: "
+labels: ["localization", "needs-triage"]
+body:
+- type: dropdown
+  id: language
+  attributes:
+    label: Language
+    options:
+    - English (en)
+    - Italian (it)
+    - Spanish (es)
+    - French (fr)
+    - German (de)
+    - Japanese (ja)
+    - New language
+  validations:
+    required: true
+- type: textarea
+  id: issue
+  attributes:
+    label: Localization issue
+    description: Describe missing keys, incorrect wording, stale translations, broken formatting, or font/glyph problems.
+    placeholder: "Screen, key, current text, expected text"
+  validations:
+    required: true
+- type: textarea
+  id: files
+  attributes:
+    label: Affected files or keys
+    placeholder: |
+      GUI/locales/it.json
+      key.path.example
+- type: textarea
+  id: verification
+  attributes:
+    label: Verification
+    value: |
+      - [ ] Language switch checked manually in the GUI

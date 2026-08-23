@@ -3,7 +3,7 @@
 [![Repository views](https://hits.sh/github.com/seregonwar/PkgToolBox.svg?label=views)](https://hits.sh/github.com/seregonwar/PkgToolBox/)
 --
 ## Description
-PkgToolBox is a tool for manipulating PS4 PKG files. It allows you to extract, inject, modify, and obtain information about PKG files.
+PkgToolBox is a tool for manipulating PS4 PKG files. It allows you to extract, modify, and obtain information about PKG files.
 
 ## ☕ Support PkgToolBox Development
 
@@ -69,7 +69,6 @@ If I forgot to add anyone below, please let me know on [X](https://x.com/Seregon
 2. Use the GUI to interact with PKG files:
     - **Browse**: Select a PKG file to work with.
     - **Extract**: Extract specific files from the PKG.
-    - **Inject**: Inject new data into the PKG.
     - **Modify**: Modify the header of the PKG.
     - **Dump**: Perform a complete dump of the PKG contents.
     - **Info**: Obtain detailed information about the PKG.
@@ -102,8 +101,8 @@ If I forgot to add anyone below, please let me know on [X](https://x.com/Seregon
   - [ ] Advanced PKG file splitting.
   - [ ] Fpkg updates.
   - [ ] Implementation of PKGToolBox directly on PS4 and PS5 systems.
-- **DLC Injection**
-  - [ ] Implementation of the inject section for loading DLC directly into PKG packages.
+- **PKG Rebuild**
+  - [ ] Extract, modify and rebuild a PKG (recompute digests/signatures) — the only viable approach for modifying encrypted content.
 - **Multi-platform Compatibility**
   - [ ] Implementation of the project on other platforms (e.g., Linux, macOS, etc.).
 - **File Decryption**

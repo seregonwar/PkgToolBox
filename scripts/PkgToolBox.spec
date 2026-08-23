@@ -20,26 +20,39 @@ def resource_path(relative_path):
 # Raccogli tutti i dati necessari per Crypto
 crypto_datas, crypto_binaries, crypto_hiddenimports = collect_all('Crypto')
 
-# Raccogli tutti i moduli in Utilities e file_operations
+# Raccogli tutti i moduli in Utilities
 utilities_datas, utilities_binaries, utilities_hiddenimports = collect_all('Utilities')
-file_operations_datas, file_operations_binaries, file_operations_hiddenimports = collect_all('file_operations')
 
 # Includi il pacchetto dell'interfaccia grafica (serve per bundlare i JSON delle traduzioni)
-gui_datas, gui_binaries, gui_hiddenimports = collect_all('GraphicUserInterface')
+gui_datas, gui_binaries, gui_hiddenimports = collect_all('GUI')
 
 # Includi la cartella con gli strumenti PS3 necessari a runtime
 ps3lib_tree = Tree(os.path.join('packages', 'ps3lib'), prefix=os.path.join('packages', 'ps3lib'))
 
-# Percorso icona eseguibile
-icon_path = resource_path(os.path.join('icons', 'icon.ico'))
+# Percorso icona eseguibile (formato diverso per piattaforma)
+def resolve_icon_path():
+    if sys.platform == 'darwin':
+        # macOS richiede un .icns
+        icon = resource_path(os.path.join('icons', 'icon.icns'))
+        return icon if os.path.exists(icon) else None
+    elif sys.platform == 'win32':
+        return resource_path(os.path.join('icons', 'icon.ico'))
+    else:
+        # Linux non supporta icone sull'eseguibile ELF
+        return None
+
+icon_path = resolve_icon_path()
+
+# UPX è disponibile solo su Windows in questo progetto
+use_upx = sys.platform == 'win32'
 
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('PS4PKGToolTemp', 'PS4PKGToolTemp')] + utilities_datas + file_operations_datas + gui_datas,
-    hiddenimports=['repack', 'gui', 'package', 'PS4_Passcode_Bruteforcer', 'PS5_Game_Info'] + 
-                  utilities_hiddenimports + file_operations_hiddenimports + gui_hiddenimports,
+    datas=[('PS4PKGToolTemp', 'PS4PKGToolTemp')] + utilities_datas + gui_datas,
+    hiddenimports=['PS4_Passcode_Bruteforcer', 'PS5_Game_Info'] + 
+                  utilities_hiddenimports + gui_hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -61,7 +74,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=use_upx,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -79,10 +92,19 @@ coll = COLLECT(
     a.datas,
     ps3lib_tree,
     strip=False,
-    upx=True,
+    upx=use_upx,
     upx_exclude=[],
     name='PkgToolBox',
 )
+
+# Su macOS impacchetta tutto in un .app bundle
+if sys.platform == 'darwin':
+    app = BUNDLE(
+        coll,
+        name='PkgToolBox.app',
+        icon=icon_path,
+        bundle_identifier='com.seregonwar.PkgToolBox',
+    )
 
 # Crea una cartella per i file temporanei
 temp_folder = 'PS4PKGToolTemp'

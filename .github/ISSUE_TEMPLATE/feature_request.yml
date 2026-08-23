@@ -1,0 +1,66 @@
+name: Feature request
+description: Propose a PkgToolBox capability or workflow improvement.
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+- type: markdown
+  attributes:
+    value: |
+      Feature requests should describe a legitimate PKG handling, research, preservation, or offline homebrew workflow.
+- type: dropdown
+  id: area
+  attributes:
+    label: Area
+    options:
+    - PKG loading / parsing
+    - Extraction
+    - Injection
+    - Header modification
+    - File explorer
+    - Hex / text reader
+    - Trophy management
+    - Wallpapers
+    - Passcode bruteforce
+    - PS5 game info
+    - PFS info
+    - Localization
+    - Build / release
+    - Documentation
+  validations:
+    required: true
+- type: textarea
+  id: workflow
+  attributes:
+    label: Workflow or problem
+    description: What are you trying to do, and where does the current tool slow you down?
+    placeholder: "I want to ... because ..."
+  validations:
+    required: true
+- type: textarea
+  id: proposal
+  attributes:
+    label: Proposed behavior
+    description: Describe the user-facing behavior or build/release change.
+  validations:
+    required: true
+- type: textarea
+  id: alternatives
+  attributes:
+    label: Alternatives considered
+    description: Mention existing workarounds, related tools, or why the current workflow is not enough.
+- type: textarea
+  id: verification
+  attributes:
+    label: How should it be verified?
+    description: List expected tests, manual PKG checks, or docs updates.
+    placeholder: |
+      - Manual check with a PS3/PS4/PS5 PKG:
+      - GUI interaction:
+      - Documentation:
+- type: checkboxes
+  id: scope
+  attributes:
+    label: Use scope
+    options:
+    - label: This request is not for online cheating, piracy, unauthorized access, or service disruption.
+      required: true

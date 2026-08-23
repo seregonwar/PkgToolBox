@@ -3,7 +3,6 @@ from .package_base import PackageBase
 from .enums import DRMType, ContentType, IROTag
 from Utilities import Logger
 import os
-import shutil
 import logging
 import subprocess
 from .crypto_utils import AES_ctx, AES_set_key, AES_cbc_decrypt, AES_KEY_LEN_128

@@ -5,7 +5,6 @@ import logging
 from io import BytesIO
 from decimal import Decimal
 import re
-from pathlib import Path
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -160,23 +159,20 @@ class TRPCreator:
         return arrayList1
 
     def GetHeaderFiles(self):
-        buffer1 = bytearray([0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        buffer2 = bytearray([0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        """Entry table standard (0x40 byte per entry):
+        name[32] + offset(8, BE) + size(8, BE) + flag(4, BE) + padding[12]."""
         memoryStream = BytesIO()
         for item in self._trophyList:
-            bytes1 = item.name.encode('ascii')
-            bytes1 = bytes1.ljust(32, b'\0')
-            memoryStream.write(bytes1)
-            bytes2 = item.offset.to_bytes(4, 'big')      # Cambiato da 'little' a 'big'
-            memoryStream.write(bytes2)
-            bytes3 = item.size.to_bytes(4, 'big')        # Cambiato da 'little' a 'big'
-            memoryStream.write(bytes3)
-            if item.name.upper().endswith(".SFM"):
-                memoryStream.write(buffer1)
-            elif item.name.upper().endswith(".ESFM"):
-                memoryStream.write(buffer2)
+            memoryStream.write(item.name.encode('ascii').ljust(32, b'\0'))
+            memoryStream.write(item.offset.to_bytes(8, 'big'))
+            memoryStream.write(item.size.to_bytes(8, 'big'))
+            if item.name.upper().endswith(".ESFM"):
+                memoryStream.write(bytearray([0, 0, 0, 3]))  # flag: cifrato
+            elif item.name.upper().endswith(".SFM"):
+                memoryStream.write(bytearray([0, 0, 0, 1]))  # flag: non cifrato
             else:
-                memoryStream.write(bytearray(16))
+                memoryStream.write(bytearray(4))
+            memoryStream.write(bytearray(12))
         return memoryStream.getvalue()
 
     def GetSize(self):

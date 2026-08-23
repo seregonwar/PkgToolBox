@@ -3,13 +3,10 @@
 # repository link: https://github.com/HoppersPS4/Waste_Ur_Time
 
 import os
-import sys
 import time
 import random
 import string
-import shutil
 import subprocess
-from pathlib import Path
 from packages import PackagePS4, PackagePS5, PackagePS3
 import struct
 import logging
@@ -17,7 +14,6 @@ import json
 import pickle
 import base64
 import threading
-import queue
 import hashlib
 
 class PS4PasscodeBruteforcer:

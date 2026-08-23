@@ -2,7 +2,6 @@ import struct
 import os
 import json
 from .package_base import PackageBase
-from .enums import DRMType, ContentType, IROTag
 from Utilities import Logger
 
 class PackagePS5(PackageBase):

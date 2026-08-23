@@ -1,0 +1,200 @@
+name: Release
+on:
+  push:
+    tags:
+    - "v*"
+  schedule:
+  # GitHub cron is UTC. Preflight selects exactly one entry for 22:00 Rome.
+  - cron: "0 20 * * *"
+  - cron: "0 21 * * *"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version, for example 1.4.0 or v1.4.0"
+        required: false
+        type: string
+      nightly:
+        description: "Build an immutable historical nightly release"
+        required: false
+        default: false
+        type: boolean
+      draft:
+        description: "Create the GitHub release as draft"
+        required: false
+        default: false
+        type: boolean
+      prerelease:
+        description: "Mark the GitHub release as prerelease"
+        required: false
+        default: false
+        type: boolean
+permissions:
+  contents: write
+jobs:
+  preflight:
+    name: Resolve release identity
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.identity.outputs.should_run }}
+      nightly: ${{ steps.identity.outputs.nightly }}
+      version: ${{ steps.identity.outputs.version }}
+      tag: ${{ steps.identity.outputs.tag }}
+      title: ${{ steps.identity.outputs.title }}
+      stable: ${{ steps.identity.outputs.stable }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Resolve release identity and Rome schedule
+      id: identity
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        EVENT_NAME="${{ github.event_name }}"
+        REF_TYPE="${{ github.ref_type }}"
+        REF_NAME="${{ github.ref_name }}"
+        INPUT_VERSION="${{ inputs.version }}"
+        INPUT_NIGHTLY="${{ inputs.nightly }}"
+
+        NIGHTLY="false"
+        if [ "$EVENT_NAME" = "schedule" ] || [ "$INPUT_NIGHTLY" = "true" ]; then
+          NIGHTLY="true"
+        fi
+
+        if [ "$NIGHTLY" = "true" ]; then
+          TODAY="$(date -u +'%Y-%m-%d')"
+          COMPACT="$(date -u +'%Y%m%d')"
+          SHORT_SHA="$(git rev-parse --short=7 "$GITHUB_SHA")"
+          VERSION="$TODAY"
+          TAG="nightly-${COMPACT}-g${SHORT_SHA}"
+          TITLE="PkgToolBox Nightly $TODAY"
+          STABLE="false"
+          # Skip when HEAD already carries a nightly tag (immutable historical builds).
+          SHOULD_RUN="true"
+          if git tag --points-at "$GITHUB_SHA" | grep -q '^nightly-'; then
+            SHOULD_RUN="false"
+          fi
+        else
+          if [ -n "$INPUT_VERSION" ]; then
+            VERSION="${INPUT_VERSION#v}"
+          elif [ "$REF_TYPE" = "tag" ]; then
+            VERSION="${REF_NAME#v}"
+          else
+            echo "Missing version: provide inputs.version or push a v* tag" >&2
+            exit 1
+          fi
+          TAG="v${VERSION}"
+          TITLE="PkgToolBox $VERSION"
+          STABLE="true"
+          SHOULD_RUN="true"
+        fi
+
+        echo "should_run=$SHOULD_RUN" >> "$GITHUB_OUTPUT"
+        echo "nightly=$NIGHTLY" >> "$GITHUB_OUTPUT"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+        echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+        echo "stable=$STABLE" >> "$GITHUB_OUTPUT"
+        printf 'resolved: nightly=%s version=%s tag=%s\n' "$NIGHTLY" "$VERSION" "$TAG"
+  build:
+    name: ${{ matrix.name }}
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - name: windows-x64
+          os: windows-latest
+          platform: windows
+          artifact: PkgToolBox-windows-x64
+        - name: macos
+          os: macos-latest
+          platform: macos
+          artifact: PkgToolBox-macos
+        - name: linux-x64
+          os: ubuntu-latest
+          platform: linux
+          artifact: PkgToolBox-linux-x64
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+        cache: pip
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install -r requirements.txt pyinstaller
+    - name: Create macOS app icon (icns)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p build/icon.iconset
+        for s in 16 32 128 256 512; do
+          sips -z $s $s icons/default_icon.png --out "build/icon.iconset/icon_${s}x${s}.png" >/dev/null
+          sips -z $((s * 2)) $((s * 2)) icons/default_icon.png --out "build/icon.iconset/icon_${s}x${s}@2x.png" >/dev/null
+        done
+        iconutil -c icns build/icon.iconset -o icons/icon.icns
+        echo "icon.icns created"
+    - name: Build executable with PyInstaller
+      shell: bash
+      run: |
+        pyinstaller scripts/PkgToolBox.spec
+    - name: Build Windows installer with Inno Setup
+      if: runner.os == 'Windows'
+      uses: jrsoftware/issi@v2
+      with:
+        script: scripts/PkgToolBox.iss
+        defines: "MyAppVersion=${{ needs.preflight.outputs.version }}"
+    - name: Package macOS app
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        set -euo pipefail
+        cd dist
+        ditto -c -k --sequesterRsrc --keepParent PkgToolBox.app "PkgToolBox-macos.zip"
+    - name: Package Linux build
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        set -euo pipefail
+        cd dist
+        tar -czf PkgToolBox-linux-x64.tar.gz PkgToolBox
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact }}
+        path: |
+          installer_output/PkgToolBox_Setup.exe
+          dist/PkgToolBox-macos.zip
+          dist/PkgToolBox-linux-x64.tar.gz
+        if-no-files-found: warn
+  release:
+    name: Publish GitHub release
+    needs: [preflight, build]
+    if: needs.preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        merge-multiple: true
+    - name: Publish GitHub release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ needs.preflight.outputs.tag }}
+        name: ${{ needs.preflight.outputs.title }}
+        draft: ${{ inputs.draft == true }}
+        prerelease: ${{ needs.preflight.outputs.nightly == 'true' || inputs.prerelease == true }}
+        files: artifacts/**
+        generate_release_notes: true

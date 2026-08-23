@@ -1,0 +1,100 @@
+name: Bug report
+description: Report a reproducible PkgToolBox problem.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+- type: markdown
+  attributes:
+    value: |
+      Thanks for taking the time to report a bug. Keep reports focused on legitimate PKG handling, research, preservation, and offline homebrew workflows.
+- type: dropdown
+  id: component
+  attributes:
+    label: Component
+    description: Which area is affected?
+    options:
+    - PKG loading / parsing
+    - Extraction
+    - Injection
+    - Header modification
+    - File explorer
+    - Hex / text reader
+    - Trophy management
+    - Wallpapers
+    - Passcode bruteforce
+    - PS5 game info
+    - PFS info
+    - Localization
+    - Build / CI
+    - Documentation
+  validations:
+    required: true
+- type: input
+  id: version
+  attributes:
+    label: Version or commit
+    description: Release tag, commit SHA, or branch name.
+    placeholder: "v1.4.0, main@abcdef0, or local branch name"
+  validations:
+    required: true
+- type: textarea
+  id: environment
+  attributes:
+    label: Environment
+    description: Include OS version, Python version, PKG type (PS3/PS4/PS5), and whether this is a release build or run from source.
+    placeholder: |
+      OS:
+      Python:
+      PKG type / firmware:
+      Release build or source:
+  validations:
+    required: true
+- type: textarea
+  id: steps
+  attributes:
+    label: Reproduction steps
+    description: List the shortest reliable path that triggers the issue.
+    placeholder: |
+      1. Open PkgToolBox...
+      2. Load ...
+      3. Navigate to ...
+      4. Observe ...
+  validations:
+    required: true
+- type: textarea
+  id: expected
+  attributes:
+    label: Expected behavior
+    description: What should PkgToolBox have done instead?
+  validations:
+    required: true
+- type: textarea
+  id: actual
+  attributes:
+    label: Actual behavior
+    description: What happened? Include exact errors, screenshots, logs, or console output if available.
+  validations:
+    required: true
+- type: textarea
+  id: logs
+  attributes:
+    label: Logs and diagnostics
+    description: Paste relevant application logs, terminal output, crash reports, or CI links.
+    render: text
+- type: textarea
+  id: verification
+  attributes:
+    label: Checks already tried
+    description: Mark or describe anything you already ran.
+    value: |
+      - [ ] Reproduced on a clean checkout
+      - [ ] Reproduced with a minimal PKG sample
+      - [ ] Checked the log output
+- type: checkboxes
+  id: scope
+  attributes:
+    label: Use scope
+    description: PkgToolBox is for legitimate PKG handling, research, preservation, and offline homebrew development.
+    options:
+    - label: This report is not asking for online cheating, piracy, unauthorized access, or service disruption support.
+      required: true

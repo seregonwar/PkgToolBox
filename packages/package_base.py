@@ -1,11 +1,4 @@
 import os
-import struct
-import io
-import json
-import re
-import unicodedata
-from PIL import Image
-from .enums import DRMType, ContentType, IROTag
 from Utilities import Logger
 
 class PackageBase:

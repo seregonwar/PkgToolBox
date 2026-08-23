@@ -2,7 +2,6 @@
 import json
 import os
 from pathlib import Path
-import io
 
 class PS5GameInfo:
     def __init__(self):
@@ -320,6 +319,3 @@ class PS5GameInfo:
         except Exception as e:
             raise Exception(f"Error writing string: {str(e)}")
 
-def get_ps5_game_info(path):
-    ps5_info = PS5GameInfo()
-    return ps5_info.process(path)

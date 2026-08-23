@@ -6,3 +6,4 @@
 /PS4PKGToolTemp
 packages/ps3lib/debug_log.txt
 /.commandcode
+.DS_Store

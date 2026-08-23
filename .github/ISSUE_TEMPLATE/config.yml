@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+- name: Ethical use and project scope
+  url: https://github.com/seregonwar/PkgToolBox#description
+  about: Review the supported use cases before opening a request.
+- name: Build and testing guide
+  url: https://github.com/seregonwar/PkgToolBox#installation
+  about: Check the documented build and verification commands.

@@ -1,6 +1,5 @@
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
-from Crypto.Util.number import bytes_to_long
 from Crypto.Random import get_random_bytes
 
 # Constants
@@ -30,9 +29,6 @@ class AES_ctx:
 def AES_set_key(ctx, key, key_len):
     ctx.key = key[:key_len]
     ctx.iv = get_random_bytes(AES.block_size)
-
-def AES_cbc_encrypt(ctx, data, out):
-    out[:] = ctx.encrypt(data)
 
 def AES_cbc_decrypt(ctx, data, out):
     out[:] = ctx.decrypt(data) 

@@ -1,26 +1,15 @@
-import struct
 import sys
 import os
 import logging
-import ctypes
-import argparse
-import io
 import json
-from contextlib import redirect_stdout
 
 # Aggiungi la directory root al path di Python
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import dei moduli
-from GraphicUserInterface.main_window import MainWindow
-from packages import PackagePS4, PackagePS5, PackagePS3
-from Utilities.Trophy import Archiver, TrophyFile, TRPCreator, TRPReader
-from file_operations import extract_file, inject_file, modify_file_header
-from Utilities import Logger, SettingsManager
-from tools.repack import Repack
-from tools.PS5_Game_Info import PS5GameInfo
+from GUI.main_window import MainWindow
+from Utilities import Logger
 from PySide6.QtWidgets import QApplication
-from qt_material import apply_stylesheet
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -91,94 +80,6 @@ def create_default_settings(settings_file_path):
         json.dump(default_settings, f, indent=4)
     Logger.log_information("Default settings created.")
 
-def execute_command(cmd, pkg, file, out, update_callback_info):
-    """Execute PKG related commands"""
-    logging.debug(f"execute_command called with cmd={cmd}, pkg={pkg}, file={file}, out={out}")
-    if not cmd or not pkg:
-        raise ValueError("The 'Command' and 'PKG' fields are required.")
-
-    try:
-        # Determine package type and create appropriate instance
-        with open(pkg, "rb") as fp:
-            magic = struct.unpack(">I", fp.read(4))[0]
-            if magic == PackagePS4.MAGIC_PS4:
-                target = PackagePS4(pkg)
-            elif magic == PackagePS5.MAGIC_PS5:
-                target = PackagePS5(pkg)
-            elif magic == PackagePS3.MAGIC_PS3:
-                target = PackagePS3(pkg)
-            else:
-                raise ValueError(f"Unknown PKG format: {magic:08X}")
-
-        # Execute requested command
-        if cmd == "info":
-            return get_pkg_info(target, update_callback_info)
-        elif cmd == "extract":
-            return extract_pkg_file(target, file, out, update_callback_info)
-        elif cmd == "dump":
-            return dump_pkg(target, out, update_callback_info)
-        elif cmd == "inject":
-            return inject_pkg_file(target, file, out)
-        elif cmd == "modify":
-            return modify_pkg_header(target, file, out)
-        else:
-            raise ValueError(f"Unknown command: {cmd}")
-
-    except Exception as e:
-        logging.error(f"Error executing command: {str(e)}")
-        raise
-
-def get_pkg_info(package, callback):
-    """Get PKG information"""
-    f = io.StringIO()
-    with redirect_stdout(f):
-        package.info()
-    info_output = f.getvalue()
-    
-    if not info_output:
-        raise ValueError("No information found in the PKG file.")
-    
-    info_dict = {}
-    for line in info_output.split('\n'):
-        if ':' in line:
-            key, value = line.split(':', 1)
-            info_dict[key.strip()] = value.strip()
-    
-    callback(info_dict)
-    return info_output
-
-def extract_pkg_file(package, file_path, output_path, callback):
-    """Extract file from PKG"""
-    file_info = package.get_file_info(file_path)
-    extract_file(package.original_file, file_info, output_path, callback)
-    return f"File extracted: {file_path}"
-
-def dump_pkg(package, output_path, callback):
-    """Dump PKG contents"""
-    try:
-        result = package.dump(output_path, callback)
-        return result
-    except Exception as e:
-        raise ValueError(f"Error during dump: {str(e)}")
-
-def inject_pkg_file(package, file_path, input_path):
-    """Inject file into PKG"""
-    file_info = package.get_file_info(file_path)
-    injected_size = inject_file(package.original_file, file_info, input_path)
-    return f"Injected {injected_size} bytes"
-
-def modify_pkg_header(package, offset, new_data):
-    """Modify PKG header"""
-    modified_size = modify_file_header(package.original_file, int(offset, 16), new_data.encode())
-    return f"Modified {modified_size} bytes"
-
-def is_admin():
-    """Check if running with admin privileges"""
-    try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
-        return False
-
 def main():
     """Main application entry point"""
     # Initialize application
@@ -188,9 +89,7 @@ def main():
     # Setup directories and settings
     temp_directory, settings_file_path = check_settings_file_presence()
     
-    # Apply Material Design theme (qt-material)
-    # Choose 'light_blue.xml' as default - looks modern and professional
-    apply_stylesheet(app, theme='light_blue.xml')
+    # The persisted theme is applied by MainWindow at startup (StyleManager).
     
     # Create and show main window
     window = MainWindow(temp_directory)

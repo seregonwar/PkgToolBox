@@ -3,13 +3,11 @@ import struct
 import binascii
 from Crypto.Cipher import AES
 import logging
-from PIL import Image
-import io
+
 from .package_base import PackageBase
 import shutil
 import time
 import datetime
-import sys
 import tempfile
 
 class PackagePS3(PackageBase):

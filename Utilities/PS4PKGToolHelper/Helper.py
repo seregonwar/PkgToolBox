@@ -1,9 +1,5 @@
 import os
 import json
-from datetime import datetime
-from PySide6.QtWidgets import QMessageBox
-from PySide6.QtGui import QPixmap
-from PySide6.QtCore import QByteArray, Qt
 
 class Helper:
     first_launch = True
@@ -56,31 +52,3 @@ class Backport:
             updated_pkg_file_list.append({"FilePath": file_path, "Backported": backported})
         with open(Backport.backport_info_file, 'w') as f:
             json.dump(updated_pkg_file_list, f, indent=4)
-
-class Bitmap:
-    pic0 = None
-    pic1 = None
-    fail_extract_image_list = ""
-
-    @staticmethod
-    def bytes_to_bitmap(img_bytes):
-        pixmap = QPixmap()
-        pixmap.loadFromData(QByteArray(img_bytes))
-        return pixmap
-
-    @staticmethod
-    def resize_image(image, width, height):
-        return image.scaled(width, height, aspectRatioMode=Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation)
-
-class Trophy:
-    trophy = None
-    id_entry_list = []
-    name_entry_list = []
-    image_to_extract_list = []
-    trophy_filename_to_extract_list = []
-    trophy_temp_folder = os.path.join(Helper.ps4pkg_tool_temp_directory, "TrophyFile")
-    out_path = ""
-
-    @staticmethod
-    def resize_image(image, width, height):
-        return image.scaled(width, height, aspectRatioMode=Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation)

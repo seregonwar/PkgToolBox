@@ -1,11 +1,5 @@
 from enum import Enum, IntEnum
 
-class Type(Enum):
-    PAID_STANDALONE_FULL = 1
-    UPGRADABLE = 2
-    DEMO = 3
-    FREEMIUM = 4
-
 class DRMType(IntEnum):
     NONE = 0x0
     PS4 = 0xF
@@ -34,30 +28,6 @@ class ContentType(IntEnum):
     PSM = 0x18
     WT = 0x19
     PSP2_THEME = 0x1F
-
-class PackageType(IntEnum):
-    UNKNOWN = 0x0
-    PATCH = 0x10
-    DISC_GAME_PATCH = 0x11
-    HDD_GAME_PATCH = 0x12
-    NO_EBOOT_BIN = 0x13
-    DEMO = 0xA
-    KEY = 0xC
-    UPGRADABLE = 0xD
-
-class PackageFlag(IntEnum):
-    NO_FLAGS = 0x0
-    EBOOT = 0x2
-    REQUIRE_LICENSE = 0x4
-    HDD_MC = 0x8
-    CUMULATIVE_PATCH = 0x10
-    RENAME_DIRECTORY = 0x40
-    EDAT = 0x80
-    EMULATOR = 0x200
-    VSH_MODULE = 0x400
-    DISC_BINDED = 0x800
-    STORAGE_TYPE = 0x2000
-    NON_GAME = 0x4000
 
 class IROTag(Enum):
     SHAREFACTORY_THEME = 0x1
