@@ -111,6 +111,7 @@ If I forgot to add anyone below, please let me know on [X](https://x.com/Seregon
   - [ ] Decryption of `.ESFM` files.
 
 ## GUI
-<img width="1340" height="944" alt="Screenshot 2025-12-17 alle 13 44 38" src="https://github.com/user-attachments/assets/890e9463-7241-4ad2-a5e7-2c1b1cc5c9d9" />
+<img width="1312" height="1013" alt="image" src="https://github.com/user-attachments/assets/adb6302d-ebb6-4c3b-b9ab-05f1f0b02a1c" />
+
 
 
