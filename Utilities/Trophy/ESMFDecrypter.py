@@ -2,7 +2,6 @@ import os
 import re
 import logging
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import unpad
 import xml.etree.ElementTree as ET
 import requests
 import time
@@ -18,32 +17,67 @@ class ESMFDecrypter:
         ])
         self.valid_np_com_ids = []
 
+    def _derive_key(self, np_com_id):
+        """Deriva la chiave ESFM: AES-CBC(trophy_key, IV zero) sul NP comm ID
+        riempito di zero fino a un multiplo di 16 byte."""
+        raw = np_com_id.encode('utf-8', 'ignore')
+        raw = raw + b'\0' * ((16 - len(raw) % 16) % 16)
+        iv = bytes([0] * 16)
+        return AES.new(self.trophy_key, AES.MODE_CBC, iv).encrypt(raw)
+
+    def decrypt_esfm_bytes(self, encrypted_data, np_com_id):
+        """Decifra byte ESFM con la trophy key e il NP Communication ID.
+        Ritorna il testo XML decifrato oppure None.
+
+        Formato: IV[16] + ciphertext AES-CBC (PS4/PS3). Prima si prova il
+        metodo corretto (IV letto dal file), poi il fallback storico (tutto il
+        file come ciphertext con IV zero). Il risultato deve essere XML valido.
+        """
+        if not encrypted_data or len(encrypted_data) < 16:
+            return None
+        try:
+            key = self._derive_key(np_com_id)
+        except Exception as e:
+            logger.error(f"ESFM key derivation failed: {e}")
+            return None
+
+        candidates = []
+        # Metodo corretto: i primi 16 byte sono l'IV, il resto è ciphertext
+        try:
+            iv = encrypted_data[:16]
+            dec = AES.new(key, AES.MODE_CBC, iv).decrypt(encrypted_data[16:])
+            candidates.append(''.join(chr(b) for b in dec if 32 <= b <= 126 or b in (9, 10, 13)))
+        except Exception:
+            pass
+        # Fallback legacy: tutto il file come ciphertext con IV zero
+        try:
+            iv0 = bytes([0] * 16)
+            dec = AES.new(key, AES.MODE_CBC, iv0).decrypt(encrypted_data)
+            candidates.append(''.join(chr(b) for b in dec if 32 <= b <= 126 or b in (9, 10, 13)))
+        except Exception:
+            pass
+
+        for text in candidates:
+            try:
+                ET.fromstring(text)
+                return text
+            except ET.ParseError:
+                continue
+        return candidates[0] if candidates else None
+
     def decrypt_esfm_file(self, file_path, np_com_id, output_folder):
         logger.info(f"Starting decryption of file: {file_path}")
-        
-        iv = bytes([0] * 16)
-        cipher = AES.new(self.trophy_key, AES.MODE_CBC, iv)
-        key = cipher.encrypt(np_com_id.ljust(16, '\0').encode())
 
         with open(file_path, 'rb') as file:
             encrypted_data = file.read()
 
-        total_size = len(encrypted_data)
-        chunk_size = AES.block_size
-
-        cipher = AES.new(key, AES.MODE_CBC, iv)
-        decrypted_data = bytearray()
-        for i in range(0, total_size, chunk_size):
-            chunk = encrypted_data[i:i + chunk_size]
-            decrypted_chunk = cipher.decrypt(chunk)
-            decrypted_data.extend(decrypted_chunk)
-            logger.debug(f"Decrypted {i + chunk_size} of {total_size} bytes")
-        
-        decrypted_data = unpad(decrypted_data, AES.block_size)
-        decrypted_data = ''.join(chr(byte) for byte in decrypted_data if 32 <= byte <= 126 or byte in (9, 10, 13))
+        decrypted_data = self.decrypt_esfm_bytes(encrypted_data, np_com_id)
+        if not decrypted_data:
+            logger.error("Decryption failed or produced no output")
+            return None
 
         try:
-            decrypted_xml = ET.fromstring(decrypted_data)
+            ET.fromstring(decrypted_data)
             logger.info("XML decrypted and parsed successfully")
         except ET.ParseError as e:
             logger.error(f"Error parsing decrypted XML: {e}")

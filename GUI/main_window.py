@@ -1221,6 +1221,14 @@ class MainWindow(QMainWindow):
         output_layout.addWidget(output_browse)
         layout.addLayout(output_layout)
         
+        # NP Communication ID (serve a derivare la chiave di decifratura)
+        np_layout = QHBoxLayout()
+        self.esmf_npcommid_entry = QLineEdit()
+        self.esmf_npcommid_entry.setPlaceholderText("NP Communication ID (es. NPWR05506_00)")
+        np_layout.addWidget(QLabel("NP Comm ID:"))
+        np_layout.addWidget(self.esmf_npcommid_entry, 1)
+        layout.addLayout(np_layout)
+        
         # Decrypt button
         decrypt_button = QPushButton("Decrypt")
         decrypt_button.clicked.connect(self.decrypt_esmf)
@@ -1883,16 +1891,28 @@ class MainWindow(QMainWindow):
         """Decrypt ESMF file"""
         esmf_file = self.esmf_file_entry.text()
         output_dir = self.esmf_output_entry.text()
+        np_comm_id = self.esmf_npcommid_entry.text().strip()
 
         if not esmf_file or not output_dir:
             QMessageBox.warning(self, "Warning", "Please select ESMF file and output directory")
             return
+        if not np_comm_id:
+            QMessageBox.warning(
+                self, "Warning",
+                "Enter the NP Communication ID (es. NPWR05506_00) — it is used "
+                "to derive the decryption key."
+            )
+            return
 
         try:
             decrypter = ESMFDecrypter()
-            result = decrypter.decrypt_esmf(esmf_file, output_dir)
-            self.esmf_log.append(result)
-            QMessageBox.information(self, "Success", "ESMF decrypted successfully")
+            result = decrypter.decrypt_esfm_file(esmf_file, np_comm_id, output_dir)
+            if result:
+                self.esmf_log.append(f"Decrypted: {result}")
+                QMessageBox.information(self, "Success", "ESMF decrypted successfully")
+            else:
+                self.esmf_log.append("Decryption failed (wrong NP Comm ID?).")
+                QMessageBox.critical(self, "Error", "Failed to decrypt ESMF (wrong NP Comm ID?).")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to decrypt ESMF: {str(e)}")
 
@@ -2240,41 +2260,90 @@ class MainWindow(QMainWindow):
         else:
             self.showFullScreen()
 
+    @staticmethod
+    def _apply_trophy_conf(root, reader, meta):
+        """Applica un trophyconf XML (da SFM o ESFM decifrato) a reader/meta:
+        titolo, NP Communication ID e la mappa id -> (tipo, hidden)."""
+        if reader._title is None or reader._title == "Unknown Title":
+            t = root.find('title-name')
+            if t is not None and t.text:
+                reader._title = t.text.strip()
+        if reader._npcommid is None:
+            n = root.find('npcommid')
+            if n is not None and n.text:
+                reader._npcommid = n.text.strip()
+
+        type_map = {'B': 'Bronze', 'S': 'Silver', 'G': 'Gold', 'P': 'Platinum'}
+        for elem in root.iter('trophy'):
+            tid = elem.get('id')
+            if tid is None:
+                continue
+            ttype = type_map.get((elem.get('ttype') or '').upper())
+            hidden = (elem.get('hidden') or 'no').lower() == 'yes'
+            meta[str(int(tid))] = (ttype, hidden)
+
     def _parse_sfm_config(self, reader):
-        """Legge i file .SFM non cifrati e annota ogni trofeo con tipo/hidden,
-        oltre a titolo e NP Communication ID.
+        """Recupera tipo/grade/hidden (più titolo e NP Communication ID) dal
+        config dei trofei. Prima legge l'SFM non cifrato (gestendo il BOM
+        UTF-8), poi — se non trova nulla — tenta di decifrare l'ESFM con gli
+        NP comm ID disponibili dal PKG caricato.
         Ritorna una mappa id -> (tipo, hidden)."""
         meta = {}
+
+        # 1° passata: config non cifrato (.SFM), con BOM UTF-8 tollerato
         for trophy in reader.trophy_list:
-            if not trophy.name.upper().endswith(('.SFM', '.ESFM')):
+            if not trophy.name.upper().endswith('.SFM'):
                 continue
             data = reader.extract_file_to_memory(trophy.name)
             if not data:
                 continue
+            data = data.lstrip(b'\xef\xbb\xbf \t\r\n')
+            if not data.startswith(b'<'):
+                continue
             try:
-                if not data.lstrip().startswith(b'<'):
-                    continue
                 root = ET.fromstring(data.decode('utf-8', 'ignore'))
             except ET.ParseError:
                 continue
+            self._apply_trophy_conf(root, reader, meta)
 
-            if reader._title is None or reader._title == "Unknown Title":
-                t = root.find('title-name')
-                if t is not None and t.text:
-                    reader._title = t.text.strip()
-            if reader._npcommid is None:
-                n = root.find('npcommid')
-                if n is not None and n.text:
-                    reader._npcommid = n.text.strip()
+        if meta:
+            return meta
 
-            type_map = {'B': 'Bronze', 'S': 'Silver', 'G': 'Gold', 'P': 'Platinum'}
-            for elem in root.iter('trophy'):
-                tid = elem.get('id')
-                if tid is None:
-                    continue
-                ttype = type_map.get((elem.get('ttype') or '').upper())
-                hidden = (elem.get('hidden') or 'no').lower() == 'yes'
-                meta[str(int(tid))] = (ttype, hidden)
+        # 2° passata: config cifrato (.ESFM) — tenta la decifratura best-effort
+        # con gli ID disponibili (content_id del PKG, npcommid già noto)
+        esfm = next((t for t in reader.trophy_list
+                     if t.name.upper().endswith('.ESFM') and 'TROPHY' in t.name.upper()), None)
+        if esfm is None:
+            esfm = next((t for t in reader.trophy_list if t.name.upper().endswith('.ESFM')), None)
+        if esfm is None:
+            return meta
+
+        data = reader.extract_file_to_memory(esfm.name)
+        if not data:
+            return meta
+
+        candidates = []
+        pkg = getattr(self, 'package', None)
+        cid = getattr(pkg, 'content_id', None) or getattr(pkg, 'pkg_content_id', None)
+        if cid:
+            candidates.append(str(cid))
+        if reader._npcommid:
+            candidates.append(reader._npcommid)
+        if not candidates:
+            return meta
+
+        decrypter = ESMFDecrypter()
+        for cand in dict.fromkeys(candidates):  # dedup preservando l'ordine
+            text = decrypter.decrypt_esfm_bytes(data, cand)
+            if not text:
+                continue
+            try:
+                root = ET.fromstring(text)
+            except ET.ParseError:
+                continue
+            self._apply_trophy_conf(root, reader, meta)
+            if meta:
+                break
         return meta
 
     @staticmethod
