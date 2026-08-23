@@ -951,17 +951,13 @@ class MainWindow(QMainWindow):
                 # Carica il file nella sezione trofei
                 self.trophy_entry.setText(temp_path)
                 trophy_reader = TRPReader(temp_path)
+                self._trophy_reader = trophy_reader
                 
                 # Carica i trofei nella tree view (popola anche titolo/NPCommID dall'SFM)
-                self._populate_trophy_tree(trophy_reader)
+                self._populate_trophy_tree(trophy_reader, self.trophy_npcommid_entry.text().strip())
                 
                 # Mostra le informazioni nel text edit
-                info_text = f"""
-                Title: {trophy_reader._title if trophy_reader._title else 'N/A'}
-                NP Communication ID: {trophy_reader._npcommid if trophy_reader._npcommid else 'N/A'}
-                Number of Trophies: {len(trophy_reader._trophyList) if trophy_reader._trophyList else 0}
-                """
-                self.trophy_info.setText(info_text)
+                self.trophy_info.setText(self._build_trophy_info(trophy_reader, temp_path))
                 
                 # Passa alla tab dei trofei
                 self.tab_widget.setCurrentWidget(self.trophy_tab)
@@ -1108,6 +1104,26 @@ class MainWindow(QMainWindow):
         file_layout.addWidget(pkg_button)
         file_group.setLayout(file_layout)
         layout.addWidget(file_group)
+
+        # NP Communication ID — serve a decifrare il config ESFM cifrato
+        np_group = QGroupBox("NP Communication ID")
+        np_layout = QHBoxLayout(np_group)
+        self.trophy_npcommid_entry = QLineEdit()
+        self.trophy_npcommid_entry.setPlaceholderText("es. NPWR05506_00 (solo se il config è cifrato)")
+        np_apply_btn = QPushButton("Apply")
+        np_apply_btn.clicked.connect(self._apply_trophy_npcommid)
+        np_layout.addWidget(QLabel("NP Comm ID:"))
+        np_layout.addWidget(self.trophy_npcommid_entry, 1)
+        np_layout.addWidget(np_apply_btn)
+        self.trophy_npcommid_hint = QLabel(
+            "Se il config dei trofei è cifrato (ESFM), il tipo/grade restano sconosciuti "
+            "finché non viene fornito l'NP Comm ID del gioco. Non è nel PKG: si trova ad es. "
+            "nei dati trofeo della console, cercando \"<gioco> NPWR\" nei forum trofei, o "
+            "decifrando il config con un token PSN."
+        )
+        self.trophy_npcommid_hint.setWordWrap(True)
+        np_layout.addWidget(self.trophy_npcommid_hint, 2)
+        layout.addWidget(np_group)
         
         # Split view for trophy list and preview
         split_layout = QHBoxLayout()
@@ -2282,11 +2298,12 @@ class MainWindow(QMainWindow):
             hidden = (elem.get('hidden') or 'no').lower() == 'yes'
             meta[str(int(tid))] = (ttype, hidden)
 
-    def _parse_sfm_config(self, reader):
+    def _parse_sfm_config(self, reader, extra_npcommid=None):
         """Recupera tipo/grade/hidden (più titolo e NP Communication ID) dal
         config dei trofei. Prima legge l'SFM non cifrato (gestendo il BOM
         UTF-8), poi — se non trova nulla — tenta di decifrare l'ESFM con gli
-        NP comm ID disponibili dal PKG caricato.
+        NP comm ID disponibili (quello fornito dall'utente, poi il content_id
+        del PKG caricato, poi l'npcommid già noto).
         Ritorna una mappa id -> (tipo, hidden)."""
         meta = {}
 
@@ -2310,7 +2327,6 @@ class MainWindow(QMainWindow):
             return meta
 
         # 2° passata: config cifrato (.ESFM) — tenta la decifratura best-effort
-        # con gli ID disponibili (content_id del PKG, npcommid già noto)
         esfm = next((t for t in reader.trophy_list
                      if t.name.upper().endswith('.ESFM') and 'TROPHY' in t.name.upper()), None)
         if esfm is None:
@@ -2323,6 +2339,8 @@ class MainWindow(QMainWindow):
             return meta
 
         candidates = []
+        if extra_npcommid and extra_npcommid.strip():
+            candidates.append(extra_npcommid.strip())
         pkg = getattr(self, 'package', None)
         cid = getattr(pkg, 'content_id', None) or getattr(pkg, 'pkg_content_id', None)
         if cid:
@@ -2352,11 +2370,26 @@ class MainWindow(QMainWindow):
         m = re.search(r'TROP(\d+)', name.upper())
         return str(int(m.group(1))) if m else None
 
-    def _populate_trophy_tree(self, reader):
+    def _build_trophy_info(self, reader, filename):
+        """Testo informativo del TRP caricato, con hint se il config è cifrato."""
+        lines = [
+            f"Title: {reader._title if reader._title else 'N/A'}",
+            f"NP Communication ID: {reader._npcommid if reader._npcommid else 'N/A'}",
+            f"Number of Trophies: {len(reader._trophyList) if reader._trophyList else 0}",
+            f"File Type: {os.path.splitext(filename)[1].upper()[1:]}",
+        ]
+        has_esfm = any(t.name.upper().endswith('.ESFM') for t in reader.trophy_list)
+        has_plain = any(t.name.upper().endswith('.SFM') for t in reader.trophy_list)
+        if reader._npcommid is None and has_esfm and not has_plain:
+            lines.append("")
+            lines.append("Config cifrato (ESFM): inserisci l'NP Comm ID sopra per decifrarlo.")
+        return "\n".join(lines)
+
+    def _populate_trophy_tree(self, reader, extra_npcommid=None):
         """Popola la tree dei trofei con nome/tipo/grade/hidden e mostra
         subito l'immagine del primo trofeo PNG disponibile."""
         self.trophy_tree.clear()
-        meta = self._parse_sfm_config(reader)
+        meta = self._parse_sfm_config(reader, extra_npcommid=extra_npcommid)
 
         for trophy in reader.trophy_list:
             tid = self._trophy_id_from_name(trophy.name)
@@ -2390,6 +2423,20 @@ class MainWindow(QMainWindow):
         if filename:
             self._load_trophy_file(filename)
 
+    def _apply_trophy_npcommid(self):
+        """Rilegge il config dei trofei con l'NP Comm ID inserito dall'utente
+        (per decifrare un config ESFM e recuperare tipo/grade)."""
+        reader = getattr(self, '_trophy_reader', None)
+        if reader is None:
+            QMessageBox.information(self, "Trophy", "Load a trophy file first.")
+            return
+        npcommid = self.trophy_npcommid_entry.text().strip()
+        self._populate_trophy_tree(reader, extra_npcommid=npcommid)
+        self.trophy_info.setText(self._build_trophy_info(reader, self.trophy_entry.text()))
+        Logger.log_information(
+            f"Trophy config re-parsed with NP Comm ID: {npcommid or '(none)'}"
+        )
+
     def _load_trophy_file(self, filename):
         """Carica un file trofeo (.trp/.ucp) nella sezione Trophy."""
         try:
@@ -2397,18 +2444,13 @@ class MainWindow(QMainWindow):
 
             # Carica il file dei trofei (popola anche titolo/NPCommID dall'SFM)
             trophy_reader = TRPReader(filename)
+            self._trophy_reader = trophy_reader
 
             # Carica i trofei nella tree view
-            self._populate_trophy_tree(trophy_reader)
+            self._populate_trophy_tree(trophy_reader, self.trophy_npcommid_entry.text().strip())
 
             # Mostra le informazioni nel text edit
-            info_text = f"""
-            Title: {trophy_reader._title if trophy_reader._title else 'N/A'}
-            NP Communication ID: {trophy_reader._npcommid if trophy_reader._npcommid else 'N/A'}
-            Number of Trophies: {len(trophy_reader._trophyList) if trophy_reader._trophyList else 0}
-            File Type: {os.path.splitext(filename)[1].upper()[1:]}
-            """
-            self.trophy_info.setText(info_text)
+            self.trophy_info.setText(self._build_trophy_info(trophy_reader, filename))
 
             # Abilita/disabilita pulsanti in base al tipo di file
             is_trp = filename.lower().endswith('.trp')
