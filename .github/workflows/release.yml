@@ -133,6 +133,24 @@ jobs:
       shell: bash
       run: |
         pip install -r requirements.txt pyinstaller
+    - name: Fetch platform shadPKG binary
+      shell: bash
+      run: |
+        set -euo pipefail
+        VERSION="v2.1.0"
+        mkdir -p packages/external_tools
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          ASSET="shadpkg.exe";   DEST="packages/external_tools/shadPKG.exe"
+        elif [ "$RUNNER_OS" = "macOS" ]; then
+          ASSET="shadpkg-macos"; DEST="packages/external_tools/shadPKG"
+        else
+          ASSET="shadpkg-debian"; DEST="packages/external_tools/shadPKG"
+        fi
+        curl -sL "https://github.com/seregonwar/ShadPKG/releases/download/${VERSION}/${ASSET}" -o "$DEST"
+        if [ "$RUNNER_OS" != "Windows" ]; then
+          chmod +x "$DEST"
+        fi
+        ls -lh "$DEST"
     - name: Create macOS app icon (icns)
       if: runner.os == 'macOS'
       shell: bash
@@ -155,20 +173,43 @@ jobs:
       with:
         script: scripts/PkgToolBox.iss
         defines: "MyAppVersion=${{ needs.preflight.outputs.version }}"
-    - name: Package macOS app
+    - name: Package macOS app (zip + dmg installer)
       if: runner.os == 'macOS'
       shell: bash
       run: |
         set -euo pipefail
         cd dist
         ditto -c -k --sequesterRsrc --keepParent PkgToolBox.app "PkgToolBox-macos.zip"
-    - name: Package Linux build
+        hdiutil create -volname "PkgToolBox" -srcfolder PkgToolBox.app \
+          -ov -format UDZO "PkgToolBox-macos.dmg"
+        echo "dmg created:"; ls -lh PkgToolBox-macos.dmg
+    - name: Package Linux build (tar.gz + AppImage installer)
       if: runner.os == 'Linux'
       shell: bash
       run: |
         set -euo pipefail
         cd dist
         tar -czf PkgToolBox-linux-x64.tar.gz PkgToolBox
+
+        # AppImage: bundle the PyInstaller output into an AppDir
+        mkdir -p AppDir/usr/bin
+        cp -r PkgToolBox/. AppDir/usr/bin/
+        cat > AppDir/PkgToolBox.desktop <<'EOF'
+        [Desktop Entry]
+        Name=PkgToolBox
+        Exec=PkgToolBox
+        Icon=PkgToolBox
+        Type=Application
+        Categories=Utility;
+        Terminal=false
+        EOF
+        cp ../icons/default_icon.png AppDir/PkgToolBox.png
+
+        wget -q "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" -O /tmp/appimagetool
+        chmod +x /tmp/appimagetool
+        # --appimage-extract-and-run: works on runners without FUSE
+        ARCH=x86_64 /tmp/appimagetool --appimage-extract-and-run AppDir "PkgToolBox-linux-x64.AppImage"
+        echo "appimage created:"; ls -lh PkgToolBox-linux-x64.AppImage
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
@@ -176,7 +217,9 @@ jobs:
         path: |
           installer_output/PkgToolBox_Setup.exe
           dist/PkgToolBox-macos.zip
+          dist/PkgToolBox-macos.dmg
           dist/PkgToolBox-linux-x64.tar.gz
+          dist/PkgToolBox-linux-x64.AppImage
         if-no-files-found: warn
   release:
     name: Publish GitHub release

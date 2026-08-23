@@ -199,22 +199,11 @@ class SettingsDialog(QDialog):
         colors_group.setLayout(grid)
         editor.addWidget(colors_group)
 
-        # Live preview
+        # Live preview — miniaturized mockup of the UI using every theme color
         preview_group = QGroupBox("Preview")
         preview_layout = QVBoxLayout(preview_group)
-        self.ct_preview = QFrame()
-        self.ct_preview.setFixedHeight(64)
-        preview_inner = QVBoxLayout(self.ct_preview)
-        preview_inner.setContentsMargins(10, 6, 10, 6)
-        preview_inner.setSpacing(5)
-        self.ct_preview_bg = QLabel("Background")
-        self.ct_preview_text = QLabel("Text color")
-        self.ct_preview_accent = QLabel("Accent")
-        self.ct_preview_accent.setAlignment(Qt.AlignCenter)
-        preview_inner.addWidget(self.ct_preview_bg)
-        preview_inner.addWidget(self.ct_preview_text)
-        preview_inner.addWidget(self.ct_preview_accent)
-        preview_layout.addWidget(self.ct_preview)
+        self._create_ct_mockup()
+        preview_layout.addWidget(self.ct_mockup_root)
         editor.addWidget(preview_group)
 
         # Action buttons
@@ -294,28 +283,123 @@ class SettingsDialog(QDialog):
         self.ct_color_labels[key].setText(hex_color)
         self._update_ct_preview()
 
+    def _create_ct_mockup(self):
+        """Builds the miniaturized UI mockup used as the custom-theme preview."""
+        self.ct_mockup_root = QWidget()
+        root_layout = QVBoxLayout(self.ct_mockup_root)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
+
+        self.ct_mock_window = QFrame()
+        self.ct_mock_window.setFixedHeight(128)
+        window_layout = QHBoxLayout(self.ct_mock_window)
+        window_layout.setContentsMargins(8, 8, 8, 8)
+        window_layout.setSpacing(8)
+
+        # Sidebar with one selected item
+        sidebar = QFrame()
+        sidebar.setFixedWidth(64)
+        sb_layout = QVBoxLayout(sidebar)
+        sb_layout.setContentsMargins(4, 4, 4, 4)
+        sb_layout.setSpacing(4)
+        self.ct_mock_nav = []
+        for label in ["Info", "Files", "Trophy", "Modify"]:
+            item = QLabel(label)
+            item.setAlignment(Qt.AlignCenter)
+            item.setFixedHeight(16)
+            self.ct_mock_nav.append(item)
+            sb_layout.addWidget(item)
+        sb_layout.addStretch(1)
+        self.ct_mock_sidebar = sidebar
+        window_layout.addWidget(sidebar)
+
+        # Content area
+        content = QVBoxLayout()
+        content.setSpacing(6)
+
+        title_row = QHBoxLayout()
+        self.ct_mock_title = QLabel("Window title")
+        self.ct_mock_subtitle = QLabel("secondary text")
+        title_row.addWidget(self.ct_mock_title)
+        title_row.addWidget(self.ct_mock_subtitle)
+        title_row.addStretch(1)
+        content.addLayout(title_row)
+
+        self.ct_mock_input = QFrame()
+        self.ct_mock_input.setFixedHeight(20)
+        content.addWidget(self.ct_mock_input)
+
+        btn_row = QHBoxLayout()
+        self.ct_mock_button = QLabel("Button")
+        self.ct_mock_button.setAlignment(Qt.AlignCenter)
+        self.ct_mock_button.setFixedSize(64, 20)
+        btn_row.addWidget(self.ct_mock_button)
+        btn_row.addStretch(1)
+        content.addLayout(btn_row)
+
+        badge_row = QHBoxLayout()
+        self.ct_mock_success = QLabel("OK")
+        self.ct_mock_warning = QLabel("!")
+        self.ct_mock_error = QLabel("\u2715")
+        for b in (self.ct_mock_success, self.ct_mock_warning, self.ct_mock_error):
+            b.setAlignment(Qt.AlignCenter)
+            b.setFixedSize(24, 16)
+            badge_row.addWidget(b)
+        badge_row.addStretch(1)
+        content.addLayout(badge_row)
+        content.addStretch(1)
+
+        window_layout.addLayout(content, 1)
+        root_layout.addWidget(self.ct_mock_window)
+
     def _update_ct_preview(self):
-        """Update the custom theme preview from the current editor colors."""
+        """Update the custom-theme mockup from the current editor colors."""
         def val(key):
             return self.ct_color_labels[key].text() or StyleManager._COLOR_DEFAULTS.get(key, '#ffffff')
+
         bg = val('background')
         text = val('text')
         accent = val('accent')
         secondary = val('secondary_bg')
         border = val('border')
-        self.ct_preview.setStyleSheet(f"""
-            QFrame {{ background-color: {bg}; border: 1px solid {border}; border-radius: 8px; }}
-        """)
-        self.ct_preview_bg.setStyleSheet(
-            f"background-color: {secondary}; color: {text}; border-radius: 6px; padding: 2px 6px;"
+        secondary_text = val('secondary_text')
+        selection = val('selection')
+        success = val('success')
+        warning = val('warning')
+        error = val('error')
+
+        self.ct_mock_window.setStyleSheet(
+            f"background-color: {bg}; border: 1px solid {border}; border-radius: 6px;"
         )
-        self.ct_preview_bg.setText(f"Background  {bg}")
-        self.ct_preview_text.setStyleSheet(f"background: transparent; color: {text}; padding: 2px 6px;")
-        self.ct_preview_text.setText(f"Text  {text}")
-        self.ct_preview_accent.setStyleSheet(
-            f"background-color: {accent}; color: #ffffff; border-radius: 6px; padding: 4px; font-weight: 600;"
+        self.ct_mock_sidebar.setStyleSheet(f"background-color: {secondary}; border-radius: 4px;")
+        for i, item in enumerate(self.ct_mock_nav):
+            if i == 0:
+                item.setStyleSheet(
+                    f"background-color: {selection}; color: #ffffff; border-radius: 3px; font-size: 9px;"
+                )
+            else:
+                item.setStyleSheet(f"background: transparent; color: {text}; font-size: 9px;")
+        self.ct_mock_title.setStyleSheet(
+            f"background: transparent; color: {text}; font-weight: 600; font-size: 11px;"
         )
-        self.ct_preview_accent.setText(f"Accent  {accent}")
+        self.ct_mock_subtitle.setStyleSheet(
+            f"background: transparent; color: {secondary_text}; font-size: 9px;"
+        )
+        self.ct_mock_input.setStyleSheet(
+            f"background-color: {secondary}; border: 1px solid {border}; border-radius: 3px;"
+        )
+        self.ct_mock_button.setStyleSheet(
+            f"background-color: {accent}; color: #ffffff; border-radius: 3px; font-size: 9px; font-weight: 600;"
+        )
+        self.ct_mock_success.setStyleSheet(
+            f"background-color: {success}; color: #ffffff; border-radius: 3px; font-size: 8px;"
+        )
+        self.ct_mock_warning.setStyleSheet(
+            f"background-color: {warning}; color: #ffffff; border-radius: 3px; font-size: 8px;"
+        )
+        self.ct_mock_error.setStyleSheet(
+            f"background-color: {error}; color: #ffffff; border-radius: 3px; font-size: 8px;"
+        )
 
     def _save_custom_theme(self):
         name = self.ct_name_edit.text().strip()

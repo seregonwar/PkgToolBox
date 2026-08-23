@@ -26,8 +26,8 @@ utilities_datas, utilities_binaries, utilities_hiddenimports = collect_all('Util
 # Includi il pacchetto dell'interfaccia grafica (serve per bundlare i JSON delle traduzioni)
 gui_datas, gui_binaries, gui_hiddenimports = collect_all('GUI')
 
-# Includi la cartella con gli strumenti PS3 necessari a runtime
-ps3lib_tree = Tree(os.path.join('packages', 'ps3lib'), prefix=os.path.join('packages', 'ps3lib'))
+# Includi la cartella con gli strumenti esterni necessari a runtime (shadPKG, orbis-pub-cmd, ...)
+external_tools_tree = Tree(os.path.join('packages', 'external_tools'), prefix=os.path.join('packages', 'external_tools'))
 
 # Percorso icona eseguibile (formato diverso per piattaforma)
 def resolve_icon_path():
@@ -90,7 +90,7 @@ coll = COLLECT(
     a.binaries,
     a.zipfiles,
     a.datas,
-    ps3lib_tree,
+    external_tools_tree,
     strip=False,
     upx=use_upx,
     upx_exclude=[],

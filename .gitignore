@@ -4,6 +4,7 @@
 /installer_output
 /installer_output
 /PS4PKGToolTemp
-packages/ps3lib/debug_log.txt
+packages/external_tools/debug_log.txt
 /.commandcode
 .DS_Store
+*.txt

@@ -72,10 +72,10 @@ class PS4PasscodeBruteforcer:
     # Integrazione orbis-pub-cmd.exe (PS4)
     # ----------------------
     def _find_orbis_pub_cmd(self) -> str | None:
-        """Restituisce il percorso di orbis-pub-cmd.exe se presente in packages/ps3lib, altrimenti None."""
+        """Restituisce il percorso di orbis-pub-cmd.exe se presente in packages/external_tools, altrimenti None."""
         try:
             base_dir = os.path.dirname(os.path.abspath(__file__))
-            exe = os.path.normpath(os.path.join(base_dir, '..', 'packages', 'ps3lib', 'orbis-pub-cmd.exe'))
+            exe = os.path.normpath(os.path.join(base_dir, '..', 'packages', 'external_tools', 'orbis-pub-cmd.exe'))
             if os.path.isfile(exe):
                 return exe
         except Exception:

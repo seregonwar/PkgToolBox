@@ -14,6 +14,10 @@
 - **File browser preview too small**: the splitter now gives the preview panel (hex/text view) more room than the file tree (stretch 1:2 instead of 2:1, initial sizes 360/560).
 
 ### Changed
+- **shadPKG now bundled on Linux and macOS too** (previously Windows-only): the release CI downloads the matching binary from the ShadPKG releases (v2.1.0: `shadpkg.exe` / `shadpkg-macos` arm64 / `shadpkg-debian` x86-64) into `packages/external_tools/` before building, and `_find_shadpkg_exe` looks for `shadPKG.exe` on Windows and `shadPKG` on Unix. README documents the manual step for local dev.
+- Renamed the bundled-binaries folder `packages/ps3lib` → `packages/external_tools` (it holds shadPKG, orbis-pub-cmd and runtime DLLs, not just PS3 tools); all references updated (spec, CI, code, README, .gitignore).
+- **Custom themes preview redesigned**: the editor now shows a miniaturized mockup of the UI that uses every theme color (window background/border, sidebar with selected item, title/secondary text, input, accent button, success/warning/error badges) and updates live while picking colors.
+- **Release CI now builds real installers on all platforms**: macOS gets a `.dmg` (via `hdiutil`) in addition to the zip, Linux gets an `.AppImage` (via appimagetool, FUSE-free) in addition to the tarball — Windows already built an Inno Setup `.exe`.
 - Toolbar icons: the settings button is now a **gear icon** (was a generic list icon) and is placed **before** the theme dropdown; the theme dropdown got a **sun icon** next to its label. Both recolor with the active theme.
 - Migrated from PyQt5 to PySide6 with qt-material Material Design theming.
 - Renamed the `GraphicUserInterface` package to `GUI`.

@@ -48,6 +48,8 @@ If I forgot to add anyone below, please let me know on [X](https://x.com/Seregon
 - pyinstaller (use only pyinstaller, tools like cx_freeze will compromise the proper functioning of the project)
 - `orbis-pub-cmd.exe` (included in the OpenOrbis toolchain)
 
+> **shadPKG (PS4 PFS extraction / pfs-info)**: the Windows binary (`packages/external_tools/shadPKG.exe`) is bundled in the repository. On **Linux/macOS** download the matching binary from the [ShadPKG releases](https://github.com/seregonwar/ShadPKG/releases) (`shadpkg-debian` / `shadpkg-macos`) and save it as `packages/external_tools/shadPKG` (executable). The CI does this automatically for every release build.
+
 ## Installation
 1. Clone the repository:
     ```sh

@@ -218,7 +218,7 @@ class PackagePS4(PackageBase):
         """
         exe = self._find_shadpkg_exe()
         if not exe:
-            raise FileNotFoundError("shadPKG.exe non trovato nel percorso previsto.")
+            raise FileNotFoundError("shadPKG non trovato nel percorso previsto.")
 
         cmd = [exe, 'pfs-info']
         if as_json:
@@ -349,12 +349,19 @@ class PackagePS4(PackageBase):
             raise Exception(f"Error decrypting PKG: {str(e)}")
 
     def _find_shadpkg_exe(self):
-        """Restituisce il percorso di shadPKG.exe se presente nel progetto, altrimenti None."""
+        """Restituisce il percorso del binario shadPKG per la piattaforma corrente.
+
+        Windows usa 'shadPKG.exe'; Linux/macOS il binario unix senza estensione
+        ('shadPKG', scaricato dalla release di ShadPKG e bundle-ato in external_tools).
+        """
         try:
             base_dir = os.path.dirname(__file__)
-            candidate = os.path.join(base_dir, 'ps3lib', 'shadPKG.exe')
-            if os.path.isfile(candidate):
-                return candidate
+            # Windows: shadPKG.exe; Linux/macOS: binario unix 'shadPKG' (l'.exe' non è eseguibile)
+            names = ['shadPKG.exe'] if os.name == 'nt' else ['shadPKG']
+            for name in names:
+                candidate = os.path.join(base_dir, 'external_tools', name)
+                if os.path.isfile(candidate):
+                    return candidate
         except Exception:
             pass
         return None
