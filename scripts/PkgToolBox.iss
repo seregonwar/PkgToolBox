@@ -19,7 +19,7 @@ AllowNoIcons=yes
 LicenseFile=
 OutputDir=installer_output
 OutputBaseFilename=PkgToolBox_Setup
-SetupIconFile=..\icons\icon.ico
+SetupIconFile=icons\icon.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -27,9 +27,9 @@ PrivilegesRequired=lowest
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 
-; Immagini per l'installer
-WizardImageFile=..\installer_assets\welcome.bmp
-WizardSmallImageFile=..\installer_assets\logo.bmp
+; Immagini per l'installer (path relativi a SourceDir, cioè la root del repo)
+WizardImageFile=installer_assets\welcome.bmp
+WizardSmallImageFile=installer_assets\logo.bmp
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
