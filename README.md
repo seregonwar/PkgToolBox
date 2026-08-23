@@ -106,7 +106,7 @@ If I forgot to add anyone below, please let me know on [X](https://x.com/Seregon
 - **PKG Rebuild**
   - [ ] Extract, modify and rebuild a PKG (recompute digests/signatures) — the only viable approach for modifying encrypted content.
 - **Multi-platform Compatibility**
-  - [ ] Implementation of the project on other platforms (e.g., Linux, macOS, etc.).
+  - [x] Implementation of the project on other platforms (e.g., Linux, macOS, etc.).
 - **File Decryption**
   - [ ] Decryption of `.ESFM` files.
 
