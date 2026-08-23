@@ -13,11 +13,10 @@ from GUI.components import FileBrowser, WallpaperViewer
 from GUI.dialogs import SettingsDialog
 from GUI.utils import StyleManager, ImageUtils, FileUtils
 from GUI.utils.icons import get_icon, get_sidebar_icons
-from GUI.widgets import ExtractTab, InfoTab, BruteforceTab
+from GUI.widgets import ExtractTab, InfoTab, BruteforceTab, ModifyTab
 from GUI.widgets.pfs_info_tab import PfsInfoTab
 from tools.PS5_Game_Info import PS5GameInfo
 from packages import PackagePS4, PackagePS5, PackagePS3
-from Utilities import modify_file_header
 from Utilities.Trophy import ESMFDecrypter, TRPCreator
 from tools.PS4_Passcode_Bruteforcer import PS4PasscodeBruteforcer
 from Utilities import Logger
@@ -193,9 +192,8 @@ class MainWindow(QMainWindow):
         self.pfs_info_tab = PfsInfoTab(self)
         self.tab_widget.addTab(self.pfs_info_tab, "PFS Info")
         
-        # Modify tab
-        self.modify_tab = QWidget()
-        self.setup_modify_tab()
+        # Modify tab — hex editor + header fields on a working copy
+        self.modify_tab = ModifyTab(self)
         self.tab_widget.addTab(self.modify_tab, "Modify")
         
         # Trophy tab
@@ -832,6 +830,10 @@ class MainWindow(QMainWindow):
             self.pkg_entry.setText(pkg_path)
             self.load_pkg_icon()
             
+            # Il tab Modify segue il PKG caricato
+            if hasattr(self, 'modify_tab'):
+                self.modify_tab.refresh_package()
+            
             # Update file browser and wallpaper viewer
             if hasattr(self, 'file_browser'):
                 self.file_browser.load_files(self.package)
@@ -860,6 +862,8 @@ class MainWindow(QMainWindow):
                 self.file_browser.clear()
             if hasattr(self, 'wallpaper_viewer'):
                 self.wallpaper_viewer.clear_viewer()
+            if hasattr(self, 'modify_tab'):
+                self.modify_tab.refresh_package()
 
     def load_trophy_files(self):
         """Cerca e carica automaticamente i file dei trofei"""
@@ -1000,33 +1004,6 @@ class MainWindow(QMainWindow):
         extract_button = QPushButton("Extract")
         extract_button.clicked.connect(self.extract_pkg)
         layout.addWidget(extract_button)
-
-    def setup_modify_tab(self):
-        """Setup the modify tab"""
-        layout = QVBoxLayout(self.modify_tab)
-        
-        # Hex viewer
-        self.hex_viewer = QTextEdit()
-        self.hex_viewer.setReadOnly(True)
-        self.hex_viewer.setFont(QFont("Courier"))
-        layout.addWidget(self.hex_viewer)
-        
-        # Offset and data entry
-        offset_layout = QHBoxLayout()
-        self.offset_entry = QLineEdit()
-        self.offset_entry.setPlaceholderText("Offset (hex)")
-        self.data_entry = QLineEdit()
-        self.data_entry.setPlaceholderText("New data (hex)")
-        offset_layout.addWidget(QLabel("Offset:"))
-        offset_layout.addWidget(self.offset_entry)
-        offset_layout.addWidget(QLabel("Data:"))
-        offset_layout.addWidget(self.data_entry)
-        layout.addLayout(offset_layout)
-        
-        # Modify button
-        modify_button = QPushButton("Modify")
-        modify_button.clicked.connect(self.modify_pkg)
-        layout.addWidget(modify_button)
 
     def setup_trophy_tab(self):
         """Setup the trophy tab"""
@@ -1843,28 +1820,6 @@ class MainWindow(QMainWindow):
         finally:
             self.pfs_thread.quit()
             self.pfs_info_button.setEnabled(True)
-
-    def modify_pkg(self):
-        """Modify PKG header"""
-        if not self.package:
-            QMessageBox.warning(self, "Warning", "Please load a PKG file first")
-            return
-
-        offset = self.offset_entry.text()
-        new_data = self.data_entry.text()
-
-        if not offset or not new_data:
-            QMessageBox.warning(self, "Warning", "Please specify both offset and new data")
-            return
-
-        try:
-            offset = int(offset, 16)
-            new_data = bytes.fromhex(new_data)
-            result = modify_file_header(self.package.original_file, offset, new_data)
-            QMessageBox.information(self, "Success", f"Modified {result} bytes")
-            self.update_hex_view()
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to modify PKG: {str(e)}")
 
     def decrypt_esmf(self):
         """Decrypt ESMF file"""
