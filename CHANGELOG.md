@@ -22,6 +22,7 @@
 - Renamed the bundled-binaries folder `packages/ps3lib` → `packages/external_tools` (it holds shadPKG, orbis-pub-cmd and runtime DLLs, not just PS3 tools); all references updated (spec, CI, code, README, .gitignore).
 - **Custom themes preview redesigned**: the editor now shows a miniaturized mockup of the UI that uses every theme color (window background/border, sidebar with selected item, title/secondary text, input, accent button, success/warning/error badges) and updates live while picking colors.
 - **Release CI now builds real installers on all platforms**: macOS gets a `.dmg` (via `hdiutil`) in addition to the zip, Linux gets an `.AppImage` (via appimagetool, FUSE-free) in addition to the tarball — Windows already built an Inno Setup `.exe`.
+- **Fixed the Windows installer step in the release workflow**: it used the non-existent action `jrsoftware/issi` ("repository not found"), now replaced with `Minionguyjpro/Inno-Setup-Action@v1.2.2`; the version define is passed via `options: /DMyAppVersion=...` and the ISS guards its hardcoded default with `#ifndef` so the CI version wins.
 - Toolbar icons: the settings button is now a **gear icon** (was a generic list icon) and is placed **before** the theme dropdown; the theme dropdown got a **sun icon** next to its label. Both recolor with the active theme.
 - Migrated from PyQt5 to PySide6 with qt-material Material Design theming.
 - Renamed the `GraphicUserInterface` package to `GUI`.

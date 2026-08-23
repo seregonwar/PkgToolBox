@@ -4,7 +4,10 @@
 [Setup]
 SourceDir=..
 AppName=PkgToolBox
-#define MyAppVersion "1.4.0"
+; Default versione: sovrascrivibile dalla CI con /DMyAppVersion=...
+#ifndef MyAppVersion
+  #define MyAppVersion "1.4.0"
+#endif
 AppVersion={#MyAppVersion}
 AppPublisher=Seregonwar
 AppPublisherURL=https://github.com/Seregonwar

@@ -169,10 +169,10 @@ jobs:
         pyinstaller scripts/PkgToolBox.spec
     - name: Build Windows installer with Inno Setup
       if: runner.os == 'Windows'
-      uses: jrsoftware/issi@v2
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
       with:
-        script: scripts/PkgToolBox.iss
-        defines: "MyAppVersion=${{ needs.preflight.outputs.version }}"
+        path: scripts/PkgToolBox.iss
+        options: /O+ /DMyAppVersion=${{ needs.preflight.outputs.version }}
     - name: Package macOS app (zip + dmg installer)
       if: runner.os == 'macOS'
       shell: bash
