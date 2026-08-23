@@ -7,12 +7,17 @@ from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
 
-# Ottieni il percorso della directory corrente
-current_dir = os.path.dirname(os.path.abspath('__main__'))
+# Root del progetto: parent della cartella che contiene questo .spec (scripts/)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(SPEC)))
+
+# Rendi importabili i package del progetto (GUI, Utilities, ...) anche quando
+# il .spec viene eseguito da PyInstaller (che mette su sys.path solo scripts/)
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 # Funzione per verificare l'esistenza di un file o una directory
 def resource_path(relative_path):
-    path = os.path.join(current_dir, relative_path)
+    path = os.path.join(PROJECT_ROOT, relative_path)
     if not os.path.exists(path):
         print(f"Warning: {path} not found")
     return path
@@ -27,7 +32,10 @@ utilities_datas, utilities_binaries, utilities_hiddenimports = collect_all('Util
 gui_datas, gui_binaries, gui_hiddenimports = collect_all('GUI')
 
 # Includi la cartella con gli strumenti esterni necessari a runtime (shadPKG, orbis-pub-cmd, ...)
-external_tools_tree = Tree(os.path.join('packages', 'external_tools'), prefix=os.path.join('packages', 'external_tools'))
+external_tools_tree = Tree(
+    os.path.join(PROJECT_ROOT, 'packages', 'external_tools'),
+    prefix=os.path.join('packages', 'external_tools'),
+)
 
 # Percorso icona eseguibile (formato diverso per piattaforma)
 def resolve_icon_path():
@@ -47,11 +55,11 @@ icon_path = resolve_icon_path()
 use_upx = sys.platform == 'win32'
 
 a = Analysis(
-    ['main.py'],
-    pathex=[],
+    [os.path.join(PROJECT_ROOT, 'main.py')],
+    pathex=[PROJECT_ROOT],
     binaries=[],
-    datas=[('PS4PKGToolTemp', 'PS4PKGToolTemp')] + utilities_datas + gui_datas,
-    hiddenimports=['PS4_Passcode_Bruteforcer', 'PS5_Game_Info'] + 
+    datas=[(os.path.join(PROJECT_ROOT, 'PS4PKGToolTemp'), 'PS4PKGToolTemp')] + utilities_datas + gui_datas,
+    hiddenimports=['tools.PS4_Passcode_Bruteforcer', 'tools.PS5_Game_Info'] +
                   utilities_hiddenimports + gui_hiddenimports,
     hookspath=[],
     hooksconfig={},
@@ -106,13 +114,11 @@ if sys.platform == 'darwin':
         bundle_identifier='com.seregonwar.PkgToolBox',
     )
 
-# Crea una cartella per i file temporanei
-temp_folder = 'PS4PKGToolTemp'
+# Copia la cartella PS4PKGToolTemp nell'output (serve per settings.json/trofei)
+import shutil
+temp_folder = os.path.join(PROJECT_ROOT, 'PS4PKGToolTemp')
 if not os.path.exists(temp_folder):
     os.makedirs(temp_folder)
-
-# Copia la cartella PS4PKGToolTemp nell'eseguibile
-import shutil
-shutil.copytree(temp_folder, os.path.join(DISTPATH, temp_folder), dirs_exist_ok=True)
+shutil.copytree(temp_folder, os.path.join(DISTPATH, 'PS4PKGToolTemp'), dirs_exist_ok=True)
 
 print(f"Build completed. Executable and libraries should be in {DISTPATH}")
