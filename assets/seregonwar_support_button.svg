@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="214" height="36" viewBox="0 0 214 36" role="img" aria-label="Support SeregonWar">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="214" height="36" rx="7" fill="url(#bg)"/>
+
+  <g transform="translate(11 8)">
+    <path d="M10 19.2C9.7 19.2 9.4 19.1 9.2 18.9C2.8 13.5 0 10.4 0 6.4C0 2.9 2.7.4 6 .4C7.8.4 9.4 1.2 10.4 2.5C11.5 1.2 13 0.4 14.9 0.4C18.2 0.4 20.9 2.9 20.9 6.4C20.9 10.4 18 13.5 11.7 18.9C11.4 19.1 11.2 19.2 10.9 19.2Z"
+          fill="#fff"/>
+    <circle cx="10.45" cy="6.5" r="2.2" fill="#7c3aed" opacity=".22"/>
+  </g>
+
+  <text x="43" y="23.2"
+        font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+        font-size="14"
+        font-weight="700"
+        fill="#fff">Support SeregonWar</text>
+</svg>
