@@ -142,13 +142,40 @@ jobs:
         # ships the current avatar. Pillow is in requirements.txt.
         curl -sL "https://avatars.githubusercontent.com/u/109359355?s=512" -o /tmp/avatar.png
         python - <<'PY'
-        from PIL import Image, ImageOps
+        import os
+        from PIL import Image, ImageDraw, ImageOps, ImageFont
         avatar = Image.open('/tmp/avatar.png').convert('RGB')
-        # welcome.bmp: 164x314 portrait panel, avatar centered on a dark backdrop
+
+        def find_font(size):
+            candidates = [
+                '/System/Library/Fonts/SFNS.ttf',                       # macOS
+                '/System/Library/Fonts/Supplemental/Arial.ttf',         # macOS
+                'C:/Windows/Fonts/arialbd.ttf',                         # Windows
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', # Linux
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+            ]
+            for c in candidates:
+                if os.path.exists(c):
+                    try:
+                        return ImageFont.truetype(c, size)
+                    except Exception:
+                        continue
+            return None
+
+        # welcome.bmp: 164x314 portrait panel, avatar centered + name below
         welcome = Image.new('RGB', (164, 314), (15, 23, 42))
-        side = int(164 * 0.9)
+        side = 148
         thumb = ImageOps.fit(avatar, (side, side), Image.LANCZOS)
-        welcome.paste(thumb, ((164 - side) // 2, 36))
+        x = (164 - side) // 2
+        y = (314 - side) // 2
+        welcome.paste(thumb, (x, y))
+        font = find_font(22)
+        if font:
+            d = ImageDraw.Draw(welcome)
+            text = 'SeregonWar'
+            bbox = d.textbbox((0, 0), text, font=font)
+            tw = bbox[2] - bbox[0]
+            d.text(((164 - tw) // 2, y + side + 16), text, fill=(148, 163, 184), font=font)
         welcome.save('installer_assets/welcome.bmp')
         # logo.bmp: 460x460 square, avatar fills it
         logo = ImageOps.fit(avatar, (460, 460), Image.LANCZOS)
