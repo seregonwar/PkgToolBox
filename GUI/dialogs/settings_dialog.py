@@ -3,10 +3,11 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QListWidget,
                                QGridLayout, QLabel, QComboBox, QSpinBox, QPushButton,
                                QCheckBox, QLineEdit, QFileDialog, QColorDialog,
                                QMessageBox, QApplication, QFrame)
-from PySide6.QtGui import QFont, QColor, QFontDatabase
+from PySide6.QtGui import QFont, QColor, QFontDatabase, QPixmap
 from PySide6.QtCore import Qt
 
 from GUI.utils.style_manager import StyleManager
+from GUI.utils.avatar_fetcher import AvatarFetcher
 
 
 class SettingsDialog(QDialog):
@@ -484,6 +485,20 @@ class SettingsDialog(QDialog):
 
         about_group = QGroupBox("PkgToolBox")
         about_layout = QVBoxLayout()
+        about_layout.setAlignment(Qt.AlignHCenter)
+
+        # Maintainer avatar: cached GitHub avatar if available, else the
+        # bundled fallback icon.
+        avatar_path = AvatarFetcher.cached_avatar() or AvatarFetcher.bundled_icon_path()
+        avatar_label = QLabel()
+        avatar_label.setFixedSize(96, 96)
+        avatar_label.setAlignment(Qt.AlignCenter)
+        pixmap = QPixmap(avatar_path)
+        if not pixmap.isNull():
+            avatar_label.setPixmap(pixmap.scaled(
+                96, 96, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        about_layout.addWidget(avatar_label)
+
         about_layout.addWidget(QLabel("Version: 1.5.0"))
         link = QLabel(
             '<a href="https://github.com/seregonwar/PkgToolBox" '

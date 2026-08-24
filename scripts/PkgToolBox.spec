@@ -58,7 +58,8 @@ a = Analysis(
     [os.path.join(PROJECT_ROOT, 'main.py')],
     pathex=[PROJECT_ROOT],
     binaries=[],
-    datas=[(os.path.join(PROJECT_ROOT, 'PS4PKGToolTemp'), 'PS4PKGToolTemp')] + utilities_datas + gui_datas,
+    datas=[(os.path.join(PROJECT_ROOT, 'PS4PKGToolTemp'), 'PS4PKGToolTemp'),
+           (os.path.join(PROJECT_ROOT, 'icons'), 'icons')] + utilities_datas + gui_datas,
     hiddenimports=['tools.PS4_Passcode_Bruteforcer', 'tools.PS5_Game_Info'] +
                   utilities_hiddenimports + gui_hiddenimports,
     hookspath=[],

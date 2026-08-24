@@ -133,6 +133,27 @@ jobs:
       shell: bash
       run: |
         pip install -r requirements.txt pyinstaller
+    - name: Refresh app icons from latest GitHub avatar
+      shell: bash
+      run: |
+        set -euo pipefail
+        # The avatar URL always serves the maintainer's latest profile picture.
+        # Regenerate icons/default_icon.png (macOS icns + Linux AppImage) and
+        # icons/icon.ico (Windows exe + installer) from it, so every release
+        # ships the current avatar. Pillow is in requirements.txt.
+        curl -sL "https://avatars.githubusercontent.com/u/109359355?s=512" -o /tmp/avatar.png
+        python - <<'PY'
+        from PIL import Image
+        img = Image.open('/tmp/avatar.png').convert('RGBA')
+        size = max(img.size)
+        canvas = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+        canvas.paste(img, ((size - img.size[0]) // 2, (size - img.size[1]) // 2))
+        img = canvas.resize((512, 512), Image.LANCZOS)
+        img.save('icons/default_icon.png')
+        sizes = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
+        img.save('icons/icon.ico', sizes=sizes)
+        PY
+        echo "icons regenerated from latest GitHub avatar"
     - name: Fetch platform shadPKG binary
       shell: bash
       run: |

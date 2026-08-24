@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+- **Dynamic app icon from the maintainer's GitHub avatar**: the app now shows the latest GitHub profile picture of SeregonWar as its window icon, fetched asynchronously at startup (mirroring the `UpdateChecker` async pattern, no background thread) and cached in `~/.pkgtoolbox/avatar.png`; a bundled fallback icon is used immediately and offline. The avatar is also shown in the Settings → About page. The release CI refreshes `icons/default_icon.png` and `icons/icon.ico` from the avatar URL before every build, so installers/exes ship the current picture.
+
+### Removed
+- `installer_assets/KodeKraken.ico` (old, unreferenced icon file).
+
 ## [1.5.0] - 2026-08-24
 
 ### Added

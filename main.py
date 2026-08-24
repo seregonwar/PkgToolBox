@@ -8,8 +8,10 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import dei moduli
 from GUI.main_window import MainWindow
+from GUI.utils.avatar_fetcher import AvatarFetcher
 from Utilities import Logger
 from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -94,7 +96,26 @@ def main():
     # Create and show main window
     window = MainWindow(temp_directory)
     window.show()
-    
+
+    # App icon: use the bundled fallback immediately, then swap in the
+    # maintainer's latest GitHub avatar as soon as it is fetched (async).
+    fallback = AvatarFetcher.bundled_icon_path()
+    if os.path.exists(fallback):
+        app.setWindowIcon(QIcon(fallback))
+        window.setWindowIcon(QIcon(fallback))
+
+    cached = AvatarFetcher.cached_avatar()
+    if cached:
+        app.setWindowIcon(QIcon(cached))
+        window.setWindowIcon(QIcon(cached))
+
+    fetcher = AvatarFetcher(app)
+    fetcher.avatar_ready.connect(lambda path: (
+        app.setWindowIcon(QIcon(path)),
+        window.setWindowIcon(QIcon(path)),
+    ))
+    fetcher.start()
+
     # Start application
     sys.exit(app.exec())
 
