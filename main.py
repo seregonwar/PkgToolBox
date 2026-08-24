@@ -92,7 +92,11 @@ def main():
     temp_directory, settings_file_path = check_settings_file_presence()
     
     # The persisted theme is applied by MainWindow at startup (StyleManager).
-    
+
+    # Create and show main window
+    window = MainWindow(temp_directory)
+    window.show()
+
     # App icon: the toolbox icon bundled with the app (never the avatar;
     # the avatar is used only in the Settings About page and the installer).
     toolbox = AvatarFetcher.bundled_icon_path()
