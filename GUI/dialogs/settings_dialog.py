@@ -22,8 +22,10 @@ class SettingsDialog(QDialog):
         super().__init__(parent)
         self.parent = parent
         self._current_font = QFont("Arial", 12)
+        self._avatar_fetcher = None
         self.setup_ui()
         self.load_settings()
+        self._refresh_avatar()
 
     # ── UI construction ────────────────────────────────────────────────────
 
@@ -487,33 +489,59 @@ class SettingsDialog(QDialog):
         about_layout = QVBoxLayout()
         about_layout.setAlignment(Qt.AlignHCenter)
 
-        # Maintainer avatar: cached GitHub avatar if available, else the
-        # bundled fallback icon.
-        avatar_path = AvatarFetcher.cached_avatar() or AvatarFetcher.bundled_icon_path()
-        avatar_label = QLabel()
-        avatar_label.setFixedSize(96, 96)
-        avatar_label.setAlignment(Qt.AlignCenter)
-        pixmap = QPixmap(avatar_path)
-        if not pixmap.isNull():
-            avatar_label.setPixmap(pixmap.scaled(
-                96, 96, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        about_layout.addWidget(avatar_label)
+        # Maintainer avatar: latest GitHub profile picture. Shows the cached
+        # copy (or the bundled toolbox icon) immediately, then swaps in the
+        # freshly fetched avatar when it arrives.
+        self.avatar_label = QLabel()
+        self.avatar_label.setFixedSize(96, 96)
+        self.avatar_label.setAlignment(Qt.AlignCenter)
+        self.avatar_label.setToolTip("SeregonWar")
+        about_layout.addWidget(self.avatar_label)
 
         about_layout.addWidget(QLabel("Version: 1.5.0"))
-        link = QLabel(
-            '<a href="https://github.com/seregonwar/PkgToolBox" '
-            'style="color:#3b82f6; text-decoration:none;">'
-            "github.com/seregonwar/PkgToolBox</a>"
-        )
-        link.setTextFormat(Qt.RichText)
-        link.setOpenExternalLinks(True)
-        about_layout.addWidget(link)
         about_layout.addWidget(QLabel("Created by SeregonWar"))
+
+        link_style = 'style="color:#3b82f6; text-decoration:none;"'
+        donations = QLabel(
+            '<a href="https://www.seregonwar.com/donations" ' + link_style +
+            ' target="_blank">Donate · seregonwar.com/donations</a>'
+        )
+        donations.setTextFormat(Qt.RichText)
+        donations.setOpenExternalLinks(True)
+        about_layout.addWidget(donations)
+
+        github = QLabel(
+            '<a href="https://github.com/seregonwar/PkgToolBox" ' + link_style +
+            ' target="_blank">github.com/seregonwar/PkgToolBox</a>'
+        )
+        github.setTextFormat(Qt.RichText)
+        github.setOpenExternalLinks(True)
+        about_layout.addWidget(github)
+
         about_group.setLayout(about_layout)
         layout.addWidget(about_group)
 
         layout.addStretch(1)
         return page
+
+    def _refresh_avatar(self):
+        """Show the cached avatar (or the bundled icon), then fetch the latest."""
+        path = AvatarFetcher.cached_avatar() or AvatarFetcher.bundled_icon_path()
+        self._set_avatar_pixmap(path)
+        if self._avatar_fetcher is None:
+            self._avatar_fetcher = AvatarFetcher(self)
+            self._avatar_fetcher.avatar_ready.connect(self._set_avatar_pixmap)
+        self._avatar_fetcher.start()
+
+    def _set_avatar_pixmap(self, path):
+        """Load and scale the avatar image into the label (best-effort)."""
+        if not path or not hasattr(self, 'avatar_label'):
+            return
+        pixmap = QPixmap(path)
+        if pixmap.isNull():
+            return
+        self.avatar_label.setPixmap(pixmap.scaled(
+            96, 96, Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
     # ── Live preview helpers ───────────────────────────────────────────────
 

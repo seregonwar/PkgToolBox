@@ -93,28 +93,12 @@ def main():
     
     # The persisted theme is applied by MainWindow at startup (StyleManager).
     
-    # Create and show main window
-    window = MainWindow(temp_directory)
-    window.show()
-
-    # App icon: use the bundled fallback immediately, then swap in the
-    # maintainer's latest GitHub avatar as soon as it is fetched (async).
-    fallback = AvatarFetcher.bundled_icon_path()
-    if os.path.exists(fallback):
-        app.setWindowIcon(QIcon(fallback))
-        window.setWindowIcon(QIcon(fallback))
-
-    cached = AvatarFetcher.cached_avatar()
-    if cached:
-        app.setWindowIcon(QIcon(cached))
-        window.setWindowIcon(QIcon(cached))
-
-    fetcher = AvatarFetcher(app)
-    fetcher.avatar_ready.connect(lambda path: (
-        app.setWindowIcon(QIcon(path)),
-        window.setWindowIcon(QIcon(path)),
-    ))
-    fetcher.start()
+    # App icon: the toolbox icon bundled with the app (never the avatar;
+    # the avatar is used only in the Settings About page and the installer).
+    toolbox = AvatarFetcher.bundled_icon_path()
+    if os.path.exists(toolbox):
+        app.setWindowIcon(QIcon(toolbox))
+        window.setWindowIcon(QIcon(toolbox))
 
     # Start application
     sys.exit(app.exec())
