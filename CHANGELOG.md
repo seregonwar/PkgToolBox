@@ -4,7 +4,7 @@
 
 ### Added
 - **Maintainer avatar in the Settings → About page**: the latest GitHub profile picture of SeregonWar is fetched asynchronously at dialog open (mirroring the `UpdateChecker` async pattern, no background thread), cached in `~/.pkgtoolbox/avatar.png` and shown at 96px together with the **Donate** link (`seregonwar.com/donations`) and the project GitHub link. The cached copy appears immediately; the freshly fetched one replaces it when it arrives.
-- **Installer images follow the maintainer's avatar**: the release CI refreshes `installer_assets/welcome.bmp` (portrait panel, avatar centered on a dark backdrop with the "SeregonWar" name below, cross-platform font with fallback) and `installer_assets/logo.bmp` (square, avatar fills it) from the avatar URL before every build, so each installer ships the current profile picture.
+- **Installer images follow the maintainer's avatar**: the release CI refreshes `installer_assets/welcome.bmp` (portrait panel, avatar centered on a dark backdrop with a light border so dark photo edges don't blend in, plus the "SeregonWar" name below — cross-platform font with fallback) and `installer_assets/logo.bmp` (square, avatar fills it) from the avatar URL before every build, so each installer ships the current profile picture.
 
 ### Changed
 - The app window icon is always the bundled **toolbox icon** (`icons/default_icon.png`), never the avatar.

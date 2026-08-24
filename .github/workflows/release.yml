@@ -162,12 +162,16 @@ jobs:
                         continue
             return None
 
-        # welcome.bmp: 164x314 portrait panel, avatar centered + name below
+        # welcome.bmp: 164x314 portrait panel, avatar centered with a light
+        # border (so dark photo edges don't blend into the dark backdrop)
+        # and the name below.
         welcome = Image.new('RGB', (164, 314), (15, 23, 42))
-        side = 148
+        side = 140
+        border = 4
         thumb = ImageOps.fit(avatar, (side, side), Image.LANCZOS)
-        x = (164 - side) // 2
-        y = (314 - side) // 2
+        thumb = ImageOps.expand(thumb, border=border, fill=(203, 213, 225))
+        x = (164 - (side + 2 * border)) // 2
+        y = (314 - (side + 2 * border)) // 2 - 8
         welcome.paste(thumb, (x, y))
         font = find_font(22)
         if font:
@@ -175,7 +179,7 @@ jobs:
             text = 'SeregonWar'
             bbox = d.textbbox((0, 0), text, font=font)
             tw = bbox[2] - bbox[0]
-            d.text(((164 - tw) // 2, y + side + 16), text, fill=(148, 163, 184), font=font)
+            d.text(((164 - tw) // 2, y + side + 2 * border + 14), text, fill=(148, 163, 184), font=font)
         welcome.save('installer_assets/welcome.bmp')
         # logo.bmp: 460x460 square, avatar fills it
         logo = ImageOps.fit(avatar, (460, 460), Image.LANCZOS)
