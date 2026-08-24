@@ -9,6 +9,7 @@ PkgToolBox is a tool for manipulating PS4 PKG files. It allows you to extract, m
 
 PkgToolBox is actively developed and maintained over time.  
 If you find this tool useful and want to support its continued development, you can support me by clicking below and donating through one of my official methods
+
 <a href="https://www.seregonwar.com/donations">
   <img src="https://github.com/seregonwar/PkgToolBox/blob/main/assets/seregonwar_support_button.svg"
        alt="Support SeregonWar"
