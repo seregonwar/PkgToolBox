@@ -1,4 +1,6 @@
 # PKG Tool Box
+<img src="logos/logo.png" width="520" alt="PkgToolBox" />
+
 [![Github All Releases](https://img.shields.io/github/downloads/seregonwar/PkgToolBox/total.svg)]()
 [![Repository views](https://hits.sh/github.com/seregonwar/PkgToolBox.svg?label=views)](https://hits.sh/github.com/seregonwar/PkgToolBox/)
 --
