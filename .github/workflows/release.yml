@@ -186,24 +186,6 @@ jobs:
         logo.save('installer_assets/logo.bmp')
         PY
         echo "installer images regenerated from latest GitHub avatar"
-    - name: Fetch platform shadPKG binary
-      shell: bash
-      run: |
-        set -euo pipefail
-        VERSION="v2.1.0"
-        mkdir -p packages/external_tools
-        if [ "$RUNNER_OS" = "Windows" ]; then
-          ASSET="shadpkg.exe";   DEST="packages/external_tools/shadPKG.exe"
-        elif [ "$RUNNER_OS" = "macOS" ]; then
-          ASSET="shadpkg-macos"; DEST="packages/external_tools/shadPKG"
-        else
-          ASSET="shadpkg-debian"; DEST="packages/external_tools/shadPKG"
-        fi
-        curl -sL "https://github.com/seregonwar/ShadPKG/releases/download/${VERSION}/${ASSET}" -o "$DEST"
-        if [ "$RUNNER_OS" != "Windows" ]; then
-          chmod +x "$DEST"
-        fi
-        ls -lh "$DEST"
     - name: Create macOS app icon (icns)
       if: runner.os == 'macOS'
       shell: bash

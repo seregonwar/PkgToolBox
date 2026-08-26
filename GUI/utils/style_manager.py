@@ -356,6 +356,10 @@ class StyleManager:
             QTabBar::tab:hover {{
                 background: {tc['hover']};
             }}
+            QTabBar::tab:disabled {{
+                background: {tc['secondary_bg']};
+                color: {tc['secondary_text']};
+            }}
             
             /* Menus */
             QMenuBar {{
@@ -404,27 +408,25 @@ class StyleManager:
             
             /* Scroll Bars */
             QScrollBar:vertical {{
-                background-color: {tc['secondary_bg']};
-                width: 10px;
-                border-radius: 5px;
+                background-color: transparent;
+                width: 8px;
             }}
             QScrollBar::handle:vertical {{
-                background-color: {tc['accent']};
+                background-color: {tc['border']};
                 min-height: 20px;
-                border-radius: 5px;
+                border-radius: 4px;
             }}
             QScrollBar::handle:vertical:hover {{
                 background-color: {tc['accent_hover']};
             }}
             QScrollBar:horizontal {{
-                background-color: {tc['secondary_bg']};
-                height: 10px;
-                border-radius: 5px;
+                background-color: transparent;
+                height: 8px;
             }}
             QScrollBar::handle:horizontal {{
-                background-color: {tc['accent']};
+                background-color: {tc['border']};
                 min-width: 20px;
-                border-radius: 5px;
+                border-radius: 4px;
             }}
             
             /* Group Box */
@@ -442,6 +444,270 @@ class StyleManager:
                 subcontrol-position: top left;
                 padding: 0 8px;
                 color: {tc['text']};
+            }}
+
+            /* Overview workspace */
+            QFrame#overviewHero, QFrame#summaryCard {{
+                background-color: {tc['secondary_bg']};
+                border: 1px solid {tc['border']};
+                border-radius: 10px;
+            }}
+            QLabel#overviewTitle {{
+                color: {tc['text']};
+                font-size: 22px;
+                font-weight: 700;
+            }}
+            QLabel#overviewSubtitle, QLabel#summaryCaption {{
+                color: {tc['secondary_text']};
+            }}
+            QLabel#summaryCaption {{
+                font-size: 10px;
+                font-weight: 700;
+            }}
+            QLabel#summaryValue {{
+                color: {tc['text']};
+                font-size: 15px;
+                font-weight: 650;
+            }}
+            QLabel#sourceWarnings {{
+                color: {tc['warning']};
+                background-color: {tc['secondary_bg']};
+                border: 1px solid {tc['warning']};
+                border-radius: 8px;
+                padding: 10px 12px;
+            }}
+            QGroupBox#technicalGroup {{
+                border: none;
+                margin-top: 12px;
+                padding: 10px 0 0 0;
+            }}
+            QTableWidget#technicalTable {{
+                background-color: {tc['secondary_bg']};
+                alternate-background-color: {tc['secondary_bg']};
+                border: none;
+                border-radius: 10px;
+                gridline-color: transparent;
+                outline: none;
+            }}
+            QTableWidget#technicalTable::item {{
+                background-color: {tc['secondary_bg']};
+                color: {tc['text']};
+                border: none;
+                padding: 6px 12px;
+            }}
+            QTableWidget#technicalTable::item:selected {{
+                background-color: {tc['secondary_bg']};
+                color: {tc['text']};
+            }}
+            QTableWidget#technicalTable QHeaderView::section {{
+                background-color: {tc['secondary_bg']};
+                color: {tc['secondary_text']};
+                border: none;
+                padding: 8px 12px;
+                font-size: 11px;
+                font-weight: 700;
+            }}
+            QLabel#browserSourceLabel {{
+                color: {tc['text']};
+                font-size: 14px;
+                font-weight: 700;
+            }}
+            QLabel#browserEmptyState {{
+                color: {tc['secondary_text']};
+                background-color: {tc['secondary_bg']};
+                border: none;
+                border-radius: 12px;
+                padding: 28px;
+                font-size: 14px;
+            }}
+            QPushButton#secondaryButton {{
+                color: {tc['text']};
+                background-color: {tc['secondary_bg']};
+                border: 1px solid {tc['border']};
+                padding: 7px 12px;
+                font-weight: 600;
+            }}
+            QPushButton#secondaryButton:hover {{
+                background-color: {tc['hover']};
+                border-color: {tc['accent']};
+            }}
+            QTreeWidget#contentTree {{
+                background-color: {tc['secondary_bg']};
+                alternate-background-color: {tc['secondary_bg']};
+                border: none;
+                border-radius: 10px;
+                outline: none;
+            }}
+            QTreeWidget#contentTree::item {{
+                background-color: transparent;
+                color: {tc['text']};
+                border: none;
+                padding: 6px 4px;
+            }}
+            QTreeWidget#contentTree::item:hover {{
+                background-color: {tc['hover']};
+            }}
+            QTreeWidget#contentTree::item:selected {{
+                background-color: {tc['selection']};
+                color: #ffffff;
+            }}
+            QTreeWidget#contentTree QHeaderView::section {{
+                background-color: {tc['secondary_bg']};
+                color: {tc['secondary_text']};
+                border: none;
+                padding: 8px 10px;
+                font-size: 11px;
+                font-weight: 700;
+            }}
+            QTabWidget#contentPreview::pane {{
+                background-color: {tc['secondary_bg']};
+                border: none;
+                border-radius: 10px;
+            }}
+            QTabWidget#contentPreview QTextEdit,
+            QTabWidget#contentPreview QPlainTextEdit {{
+                background-color: {tc['secondary_bg']};
+                border: none;
+            }}
+            QLabel#previewCanvas {{
+                background-color: {tc['secondary_bg']};
+                border: none;
+                border-radius: 10px;
+                color: {tc['secondary_text']};
+            }}
+
+            /* Binary workspace */
+            QFrame#binaryHero, QFrame#binaryToolbar {{
+                background-color: {tc['secondary_bg']};
+                border: 1px solid {tc['border']};
+                border-radius: 10px;
+            }}
+            QLabel#binaryTitle {{
+                color: {tc['text']};
+                font-size: 20px;
+                font-weight: 700;
+            }}
+            QLabel#binarySubtitle, QLabel#binaryMuted, QLabel#binaryPaneHeader,
+            QLabel#binaryStatus {{
+                color: {tc['secondary_text']};
+            }}
+            QLabel#binaryPaneHeader {{
+                font-size: 10px;
+                font-weight: 700;
+            }}
+            QLabel#binaryStatus {{
+                padding: 4px 2px;
+            }}
+            QGroupBox#binaryTarget {{
+                margin-top: 10px;
+                padding: 10px;
+                padding-top: 20px;
+            }}
+            QTabWidget#binaryTabs::pane {{
+                background-color: {tc['background']};
+                border: 1px solid {tc['border']};
+                border-radius: 8px;
+            }}
+            QFrame#binarySurface {{
+                background-color: {tc['secondary_bg']};
+                border: 1px solid {tc['border']};
+                border-radius: 8px;
+            }}
+            QPlainTextEdit#offsetPane, QPlainTextEdit#hexPane,
+            QPlainTextEdit#textPane {{
+                background-color: {tc['secondary_bg']};
+                color: {tc['text']};
+                border: none;
+                border-radius: 0;
+                padding: 8px 10px;
+            }}
+            QPlainTextEdit#offsetPane {{
+                color: {tc['secondary_text']};
+                border-right: 1px solid {tc['border']};
+            }}
+            QPlainTextEdit#textPane {{
+                border-left: 1px solid {tc['border']};
+            }}
+            QPlainTextEdit#hexPane:focus, QPlainTextEdit#textPane:focus {{
+                border: none;
+            }}
+            QGroupBox#binaryInspector {{
+                background-color: {tc['secondary_bg']};
+            }}
+
+            /* Guided TRP creator */
+            QFrame#trpHero {{
+                background-color: {tc['secondary_bg']};
+                border: 1px solid {tc['border']};
+                border-radius: 10px;
+            }}
+            QLabel#trpTitle {{
+                color: {tc['text']};
+                font-size: 20px;
+                font-weight: 700;
+            }}
+            QLabel#trpSubtitle, QLabel#trpHint {{
+                color: {tc['secondary_text']};
+            }}
+            QLabel#trpSectionTitle {{
+                color: {tc['text']};
+                font-size: 16px;
+                font-weight: 700;
+            }}
+            QLabel#trpStep {{
+                color: {tc['secondary_text']};
+                background-color: {tc['secondary_bg']};
+                border: 1px solid {tc['border']};
+                border-radius: 8px;
+                padding: 9px 12px;
+                font-weight: 650;
+            }}
+            QLabel#trpStep[state="active"] {{
+                color: #ffffff;
+                background-color: {tc['accent']};
+                border-color: {tc['accent']};
+            }}
+            QLabel#trpStep[state="done"] {{
+                color: {tc['text']};
+                border-color: {tc['accent']};
+            }}
+            QStackedWidget#trpWizard {{
+                background-color: {tc['background']};
+            }}
+            QTreeWidget#trpFiles {{
+                background-color: {tc['secondary_bg']};
+                alternate-background-color: {tc['secondary_bg']};
+                border: none;
+                border-radius: 10px;
+                outline: none;
+            }}
+            QTreeWidget#trpFiles::item {{
+                background-color: transparent;
+                border: none;
+                padding: 7px 6px;
+            }}
+            QTreeWidget#trpFiles::item:hover {{
+                background-color: {tc['hover']};
+            }}
+            QTreeWidget#trpFiles::item:selected {{
+                background-color: {tc['selection']};
+                color: #ffffff;
+            }}
+            QLabel#trpValidation {{
+                color: {tc['warning']};
+            }}
+            QLabel#trpValidation[valid="true"] {{
+                color: {tc['success']};
+            }}
+            QLabel#trpSummary {{
+                color: {tc['text']};
+                background-color: {tc['secondary_bg']};
+                border-radius: 8px;
+                padding: 14px;
+            }}
+            QTextEdit#trpLog {{
+                border: none;
+                background-color: {tc['secondary_bg']};
             }}
             
             /* Tool Tips */
@@ -468,6 +734,7 @@ class StyleManager:
             /* Labels */
             QLabel {{
                 color: {tc['text']};
+                background-color: transparent;
             }}
             
             /* Status Bar */

@@ -15,14 +15,16 @@ class WallpaperViewer(QWidget):
         # Tree view for wallpapers
         self.wallpaper_tree = QTreeWidget()
         self.wallpaper_tree.setHeaderLabels(["Name", "Size"])
+        self.wallpaper_tree.setAlternatingRowColors(False)
+        self.wallpaper_tree.setUniformRowHeights(True)
         self.wallpaper_tree.itemClicked.connect(self.display_selected_wallpaper)
         layout.addWidget(self.wallpaper_tree)
 
         # Image viewer
         self.wallpaper_viewer = QLabel()
+        self.wallpaper_viewer.setObjectName("previewCanvas")
         self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
-        self.wallpaper_viewer.setStyleSheet(
-            "background-color: white; border: 1px solid #3498db; border-radius: 5px;")
+        self.wallpaper_viewer.setText("Select an image to preview")
         self.wallpaper_viewer.setMinimumSize(300, 300)
         layout.addWidget(self.wallpaper_viewer)
 
@@ -31,21 +33,6 @@ class WallpaperViewer(QWidget):
         self.prev_button = QPushButton("Previous")
         self.next_button = QPushButton("Next")
         self.fullscreen_button = QPushButton("Fullscreen")
-        
-        for button in [self.prev_button, self.next_button, self.fullscreen_button]:
-            button.setStyleSheet("""
-                QPushButton {
-                    font-size: 14px;
-                    padding: 8px 15px;
-                    background-color: #3498db;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                }
-                QPushButton:hover {
-                    background-color: #2980b9;
-                }
-            """)
         
         self.prev_button.clicked.connect(self.show_previous_wallpaper)
         self.next_button.clicked.connect(self.show_next_wallpaper)
@@ -66,6 +53,7 @@ class WallpaperViewer(QWidget):
         wallpaper_files = [
             f for f in package.files.values() 
             if isinstance(f.get("name"), str) and 
+            f.get("present", True) and
             f["name"].lower().endswith(('.png', '.jpg', '.jpeg'))
         ]
         
@@ -117,7 +105,7 @@ class WallpaperViewer(QWidget):
             self.wallpaper_viewer.setAlignment(Qt.AlignCenter)
             
         except Exception as e:
-            self.wallpaper_viewer.clear()
+            self.wallpaper_viewer.setText("Preview unavailable")
             QMessageBox.warning(self.parent, "Error", f"Error displaying wallpaper: {str(e)}")
 
     def show_previous_wallpaper(self):
@@ -179,7 +167,7 @@ class WallpaperViewer(QWidget):
 
     def clear_viewer(self):
         """Clear the wallpaper viewer"""
-        self.wallpaper_viewer.clear()
+        self.wallpaper_viewer.setText("Select an image to preview")
         self.wallpaper_tree.clear()
 
     def get_current_wallpaper(self):

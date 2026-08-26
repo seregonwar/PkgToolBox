@@ -8,3 +8,4 @@ packages/external_tools/debug_log.txt
 /.commandcode
 .DS_Store
 *.txt
+/flet-gui

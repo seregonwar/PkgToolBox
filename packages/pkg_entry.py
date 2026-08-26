@@ -3,7 +3,7 @@ PKG_ENTRY_ID_TO_NAME_FULL = { # Corretto
     0x0100: "metas", 0x0200: "entry_names", 0x0400: "license.dat", 0x0401: "license.info",
     0x0402: "nptitle.dat", 0x0403: "npbind.dat", 0x0404: "selfinfo.dat",
     0x0406: "imageinfo.dat", 0x0407: "target-deltainfo.dat", 0x0408: "origin-deltainfo.dat",
-    0x0409: "psreserved.dat", 0x1000: "param.sfo", 0x1001: "playgo-chunk.dat",
+    0x0409: "psreserved.dat", 0x040A: "imagedigs.dat", 0x1000: "param.sfo", 0x1001: "playgo-chunk.dat",
     0x1002: "playgo-chunk.sha", 0x1003: "playgo-manifest.xml", 0x1004: "pronunciation.xml",
     0x1005: "pronunciation.sig", 0x1006: "pic1.png", 0x1007: "pubtoolinfo.dat",
     0x1008: "app/playgo-chunk.dat", 0x1009: "app/playgo-chunk.sha", 0x100A: "app/playgo-manifest.xml",

@@ -540,8 +540,8 @@ class SettingsDialog(QDialog):
         pixmap = QPixmap(path)
         if pixmap.isNull():
             return
-        self.avatar_label.setPixmap(pixmap.scaled(
-            96, 96, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        from GUI.utils.icons import scale_pixmap_sharp
+        self.avatar_label.setPixmap(scale_pixmap_sharp(pixmap, 96, 96))
 
     # ── Live preview helpers ───────────────────────────────────────────────
 

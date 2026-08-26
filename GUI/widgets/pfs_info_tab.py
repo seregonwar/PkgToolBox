@@ -1,6 +1,4 @@
-"""
-PFS Info tab widget for inspecting PS4 PKG PFS structure via shadPKG
-"""
+"""PFS Info tab for dependency-free PS4/PS5 container inspection."""
 from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
@@ -12,11 +10,11 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import QObject, QThread, Signal
 from .base_tab import BaseTab
-from packages import PackagePS4
+from packages import PackagePS4, PackagePS5
 
 
 class PfsInfoTab(BaseTab):
-    """Tab to run shadPKG pfs-info on the currently loaded PKG"""
+    """Run the internal PFS inspector on the loaded PS4 package."""
 
     def setup_ui(self):
         # Controls group
@@ -39,7 +37,7 @@ class PfsInfoTab(BaseTab):
         self.output_view = QTextEdit()
         self.output_view.setReadOnly(True)
         self.output_view.setMinimumHeight(360)
-        self.output_view.setPlaceholderText("Click 'Run PFS Info' to analyze the loaded PS4 PKG")
+        self.output_view.setPlaceholderText("Click 'Run PFS Info' to analyze the loaded PKG")
         output_layout.addWidget(self.output_view)
         output_group.setLayout(output_layout)
 
@@ -53,14 +51,14 @@ class PfsInfoTab(BaseTab):
         if not package:
             QMessageBox.warning(self, "PFS Info", "Please load a PKG file first")
             return
-        if not isinstance(package, PackagePS4):
-            QMessageBox.warning(self, "PFS Info", "PFS Info is only available for PS4 PKG")
+        if not isinstance(package, (PackagePS4, PackagePS5)):
+            QMessageBox.warning(self, "PFS Info", "PFS Info is only available for PS4/PS5 PKG")
             return
 
         as_json = self.json_chk.isChecked()
         self.run_btn.setEnabled(False)
         self.output_view.clear()
-        self.output_view.append("[+] Running shadPKG pfs-info{}...\n".format(" --json" if as_json else ""))
+        self.output_view.append("[+] Running internal PFS inspection{}...\n".format(" (JSON)" if as_json else ""))
 
         class Worker(QObject):
             finished = Signal(str)

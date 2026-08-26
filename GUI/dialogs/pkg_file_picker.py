@@ -75,7 +75,15 @@ class PkgFilePickerDialog(QDialog):
     def _populate(self):
         self.tree.clear()
         structure = {}
-        for info in self.package.files.values():
+        # PS5 packages expose the PFS payloads (eboot.bin, sce_sys/keystone,
+        # sce_sys/about/right.sprx, ...) alongside the CNT entries through
+        # get_all_files(); every other package type uses the plain file table.
+        files = (
+            self.package.get_all_files()
+            if hasattr(self.package, "get_all_files")
+            else self.package.files
+        )
+        for info in files.values():
             name = info.get("name")
             if not name or not self._matches_filter(name):
                 continue

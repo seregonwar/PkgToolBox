@@ -2,18 +2,43 @@
 Material Design inspired SVG icons for PkgToolBox.
 Provides QIcon objects from inline SVG paths - no external dependencies.
 """
-from PySide6.QtGui import QIcon, QPixmap, QPainter
-from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon, QPixmap, QPainter, QGuiApplication
+from PySide6.QtCore import Qt, QRectF, QSize
 from PySide6.QtSvg import QSvgRenderer
 
 
+def _current_dpr() -> float:
+    """Return the app-level device pixel ratio (2.0 on Retina displays).
+
+    Icons are rendered at DPR resolution so they stay sharp when displayed on
+    high-DPI screens instead of being upscaled from a 1x bitmap.
+    """
+    app = QGuiApplication.instance()
+    if app is not None:
+        try:
+            dpr = app.devicePixelRatio()
+            if dpr > 0:
+                return float(dpr)
+        except Exception:
+            pass
+    screen = QGuiApplication.primaryScreen()
+    if screen is not None:
+        dpr = screen.devicePixelRatio()
+        if dpr > 0:
+            return float(dpr)
+    return 1.0
+
+
 def _svg_to_icon(svg_string: str, size: int = 24) -> QIcon:
-    """Convert an SVG string to a QIcon."""
+    """Convert an SVG string to a QIcon (rendered at the screen DPR)."""
     renderer = QSvgRenderer(bytes(svg_string, 'utf-8'))
-    pixmap = QPixmap(size, size)
+    dpr = _current_dpr()
+    pixel_size = max(1, int(round(size * dpr)))
+    pixmap = QPixmap(pixel_size, pixel_size)
+    pixmap.setDevicePixelRatio(dpr)
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
-    renderer.render(painter)
+    renderer.render(painter, QRectF(0, 0, size, size))
     painter.end()
     return QIcon(pixmap)
 
@@ -80,6 +105,15 @@ ICON_COLUMNS = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fi
 
 ICON_EDIT = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>'''
 
+# ──────────────────────────────────────────────────────────
+# Official brand marks (monochrome, tinted via currentColor)
+# ──────────────────────────────────────────────────────────
+
+ICON_BRAND_X = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'''
+
+ICON_BRAND_GITHUB = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>'''
+
+ICON_BRAND_REDDIT = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>'''
 
 # ──────────────────────────────────────────────────────────
 # Icon Registry: maps icon names to SVG strings
@@ -113,6 +147,9 @@ NAV_ICONS = {
     'package': ICON_PACKAGE,
     'columns': ICON_COLUMNS,
     'edit': ICON_EDIT,
+    'brand_x': ICON_BRAND_X,
+    'brand_github': ICON_BRAND_GITHUB,
+    'brand_reddit': ICON_BRAND_REDDIT,
 }
 
 
@@ -129,6 +166,38 @@ def get_icon(name: str, color: str = "#4a5568", size: int = 24) -> QIcon:
     """
     svg = NAV_ICONS.get(name, ICON_FILE)
     return _svg_colored(svg, color, size)
+
+
+def scale_pixmap_sharp(pixmap, width: int, height: int) -> QPixmap:
+    """Scale a QPixmap to width x height logical pixels, sharp on Retina.
+
+    The source is scaled at the screen's devicePixelRatio and the result is
+    tagged with that DPR, so high-DPI displays use the full-resolution bitmap
+    instead of upscaling a 1x one (which looks grainy).
+    """
+    dpr = _current_dpr()
+    scaled = pixmap.scaled(
+        QSize(int(width * dpr), int(height * dpr)),
+        Qt.KeepAspectRatio, Qt.SmoothTransformation,
+    )
+    scaled.setDevicePixelRatio(dpr)
+    return scaled
+
+
+def svg_file_to_icon(path: str, width: int = 214, height: int = 36) -> QIcon:
+    """Render an SVG file to a QIcon at the given size (rendered at screen DPR)."""
+    with open(path, "rb") as fp:
+        renderer = QSvgRenderer(fp.read())
+    dpr = _current_dpr()
+    pixel_w = max(1, int(round(width * dpr)))
+    pixel_h = max(1, int(round(height * dpr)))
+    pixmap = QPixmap(pixel_w, pixel_h)
+    pixmap.setDevicePixelRatio(dpr)
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+    renderer.render(painter, QRectF(0, 0, width, height))
+    painter.end()
+    return QIcon(pixmap)
 
 
 def get_sidebar_icons(color: str = "#4a5568", size: int = 20) -> dict:

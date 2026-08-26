@@ -30,8 +30,17 @@ PkgToolBox supports package formats used across **PSP, PS3, PS4, and PS5**, alth
 
 ## Features
 
-- **PKG Information**  
+- **PKG Information**
   Inspect package metadata and obtain detailed information about PKG files.
+
+- **GP4 / GP5 Project Workspace**
+  Open PS4 `.gp4` and PS5 `.gp5` publishing projects, validate mapped paths,
+  inspect `param.sfo` / `param.json`, preview source assets, and export the
+  resolved project files. GP5 supports both flat and recursive layouts.
+
+- **Standalone File Inspection**
+  Drop or open any local file to preview it and use the integrated text/hex
+  inspection flow without first loading a package.
 
 - **File Explorer**  
   Navigate the internal structure of a PKG without extracting the entire package.
@@ -57,14 +66,14 @@ PkgToolBox supports package formats used across **PSP, PS3, PS4, and PS5**, alth
 - **Wallpaper Management**  
   Inspect, extract, and modify wallpapers and background assets included in packages.
 
-- **Passcode Bruteforce**  
-  Recover supported PKG passcodes using the integrated bruteforce module.
+- **Encryption-aware extraction**
+  Extract plaintext metadata safely and identify protected entries without producing corrupt output.
 
 - **PFS Analysis**  
-  Inspect PS4 PFS structures using [ShadPKG](https://github.com/seregonwar/ShadPKG).
+  Inspect PS4 PFS/PFSC container geometry with the built-in dependency-free engine.
 
-- **OpenOrbis Integration**  
-  Integrates with `orbis-pub-cmd.exe` for additional PS4 PKG operations.
+- **PARAM.SFO and image metadata**
+  Parse all SFO keys and inspect PNG/DDS dimensions directly in the application.
 
 - **Cross-platform Support**  
   PkgToolBox can run on Windows, Linux, and macOS.
@@ -97,41 +106,10 @@ PkgToolBox supports package formats used across **PSP, PS3, PS4, and PS5**, alth
 > [!IMPORTANT]
 > Use **PyInstaller** when packaging the application. Alternative packaging tools such as `cx_Freeze` may not preserve all of the behavior required by PkgToolBox.
 
-### OpenOrbis
-
-Some PS4-specific functionality requires:
-
-```text
-orbis-pub-cmd.exe
-````
-
-This tool is distributed as part of the [OpenOrbis Toolchain](https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain).
-
-### ShadPKG
-
-PkgToolBox uses [ShadPKG](https://github.com/seregonwar/ShadPKG) for PS4 PFS extraction and `pfs-info` functionality.
-
-The Windows binary is bundled at:
-
-```text
-packages/external_tools/shadPKG.exe
-```
-
-On **Linux** or **macOS**, download the appropriate binary from the
-[ShadPKG releases](https://github.com/seregonwar/ShadPKG/releases):
-
-* `shadpkg-debian`
-* `shadpkg-macos`
-
-Then place it at:
-
-```text
-packages/external_tools/shadPKG
-```
-
-and make sure it is executable.
-
-Release builds handle this automatically through CI.
+PkgToolBox does not require shadPKG, OpenOrbis command-line tools, or bundled
+platform-specific executables. Protected PS4 PFS payload decryption is reported
+as unsupported until the internal key pipeline is fully validated; clear-text
+PKG metadata remains browsable and extractable.
 
 ---
 
@@ -160,7 +138,8 @@ python main.py
 
 ## Usage
 
-Launch the application and select a PKG file from the interface.
+Launch the application and open a PKG, GP4/GP5 project, or standalone file from
+the same source picker. Any of them can also be dropped onto the window.
 
 Depending on the package type and platform, PkgToolBox provides tools for:
 
@@ -174,6 +153,10 @@ Depending on the package type and platform, PkgToolBox provides tools for:
 * managing trophy files;
 * analyzing PFS structures;
 * performing supported package-specific operations.
+
+For publishing projects, PkgToolBox resolves mapped paths, shows missing files
+without hiding them, and keeps the project read-only while allowing available
+content to be browsed, previewed, and exported.
 
 ---
 
@@ -189,6 +172,8 @@ Depending on the package type and platform, PkgToolBox provides tools for:
 * [x] PS3 retail and debug PKG support
 * [x] PSP PKG support
 * [x] Initial PS5 PKG support
+* [x] PS5 GP5 project loading (flat and rootdir layouts)
+* [x] PS4 GP4 project loading and standalone file workspaces
 
 #### Trophy Support
 
@@ -257,6 +242,16 @@ PkgToolBox includes or builds upon work from other members of the PlayStation de
 
 * **[HoppersPS4](https://github.com/HoppersPS4)**
   Creator of the C++ version of [Waste_Ur_Time](https://github.com/HoppersPS4/Waste_Ur_Time), which was rewritten and integrated into the `PS4_Passcode_Bruteforcer.py` module.
+
+* **[zecoxao/gengp4-src](https://github.com/zecoxao/gengp4-src)**,
+  **[zecoxao/gengp5-src](https://github.com/zecoxao/gengp5-src)** and
+  **[SvenGDK/LibProsperoPKG](https://github.com/SvenGDK/LibProsperoPKG)**
+  Public publishing-project schema and model references used to validate
+  PkgToolBox's independent Python implementation of GP4/GP5 loading.
+
+* **[SvenGDK/SharpProspero](https://github.com/SvenGDK/SharpProspero)**
+  Reference for the broader PS5 development and packaging workflow that the
+  consolidated workspace is designed to complement.
 
 If your work is used by PkgToolBox and is missing from this section, please contact me on [X](https://x.com/SeregonWar).
 

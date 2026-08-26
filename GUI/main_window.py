@@ -2,21 +2,30 @@ import logging
 import os
 import re
 import shutil
+import sys
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                             QHBoxLayout, QLabel, QLineEdit, QPushButton, QTabWidget,
                             QMessageBox, QToolBar, QTreeWidget, QTextEdit, QTableWidget, QTableWidgetItem, QFileDialog, QGroupBox, QGridLayout, QSpinBox, QTreeWidgetItem, QDialog, QProgressBar, QComboBox, QCheckBox, QListWidget, QFrame, QSplitter)
-from PySide6.QtCore import Qt, QSize, QUrl, QObject, Signal, QThread
-from PySide6.QtGui import QFont, QDesktopServices, QAction, QShortcut, QActionGroup, QKeySequence
+from PySide6.QtCore import Qt, QSize, QUrl, QObject, Signal, QThread, QTimer
+from PySide6.QtGui import QFont, QDesktopServices, QAction, QShortcut, QActionGroup, QKeySequence, QGuiApplication, QPixmap
 import struct
 import xml.etree.ElementTree as ET
 from GUI.components import FileBrowser, WallpaperViewer
 from GUI.dialogs import SettingsDialog
 from GUI.utils import StyleManager, ImageUtils, FileUtils
-from GUI.utils.icons import get_icon, get_sidebar_icons
-from GUI.widgets import ExtractTab, InfoTab, BruteforceTab, ModifyTab
+from GUI.utils.icons import get_icon, get_sidebar_icons, svg_file_to_icon, scale_pixmap_sharp
+from GUI.widgets import InfoTab, BruteforceTab, ModifyTab, TrpCreatorTab
 from GUI.widgets.pfs_info_tab import PfsInfoTab
 from tools.PS5_Game_Info import PS5GameInfo
-from packages import PackagePS4, PackagePS5, PackagePS3
+from packages import (
+    GP4Project,
+    GP5Project,
+    StandaloneFileSource,
+    PackagePS4,
+    PackagePS5,
+    PackagePS3,
+    open_source,
+)
 from Utilities.Trophy import ESMFDecrypter, TRPCreator
 from tools.PS4_Passcode_Bruteforcer import PS4PasscodeBruteforcer
 from Utilities import Logger
@@ -26,7 +35,7 @@ import traceback
 from Utilities import Logger, TRPReader  
 from .locales.translator import Translator
 from GUI.dialogs.pkg_file_picker import PkgFilePickerDialog
-from GUI.utils.update_checker import UpdateChecker, UpdateDialog
+from GUI.utils.update_checker import UpdateChecker, pick_asset_for_current_platform, launch_downloaded_asset
 
 class MainWindow(QMainWindow):
 
@@ -54,11 +63,13 @@ class MainWindow(QMainWindow):
         # Setup UI
         self.setup_ui()
         self.setup_settings_button()
+        self._place_window_on_screen()
 
         # Highlight the sidebar button of the active tab (all switch paths)
         self.tab_widget.currentChanged.connect(self._update_nav_highlight)
-        # Modify sub-tabs keep the sidebar highlight in sync too
-        self.modify_tab.sub_tabs.currentChanged.connect(lambda _i: self._update_nav_highlight())
+        # Inner workspaces keep the compact navigation highlight in sync.
+        for workspace in (self.contents_workspace, self.modify_tab.sub_tabs, self.tools_workspace):
+            workspace.currentChanged.connect(lambda _i: self._update_nav_highlight())
         self._update_nav_highlight()
         
         # Apply saved language after UI is built (menus/tabs exist)
@@ -75,12 +86,19 @@ class MainWindow(QMainWindow):
         
         # Initialize update checker
         self.update_checker = UpdateChecker(self)
-        self.update_checker.update_available.connect(self.show_update_dialog)
+        self.update_checker.update_available.connect(self.show_update_banner)
         self.update_checker.error_occurred.connect(self.handle_update_error)
-        
-        # Check for updates
+        self.update_checker.download_progress.connect(self._on_update_download_progress)
+        self.update_checker.download_finished.connect(self._on_update_download_finished)
+        self._update_info = None  # {version, download_url, assets}
+
+        # Check for updates once at startup, then poll periodically
         if not self.should_skip_updates():
             self.update_checker.start()
+            self._update_poll_timer = QTimer(self)
+            self._update_poll_timer.setInterval(6 * 60 * 60 * 1000)  # every 6 hours
+            self._update_poll_timer.timeout.connect(self.update_checker.start)
+            self._update_poll_timer.start()
 
         # Apply the persisted theme at startup (also enables system-theme following)
         self._reapply_saved_theme()
@@ -102,23 +120,56 @@ class MainWindow(QMainWindow):
     def setup_ui(self):
         """Setup the main UI"""
         self.setWindowTitle("PKG Tool Box v1.5.0")
-        self.setGeometry(100, 100, 1200, 800)
         
         # Central widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
-        
+
+        # Update banner (hidden until a newer release is detected)
+        self.update_banner = QFrame()
+        self.update_banner.setObjectName("updateBanner")
+        self.update_banner.setVisible(False)
+        banner_layout = QHBoxLayout(self.update_banner)
+        banner_layout.setContentsMargins(12, 8, 12, 8)
+        banner_layout.setSpacing(8)
+
+        self.update_banner_label = QLabel()
+        self.update_banner_label.setWordWrap(True)
+        banner_layout.addWidget(self.update_banner_label, 1)
+
+        self.update_download_btn = QPushButton("Download")
+        self.update_download_btn.setCursor(Qt.PointingHandCursor)
+        self.update_download_btn.clicked.connect(self._open_update_page)
+        banner_layout.addWidget(self.update_download_btn)
+
+        self.update_install_btn = QPushButton("Install")
+        self.update_install_btn.setObjectName("updateInstallBtn")
+        self.update_install_btn.setCursor(Qt.PointingHandCursor)
+        self.update_install_btn.clicked.connect(self._install_update)
+        banner_layout.addWidget(self.update_install_btn)
+
+        self.update_dismiss_btn = QPushButton("\u2715")
+        self.update_dismiss_btn.setObjectName("updateDismissBtn")
+        self.update_dismiss_btn.setToolTip("Dismiss")
+        self.update_dismiss_btn.setFixedSize(24, 24)
+        self.update_dismiss_btn.setCursor(Qt.PointingHandCursor)
+        self.update_dismiss_btn.clicked.connect(lambda: self.update_banner.hide())
+        banner_layout.addWidget(self.update_dismiss_btn)
+
+        main_layout.insertWidget(0, self.update_banner)
+        self._style_update_banner()
+
         # Split layout
         split_layout = QHBoxLayout()
         
         # Left panel for PKG info (collapsible via the toolbar toggle / splitter)
         self.left_panel = QWidget()
-        self.left_panel.setMinimumWidth(140)
+        self.left_panel.setMinimumWidth(220)
         left_layout = QVBoxLayout(self.left_panel)
         
         # PKG icon and info — minimal card styled with theme colors
-        tc = StyleManager.get_theme_colors(self.settings_dict.get("appearance", {}).get("theme", "Dark"))
+        tc = self._current_theme_colors()
         self.image_label = QLabel()
         self.image_label.setFixedSize(180, 180)
         self.image_label.setAlignment(Qt.AlignCenter)
@@ -151,7 +202,7 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self.content_id_label)
         
         # Drag-drop zone — colors come from the active theme (all states)
-        self.drag_drop_label = QLabel("Drop PKG files here or Browse")
+        self.drag_drop_label = QLabel("Drop a package, project or file here")
         self.drag_drop_label.setAlignment(Qt.AlignCenter)
         self._set_drag_style(False)
         left_layout.addWidget(self.drag_drop_label)
@@ -159,69 +210,64 @@ class MainWindow(QMainWindow):
         # PKG file selection (styling handled by the global theme)
         pkg_layout = QHBoxLayout()
         self.pkg_entry = QLineEdit()
-        self.pkg_entry.setPlaceholderText("Select your PKG file...")
+        self.pkg_entry.setPlaceholderText("Select a package, GP4/GP5 project or file...")
         
-        browse_button = QPushButton("Browse")
+        browse_button = QPushButton("Open…")
         browse_button.clicked.connect(self.browse_pkg)
         
         pkg_layout.addWidget(self.pkg_entry, 1)
         pkg_layout.addWidget(browse_button)
         left_layout.addLayout(pkg_layout)
         
+        # Extract the loaded PKG into a user-chosen folder (modal dialog for
+        # the destination, then background extraction). Disabled until a PKG
+        # is loaded.
+        self.extract_btn = QPushButton("Extract package")
+        self.extract_btn.setToolTip("Extract or export the loaded source into a destination folder")
+        self.extract_btn.setEnabled(False)
+        self.extract_btn.clicked.connect(self.extract_pkg_dialog)
+        left_layout.addWidget(self.extract_btn)
+
         left_layout.addStretch()
         
         # Tab widget (styling handled by the global theme; tab bar hidden —
         # navigation is driven by the sidebar)
         self.tab_widget = QTabWidget()
 
-        # Info tab
+        # Four coherent workspaces replace the former long list of isolated
+        # pages.  Existing widgets stay available as focused inner tabs.
         self.info_tab = InfoTab(self)
-        self.tab_widget.addTab(self.info_tab, "Info")
-        
-        # File Browser tab
+        self.tab_widget.addTab(self.info_tab, "Overview")
 
+        self.contents_workspace = QTabWidget()
+        self.contents_workspace.setDocumentMode(True)
         self.file_browser = FileBrowser(self)
-        self.tab_widget.addTab(self.file_browser, "File Browser")
-        
-        # Wallpaper tab
+        self.contents_workspace.addTab(self.file_browser, "Files")
         self.wallpaper_viewer = WallpaperViewer(self)
-        self.tab_widget.addTab(self.wallpaper_viewer, "Wallpaper")
-        
-        # Extract tab
-        self.extract_tab = ExtractTab(self)
-        self.tab_widget.addTab(self.extract_tab, "Extract")
-        
-        # PFS Info tab
+        self.contents_workspace.addTab(self.wallpaper_viewer, "Images")
         self.pfs_info_tab = PfsInfoTab(self)
-        self.tab_widget.addTab(self.pfs_info_tab, "PFS Info")
+        self.contents_workspace.addTab(self.pfs_info_tab, "Filesystem")
+        self.tab_widget.addTab(self.contents_workspace, "Contents")
         
-        # Modify tab — hex editor + header fields on a working copy
         self.modify_tab = ModifyTab(self)
-        self.tab_widget.addTab(self.modify_tab, "Modify")
+        self.tab_widget.addTab(self.modify_tab, "Inspect & edit")
         
-        # Trophy tab
+        self.tools_workspace = QTabWidget()
+        self.tools_workspace.setDocumentMode(True)
         self.trophy_tab = QWidget()
         self.setup_trophy_tab()
-        self.tab_widget.addTab(self.trophy_tab, "Trophy")
-        
-        # ESMF Decrypter tab
+        self.tools_workspace.addTab(self.trophy_tab, "Trophies")
         self.esmf_decrypter_tab = QWidget()
         self.setup_esmf_decrypter_tab()
-        self.tab_widget.addTab(self.esmf_decrypter_tab, "ESMF Decrypter")
-        
-        # Create TRP tab
-        self.trp_create_tab = QWidget()
-        self.setup_trp_create_tab()
-        self.tab_widget.addTab(self.trp_create_tab, "Create TRP")
-        
-        # PS5 Game Info tab
+        self.tools_workspace.addTab(self.esmf_decrypter_tab, "ESMF")
+        self.trp_create_tab = TrpCreatorTab(self)
+        self.tools_workspace.addTab(self.trp_create_tab, "Create TRP")
         self.ps5_game_info_tab = QWidget()
         self.setup_ps5_game_info_tab()
-        self.tab_widget.addTab(self.ps5_game_info_tab, "PS5 Game Info")
-        
-        # Passcode Bruteforcer tab
+        self.tools_workspace.addTab(self.ps5_game_info_tab, "PS5 executable")
         self.bruteforce_tab = BruteforceTab(self)
-        self.tab_widget.addTab(self.bruteforce_tab, "Passcode Bruteforcer")
+        self.tools_workspace.addTab(self.bruteforce_tab, "Encryption")
+        self.tab_widget.addTab(self.tools_workspace, "Tools")
 
         # Hide native tab bar – navigation handled by sidebar and build sidebar
         self.tab_widget.tabBar().hide()
@@ -249,86 +295,56 @@ class MainWindow(QMainWindow):
         
         # Credits and social buttons
         credits_layout = QHBoxLayout()
-        
-        # Left side - Credits label
-        credits_label = QLabel()
-        # Text color comes from the active theme (accent for the link)
-        credits_label.setText('<a href="https://github.com/seregonwar" style="text-decoration:none; color:#3b82f6;">Created by <b>SeregonWar</b></a>')
-        credits_label.setTextFormat(Qt.RichText)
-        credits_label.setOpenExternalLinks(True)
-        credits_label.setStyleSheet("""
-            QLabel {
-                font-size: 14px;
-                font-weight: 600;
-                padding: 6px 8px;
-                border-radius: 8px;
-            }
-        """)
-        credits_layout.addWidget(credits_label, 0, Qt.AlignLeft)
-        
-        # Center - Social buttons
+
+        # Left side - app logo (transparent PNG, works on light and dark themes;
+        # scaled at the screen's devicePixelRatio so it stays sharp on Retina)
+        self.logo_label = QLabel()
+        self.logo_label.setToolTip("PkgToolBox")
+        logo_path = self._app_resource_path("logos", "logo.png")
+        if os.path.exists(logo_path):
+            pixmap = QPixmap(logo_path)
+            if not pixmap.isNull():
+                self.logo_label.setPixmap(scale_pixmap_sharp(pixmap, 110, 37))
+        credits_layout.addWidget(self.logo_label, 0, Qt.AlignLeft)
+
+        # Center - Social buttons (official brand marks, tinted white/black
+        # according to the active theme)
         social_layout = QHBoxLayout()
-        social_layout.setSpacing(12)
-        
-        # Stile comune per i pulsanti social (pill buttons)
-        social_button_style = """
-            QPushButton {
-                font-size: 12px;
-                color: white;
-                background-color: #3498db;
-                border: none;
-                border-radius: 14px;
-                padding: 6px 14px;
-                min-width: 88px;
-                height: 28px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #2980b9;
-            }
-        """
-        
-        x_button = QPushButton("X")
-        x_button.setToolTip("Open X / Twitter")
-        github_button = QPushButton("GitHub")
-        github_button.setToolTip("Open GitHub profile")
-        reddit_button = QPushButton("Reddit")
-        reddit_button.setToolTip("Open Reddit profile")
-        
-        for button in [x_button, github_button, reddit_button]:
-            button.setStyleSheet(social_button_style)
+        social_layout.setSpacing(10)
+
+        self.social_buttons = {}
+        brand_links = [
+            ("x", "Open X / Twitter", "https://x.com/SeregonWar"),
+            ("github", "Open GitHub profile", "https://github.com/seregonwar"),
+            ("reddit", "Open Reddit profile", "https://www.reddit.com/user/S3R3GON/"),
+        ]
+        for key, tooltip, url in brand_links:
+            button = QPushButton()
+            button.setToolTip(tooltip)
+            button.setFixedSize(34, 34)
+            button.setCursor(Qt.PointingHandCursor)
+            button.clicked.connect(
+                lambda _=False, u=url: QDesktopServices.openUrl(QUrl(u))
+            )
             social_layout.addWidget(button)
-        
-        # Connetti i pulsanti agli URL
-        x_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://x.com/SeregonWar")))
-        github_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/seregonwar")))
-        reddit_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://www.reddit.com/user/S3R3GON/")))
-        
+            self.social_buttons[key] = button
+
         social_widget = QWidget()
         social_widget.setLayout(social_layout)
         credits_layout.addWidget(social_widget, 1, Qt.AlignCenter)
-        
-        # Right side - Ko-fi button
-        kofi_button = QPushButton("Support on Ko-fi")
-        kofi_button.setToolTip("Buy me a coffee on Ko-fi")
-        kofi_button.setStyleSheet("""
-            QPushButton {
-                font-size: 12px;
-                color: white;
-                background-color: #e74c3c;
-                border: none;
-                border-radius: 14px;
-                padding: 6px 14px;
-                min-width: 140px;
-                height: 28px;
-                font-weight: 700;
-            }
-            QPushButton:hover {
-                background-color: #c0392b;
-            }
-        """)
-        kofi_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://ko-fi.com/seregon")))
-        credits_layout.addWidget(kofi_button, 0, Qt.AlignRight)
+
+        # Right side - Support button (reuses the bundled SVG artwork)
+        self.support_button = QPushButton()
+        self.support_button.setToolTip(
+            "Support SeregonWar — seregonwar.com/donations"
+        )
+        self.support_button.setCursor(Qt.PointingHandCursor)
+        self.support_button.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl("https://www.seregonwar.com/donations"))
+        )
+        credits_layout.addWidget(self.support_button, 0, Qt.AlignRight)
+
+        self._recolor_social_buttons()
         
         # Aggiungi il layout dei credits al layout principale
         main_layout.addLayout(credits_layout)
@@ -344,7 +360,7 @@ class MainWindow(QMainWindow):
         self.links_menu = menubar.addMenu('Links')
         
         # File menu actions
-        self.open_action = QAction('Open PKG', self)
+        self.open_action = QAction('Open source…', self)
         self.open_action.setShortcut('Ctrl+O')
         self.open_action.triggered.connect(self.browse_pkg)
         self.file_menu.addAction(self.open_action)
@@ -357,43 +373,39 @@ class MainWindow(QMainWindow):
         self.file_menu.addAction(self.exit_action)
         
         # Tools menu actions
-        extract_action = QAction('Extract PKG', self)
-        extract_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.extract_tab))
-        self.tools_menu.addAction(extract_action)
-        
         modify_action = QAction('Modify PKG', self)
-        modify_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.modify_tab))
+        modify_action.triggered.connect(lambda: self.show_section(self.modify_tab))
         self.tools_menu.addAction(modify_action)
         
         self.tools_menu.addSeparator()
         
         trophy_action = QAction('Trophy Tools', self)
-        trophy_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.trophy_tab))
+        trophy_action.triggered.connect(lambda: self.show_section(self.tools_workspace, self.trophy_tab))
         self.tools_menu.addAction(trophy_action)
         
         esmf_action = QAction('ESMF Decrypter', self)
-        esmf_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.esmf_decrypter_tab))
+        esmf_action.triggered.connect(lambda: self.show_section(self.tools_workspace, self.esmf_decrypter_tab))
         self.tools_menu.addAction(esmf_action)
         
         trp_action = QAction('Create TRP', self)
-        trp_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.trp_create_tab))
+        trp_action.triggered.connect(lambda: self.show_section(self.tools_workspace, self.trp_create_tab))
         self.tools_menu.addAction(trp_action)
         
         self.tools_menu.addSeparator()
         
-        bruteforce_action = QAction('Passcode Bruteforcer', self)
-        bruteforce_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.bruteforce_tab))
+        bruteforce_action = QAction('Encryption Status', self)
+        bruteforce_action.triggered.connect(lambda: self.show_section(self.tools_workspace, self.bruteforce_tab))
         self.tools_menu.addAction(bruteforce_action)
         
         # View menu
         view_menu = self.view_menu
         
         file_browser_action = QAction('File Browser', self)
-        file_browser_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.file_browser))
+        file_browser_action.triggered.connect(lambda: self.show_section(self.contents_workspace, self.file_browser))
         view_menu.addAction(file_browser_action)
         
         wallpaper_action = QAction('Wallpaper Viewer', self)
-        wallpaper_action.triggered.connect(lambda: self.tab_widget.setCurrentWidget(self.wallpaper_viewer))
+        wallpaper_action.triggered.connect(lambda: self.show_section(self.contents_workspace, self.wallpaper_viewer))
         view_menu.addAction(wallpaper_action)
         
         # Links menu
@@ -413,9 +425,11 @@ class MainWindow(QMainWindow):
         
         links_menu.addSeparator()
         
-        kofi_action = QAction('Support on Ko-fi', self)
-        kofi_action.triggered.connect(lambda: QDesktopServices.openUrl(QUrl("https://ko-fi.com/seregon")))
-        links_menu.addAction(kofi_action)
+        support_action = QAction('Support SeregonWar', self)
+        support_action.triggered.connect(
+            lambda: QDesktopServices.openUrl(QUrl("https://www.seregonwar.com/donations"))
+        )
+        links_menu.addAction(support_action)
         
         # Help menu
         help_menu = self.help_menu
@@ -453,6 +467,109 @@ class MainWindow(QMainWindow):
         self.progress_bar.hide()
         self.status_bar.addPermanentWidget(self.progress_bar)
 
+    @staticmethod
+    def _app_resource_path(*rel):
+        """Resolve a bundled data file (source tree or PyInstaller bundle)."""
+        if getattr(sys, 'frozen', False):
+            base = getattr(sys, '_MEIPASS', None)
+            if base:
+                candidate = os.path.join(base, *rel)
+                if os.path.exists(candidate):
+                    return candidate
+            candidate = os.path.join(os.path.dirname(sys.executable), '_internal', *rel)
+            if os.path.exists(candidate):
+                return candidate
+        here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        return os.path.join(here, *rel)
+
+    def _current_theme_colors(self):
+        """Resolve colors exactly as the global stylesheet does.
+
+        Persisted overrides are relevant for System and custom themes too;
+        using only the named theme made the sidebar disagree with the rest of
+        the window after startup.
+        """
+        appearance = self.settings_dict.get("appearance", {})
+        theme_name = appearance.get("theme", "Dark")
+        stored = appearance.get("colors", {})
+        resolved = StyleManager.get_theme_colors(
+            theme_name, stored if theme_name == "Custom" else None
+        ).copy()
+        for key in resolved:
+            if key in stored:
+                resolved[key] = stored[key]
+        return resolved
+
+    def showEvent(self, event):
+        """Re-assert the window placement the first time it is shown.
+
+        Per the Qt docs, geometry set before show() can be overridden by the
+        platform window system (macOS in particular restores or repositions
+        the window when it appears). Re-applying the placement here, where
+        frameGeometry() is accurate, keeps the window inside the visible
+        screen area (below the menu bar, above the Dock).
+        """
+        super().showEvent(event)
+        if not getattr(self, "_window_placed", False):
+            self._place_window_on_screen()
+            self._window_placed = True
+
+    def _place_window_on_screen(self):
+        """Place the window inside the visible screen area.
+
+        Opens compact (1100x700 by default) and uses the screen's
+        availableGeometry() (Qt docs: "the geometry excluding window manager
+        reserved areas such as task bars and system menus" — on macOS the menu
+        bar and Dock). Once the window is visible the FRAME (which on macOS
+        includes the title bar above the client area) is clamped inside the
+        visible area, so neither the top nor the bottom ends up underneath the
+        system bars. A modest minimum size is set so the layout cannot force
+        the window taller than the screen (Qt never shrinks a top-level window
+        below the content's minimum size hint).
+        """
+        default_w, default_h = 1100, 700
+        screen = self.screen() or QGuiApplication.primaryScreen()
+        if screen is None:
+            self.setGeometry(100, 100, default_w, default_h)
+            return
+        avail = screen.availableGeometry()
+        # Never exceed the default, but never overflow the visible area either.
+        width = min(default_w, max(640, avail.width() - 40))
+        height = min(default_h, max(480, avail.height() - 40))
+        # A sane minimum that still fits the visible screen, so layouts cannot
+        # push the window taller than the available height.
+        self.setMinimumSize(min(900, width), min(560, height))
+        self.resize(width, height)
+        # On compact displays the source card would squeeze the actual task
+        # workspace below a useful width. It remains one click away in the
+        # toolbar and is not persisted as a preference change.
+        if hasattr(self, "left_panel") and width < 980:
+            self.left_panel.hide()
+        if (
+            hasattr(self, "sidebar_frame") and width < 980
+            and getattr(self, "sidebar_expanded", False)
+        ):
+            self.toggle_sidebar()
+
+        if self.isVisible():
+            # Clamp the frame (title bar included) inside the visible area.
+            frame = self.frameGeometry()
+            fw, fh = frame.width(), frame.height()
+            if fh > avail.height():
+                self.resize(width, max(480, avail.height() - 40))
+                frame = self.frameGeometry()
+                fw, fh = frame.width(), frame.height()
+            x = avail.x() + (avail.width() - fw) // 2
+            y = avail.y() + (avail.height() - fh) // 2
+            x = max(avail.x(), min(x, avail.right() - fw + 1))
+            y = max(avail.y(), min(y, avail.bottom() - fh + 1))
+            self.move(x, y)
+        else:
+            # Pre-show: center the client area in the available space.
+            x = avail.x() + (avail.width() - width) // 2
+            y = avail.y() + (avail.height() - height) // 2
+            self.move(x, y)
+
     def change_theme(self, theme_name, colors):
         """Change and persist theme selection"""
         try:
@@ -484,6 +601,8 @@ class MainWindow(QMainWindow):
             self._recolor_sidebar_icons(colors)
             self._apply_sidebar_style(colors)
             self._recolor_toolbar_icons(colors)
+            self._recolor_social_buttons(colors)
+            self._style_update_banner()
             # Keep following the system scheme when System is selected
             self._follow_system_theme()
             # Reflect selection in menu
@@ -495,11 +614,13 @@ class MainWindow(QMainWindow):
     def _reapply_saved_theme(self):
         """Re-apply the persisted theme (startup and system scheme changes)."""
         theme_name = self.settings_dict.get("appearance", {}).get("theme", "Dark")
-        colors = StyleManager.get_theme_colors(theme_name)
+        colors = self._current_theme_colors()
         StyleManager.apply_theme(self, self.settings_dict)
         self._recolor_sidebar_icons(colors)
         self._apply_sidebar_style(colors)
         self._recolor_toolbar_icons(colors)
+        self._recolor_social_buttons(colors)
+        self._style_update_banner()
         self._follow_system_theme()
 
     def _follow_system_theme(self):
@@ -537,11 +658,11 @@ class MainWindow(QMainWindow):
             self.sidebar_toggle_btn.setIcon(toggle_menu_icon)
 
     def create_sidebar(self):
-        """Create icon-first sidebar navigation with section groups."""
+        """Create compact navigation for the four primary workspaces."""
         self.sidebar_frame = QFrame()
         self.sidebar_frame.setObjectName("sidebar")
         theme_name = self.settings_dict.get("appearance", {}).get("theme", "Dark")
-        tc = StyleManager.get_theme_colors(theme_name)
+        tc = self._current_theme_colors()
         self._apply_sidebar_style(tc)
         layout = QVBoxLayout(self.sidebar_frame)
         layout.setContentsMargins(8, 8, 8, 8)
@@ -580,10 +701,8 @@ class MainWindow(QMainWindow):
             self._nav_group_labels.append(label)
             return label
 
-        def add_nav(icon_key, text, widget, sub_index=None):
-            """Add a nav button. sub_index selects an inner QTabWidget page
-            (used by the Modify sub-sections)."""
-            btn = QPushButton(text)
+        def add_nav(icon_key, text, widget):
+            btn = QPushButton(text.replace("&", "&&"))
             btn.setObjectName("navBtn")
             btn.setIcon(sidebar_icons.get(icon_key, get_icon('file', icon_color, 18)))
             btn.setToolTip(text)
@@ -591,37 +710,24 @@ class MainWindow(QMainWindow):
             btn.setMinimumWidth(194)
             btn.setCheckable(True)
             btn.setAutoExclusive(True)
-            btn._nav_match = (widget, sub_index)  # used by _update_nav_highlight
+            btn._nav_match = (widget, None)  # used by _update_nav_highlight
 
             def select():
-                self.tab_widget.setCurrentWidget(widget)
-                if sub_index is not None and hasattr(widget, 'sub_tabs'):
-                    widget.sub_tabs.setCurrentIndex(sub_index)
+                self.show_section(widget)
 
             btn.clicked.connect(select)
             layout.addWidget(btn)
             self._nav_buttons.append((btn, icon_key, text))
             return btn
 
-        # Grouped navigation: PKG / Strumenti / Extra
+        # The details live in visible inner tabs, so users always know which
+        # stage they are in without scanning a dozen peer-level destinations.
         sections = [
-            ("PKG", [
-                ('info', 'Info', self.info_tab),
-                ('file_browser', 'File Browser', self.file_browser),
-                ('extract', 'Extract', self.extract_tab),
-                ('pfs_info', 'PFS Info', self.pfs_info_tab),
-                ('modify', 'Hex Editor', self.modify_tab, 0),
-                ('edit', 'Header Fields', self.modify_tab, 1),
-                ('bruteforce', 'Passcode Bruteforcer', self.bruteforce_tab),
-            ]),
-            ("Strumenti", [
-                ('trophy', 'Trophy', self.trophy_tab),
-                ('esmf', 'ESMF Decrypter', self.esmf_decrypter_tab),
-                ('trp', 'Create TRP', self.trp_create_tab),
-                ('ps5_info', 'PS5 Game Info', self.ps5_game_info_tab),
-            ]),
-            ("Extra", [
-                ('wallpaper', 'Wallpaper', self.wallpaper_viewer),
+            ("WORKSPACE", [
+                ('info', 'Overview', self.info_tab),
+                ('file_browser', 'Contents', self.contents_workspace),
+                ('modify', 'Inspect & edit', self.modify_tab),
+                ('trophy', 'Tools', self.tools_workspace),
             ]),
         ]
 
@@ -631,6 +737,15 @@ class MainWindow(QMainWindow):
                 add_nav(*item)
 
         layout.addStretch(1)
+
+    def show_section(self, workspace, inner_widget=None):
+        """Navigate to a primary workspace and optionally one of its inner tabs."""
+        self.tab_widget.setCurrentWidget(workspace)
+        if inner_widget is not None and isinstance(workspace, QTabWidget):
+            index = workspace.indexOf(inner_widget)
+            if index >= 0:
+                workspace.setCurrentIndex(index)
+        self._update_nav_highlight()
 
     def _update_nav_highlight(self, index=None):
         """Highlight the sidebar button matching the active tab.
@@ -707,7 +822,7 @@ class MainWindow(QMainWindow):
         new_w = self.sidebar_width_expanded if self.sidebar_expanded else self.sidebar_width_collapsed
         self.sidebar_frame.setFixedWidth(new_w)
         for btn, _icon_key, text in self._nav_buttons:
-            btn.setText(text if self.sidebar_expanded else "")
+            btn.setText(text.replace("&", "&&") if self.sidebar_expanded else "")
             btn.setMinimumWidth(194 if self.sidebar_expanded else 0)
             btn.setToolTip(text)
         for label in self._nav_group_labels:
@@ -726,7 +841,7 @@ class MainWindow(QMainWindow):
         panel_toolbar = QToolBar()
         panel_toolbar.setIconSize(QSize(22, 22))
         self.panel_action = QAction(get_icon('columns', icon_color, 22), "", self)
-        self.panel_action.setToolTip("Hide/show the PKG panel")
+        self.panel_action.setToolTip("Hide/show the source panel")
         self.panel_action.triggered.connect(self.toggle_left_panel)
         panel_toolbar.setStyleSheet(style)
         panel_toolbar.addAction(self.panel_action)
@@ -758,7 +873,7 @@ class MainWindow(QMainWindow):
     def _toolbar_icon_color(self):
         """Colore delle icone della toolbar in base al tema attivo."""
         theme_name = self.settings_dict.get("appearance", {}).get("theme", "Dark")
-        tc = StyleManager.get_theme_colors(theme_name)
+        tc = self._current_theme_colors()
         return tc.get('secondary_text', tc.get('text', '#475569'))
 
     def _recolor_toolbar_icons(self, colors):
@@ -769,6 +884,35 @@ class MainWindow(QMainWindow):
         self.panel_action.setIcon(get_icon('columns', icon_color, 22))
         self.settings_action.setIcon(get_icon('settings', icon_color, 22))
         self.theme_action.setIcon(get_icon('theme', icon_color, 22))
+
+    def _recolor_social_buttons(self, colors=None):
+        """Tint the brand buttons white/black per the active theme and load the
+        Support button artwork from the bundled SVG."""
+        if not hasattr(self, 'social_buttons'):
+            return
+        theme_name = self.settings_dict.get("appearance", {}).get("theme", "Dark")
+        if colors is None:
+            colors = self._current_theme_colors()
+        dark = StyleManager.is_dark_theme(theme_name, colors)
+        icon_color = "#ffffff" if dark else "#0f172a"
+        hover = colors.get('hover', "#334155" if dark else "#e2e8f0")
+        social_style = (
+            "QPushButton { border: none; border-radius: 8px; background: transparent; }"
+            f"QPushButton:hover {{ background-color: {hover}; }}"
+        )
+        for key, button in self.social_buttons.items():
+            button.setIcon(get_icon(f"brand_{key}", icon_color, 20))
+            button.setIconSize(QSize(20, 20))
+            button.setStyleSheet(social_style)
+
+        support_svg = self._app_resource_path("assets", "seregonwar_support_button.svg")
+        if os.path.exists(support_svg):
+            self.support_button.setIcon(svg_file_to_icon(support_svg, 190, 32))
+            self.support_button.setIconSize(QSize(190, 32))
+            self.support_button.setStyleSheet(
+                "QPushButton { border: none; background: transparent; padding: 2px; }"
+                "QPushButton:hover { background: transparent; }"
+            )
 
     def toggle_left_panel(self):
         """Hide/show the left PKG panel (persisted in settings)."""
@@ -800,9 +944,7 @@ class MainWindow(QMainWindow):
 
     def _set_drag_style(self, active: bool):
         """Style the drag & drop zone with the active theme colors."""
-        tc = StyleManager.get_theme_colors(
-            self.settings_dict.get("appearance", {}).get("theme", "Dark")
-        )
+        tc = self._current_theme_colors()
         if active:
             color = tc.get('accent', '#3b82f6')
             border = tc.get('accent', '#3b82f6')
@@ -827,7 +969,7 @@ class MainWindow(QMainWindow):
         """Handle drag enter event"""
         if event.mimeData().hasUrls():
             for url in event.mimeData().urls():
-                if url.toLocalFile().lower().endswith('.pkg'):
+                if os.path.isfile(url.toLocalFile()):
                     event.acceptProposedAction()
                     self._set_drag_style(True)
                     return
@@ -840,22 +982,22 @@ class MainWindow(QMainWindow):
 
     def dropEvent(self, event):
         """Handle drop event"""
-        files = [url.toLocalFile() for url in event.mimeData().urls() 
-                if url.toLocalFile().lower().endswith('.pkg')]
+        files = [url.toLocalFile() for url in event.mimeData().urls()
+                if os.path.isfile(url.toLocalFile())]
         
         if files:
             self.load_pkg(files[0])
             
             if len(files) > 1:
-                QMessageBox.information(self, "Multiple files", 
-                    "Multiple PKG files were dragged. Only the first file will be loaded.")
+                QMessageBox.information(self, "Multiple sources",
+                    "Multiple sources were dragged. Only the first one will be loaded.")
             
             self._set_drag_style(False)
         
         event.acceptProposedAction()
 
     def load_pkg(self, pkg_path):
-        """Load PKG file"""
+        """Load a package, publishing project, or file into the workspace."""
         try:
             self._dirty = False
             # Chiudi il package precedente se esiste
@@ -864,27 +1006,51 @@ class MainWindow(QMainWindow):
                     if hasattr(self.package, 'close'):
                         self.package.close()
                     self.package = None
+                    self.extract_btn.setEnabled(False)
                     Logger.log_information("Previous package closed")
                 except Exception as e:
                     Logger.log_error(f"Error closing previous package: {str(e)}")
 
-            # Determine package type and load it
-            with open(pkg_path, "rb") as fp:
-                magic = struct.unpack(">I", fp.read(4))[0]
-                if magic == PackagePS4.MAGIC_PS4:
-                    self.package = PackagePS4(pkg_path)
-                    Logger.log_information("PS4 PKG detected")
-                elif magic == PackagePS5.MAGIC_PS5:
-                    self.package = PackagePS5(pkg_path)
-                    Logger.log_information("PS5 PKG detected")
-                elif magic == PackagePS3.MAGIC_PS3:
-                    self.package = PackagePS3(pkg_path)
-                    Logger.log_information("PS3 PKG detected")
-                else:
-                    raise ValueError(f"Unknown PKG format: {magic:08X}")
+            self.package = open_source(pkg_path)
+            self.extract_btn.setEnabled(True)
+            Logger.log_information(f"{type(self.package).__name__} detected")
             
             # Update UI
             self.pkg_entry.setText(pkg_path)
+            is_project = isinstance(self.package, (GP4Project, GP5Project))
+            is_file = isinstance(self.package, StandaloneFileSource)
+            supports_pfs = isinstance(self.package, (PackagePS4, PackagePS5))
+            self.extract_btn.setText(
+                "Export project files" if is_project else
+                "Export file" if is_file else
+                "Extract package"
+            )
+            self.extract_btn.setToolTip(
+                "Copy the files mapped by this publishing project to a clean folder"
+                if is_project else
+                "Copy this file to a destination folder" if is_file else
+                "Extract the loaded package into a destination folder"
+            )
+            self.contents_workspace.setTabEnabled(
+                self.contents_workspace.indexOf(self.pfs_info_tab), supports_pfs
+            )
+            self.tools_workspace.setTabEnabled(
+                self.tools_workspace.indexOf(self.bruteforce_tab), not (is_project or is_file)
+            )
+            self.modify_tab.sub_tabs.setTabEnabled(2, not (is_project or is_file))
+            self.contents_workspace.setTabToolTip(
+                self.contents_workspace.indexOf(self.pfs_info_tab),
+                "PFS inspection applies to PS4/PS5 package images" if not supports_pfs else "Inspect the package filesystem",
+            )
+            self.tools_workspace.setTabToolTip(
+                self.tools_workspace.indexOf(self.bruteforce_tab),
+                "Encryption checks apply to package images" if (is_project or is_file) else "Inspect package encryption",
+            )
+            self.drag_drop_label.setText(
+                "Publishing project loaded" if is_project else
+                "Standalone file loaded" if is_file else
+                "Package loaded"
+            )
             self.load_pkg_icon()
             
             # Il tab Modify segue il PKG caricato
@@ -900,19 +1066,23 @@ class MainWindow(QMainWindow):
             # Update info tab
             info_dict = self.package.get_info()
             self.update_info(info_dict)
+            if hasattr(self.info_tab, 'update_source'):
+                self.info_tab.update_source(self.package)
             
             # Cerca e carica automaticamente i file dei trofei
             self.load_trophy_files()
             
-            Logger.log_information(f"PKG file loaded successfully: {pkg_path}")
+            self.show_section(self.info_tab)
+            Logger.log_information(f"Source loaded successfully: {pkg_path}")
             
         except Exception as e:
-            error_msg = f"Error loading PKG file: {str(e)}"
+            error_msg = f"Error loading source: {str(e)}"
             Logger.log_error(error_msg)
             QMessageBox.critical(self, "Error", error_msg)
             
             # Reset UI state
             self.package = None
+            self.extract_btn.setEnabled(False)
             self.image_label.clear()
             self.content_id_label.clear()
             if hasattr(self, 'file_browser'):
@@ -921,6 +1091,8 @@ class MainWindow(QMainWindow):
                 self.wallpaper_viewer.clear_viewer()
             if hasattr(self, 'modify_tab'):
                 self.modify_tab.refresh_package()
+            if hasattr(self, 'info_tab') and hasattr(self.info_tab, 'clear_source'):
+                self.info_tab.clear_source()
 
     def load_trophy_files(self):
         """Cerca e carica automaticamente i file dei trofei"""
@@ -932,6 +1104,7 @@ class MainWindow(QMainWindow):
             trophy_files = [
                 f for f in self.package.files.values()
                 if isinstance(f.get("name"), str) and 
+                f.get("present", True) and
                 (f["name"].lower().endswith('.trp') or f["name"].lower().endswith('.ucp'))
             ]
             
@@ -959,9 +1132,6 @@ class MainWindow(QMainWindow):
                 # Mostra le informazioni nel text edit
                 self.trophy_info.setText(self._build_trophy_info(trophy_reader, temp_path))
                 
-                # Passa alla tab dei trofei
-                self.tab_widget.setCurrentWidget(self.trophy_tab)
-                
                 Logger.log_information(f"Trophy file loaded: {trophy_file['name']}")
                 
         except Exception as e:
@@ -970,22 +1140,34 @@ class MainWindow(QMainWindow):
     def load_pkg_icon(self):
         """Load and display PKG icon"""
         try:
+            self.image_label.clear()
+            self.image_label.setText("No icon")
+            self.content_id_label.clear()
             # Get content ID
             content_id = self.get_content_id()
             if content_id:
                 self.content_id_label.setText(f"Content ID: {content_id}")
             
             # Find icon file
-            icon_file = next((f for f in self.package.files.values() 
-                            if isinstance(f, dict) and 
-                            f.get('name', '').lower() in ['icon0.png', 'ICON0.PNG']), None)
+            icon_file = next((
+                f for f in self.package.files.values()
+                if isinstance(f, dict)
+                and f.get("present", True)
+                and (
+                    f.get('name', '').replace('\\', '/').lower().endswith('/icon0.png')
+                    or f.get('name', '').lower() == 'icon0.png'
+                )
+            ), None)
+            if icon_file is None and isinstance(self.package, StandaloneFileSource):
+                only_file = self.package.files.get(0)
+                if only_file and only_file.get("name", "").lower().endswith((".png", ".jpg", ".jpeg")):
+                    icon_file = only_file
             
             if icon_file:
                 # Load and display icon (scaled to the 180px panel card)
                 icon_data = self.package.read_file(icon_file['id'])
                 pixmap = ImageUtils.create_thumbnail(icon_data)
-                pixmap = pixmap.scaled(180, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                self.image_label.setPixmap(pixmap)
+                self.image_label.setPixmap(scale_pixmap_sharp(pixmap, 180, 180))
                 self.image_label.setAlignment(Qt.AlignCenter)
                 
         except Exception as e:
@@ -998,12 +1180,7 @@ class MainWindow(QMainWindow):
             if not self.package:
                 return None
             
-            if isinstance(self.package, PackagePS3):
-                return getattr(self.package, 'content_id', None)
-            elif isinstance(self.package, (PackagePS4, PackagePS5)):
-                return getattr(self.package, 'pkg_content_id', None)
-            
-            return None
+            return getattr(self.package, 'content_id', None)
             
         except Exception as e:
             logging.error(f"Error getting content ID: {str(e)}")
@@ -1020,45 +1197,6 @@ class MainWindow(QMainWindow):
         self.info_tree.setColumnWidth(1, 200)
         layout.addWidget(self.info_tree)
 
-    def setup_extract_tab(self):
-        """Setup the extract tab"""
-        layout = QVBoxLayout(self.extract_tab)
-        
-        # Output path selection
-        output_layout = QHBoxLayout()
-        self.extract_out_entry = QLineEdit()
-        self.extract_out_entry.setPlaceholderText("Select output directory")
-        browse_button = QPushButton("Browse")
-        browse_button.clicked.connect(lambda: self.browse_directory(self.extract_out_entry))
-        output_layout.addWidget(self.extract_out_entry)
-        output_layout.addWidget(browse_button)
-        layout.addLayout(output_layout)
-        
-        # PFS Info controls
-        pfs_controls = QHBoxLayout()
-        self.pfs_info_button = QPushButton("PFS Info (shadPKG)")
-        self.pfs_info_button.setToolTip("Show PFS structure without extracting files")
-        self.pfs_info_button.clicked.connect(self.run_pfs_info)
-        pfs_controls.addWidget(self.pfs_info_button)
-        pfs_controls.addStretch(1)
-        layout.addLayout(pfs_controls)
-
-        # PFS Info output
-        self.pfs_info_view = QTextEdit()
-        self.pfs_info_view.setReadOnly(True)
-        self.pfs_info_view.setPlaceholderText("Output PFS Info (shadPKG)")
-        layout.addWidget(self.pfs_info_view)
-
-        # Extract log
-        self.extract_log = QTextEdit()
-        self.extract_log.setReadOnly(True)
-        layout.addWidget(self.extract_log)
-        
-        # Extract button
-        extract_button = QPushButton("Extract")
-        extract_button.clicked.connect(self.extract_pkg)
-        layout.addWidget(extract_button)
-
     def setup_trophy_tab(self):
         """Setup the trophy tab"""
         layout = QVBoxLayout(self.trophy_tab)
@@ -1069,34 +1207,12 @@ class MainWindow(QMainWindow):
         
         self.trophy_entry = QLineEdit()
         self.trophy_entry.setPlaceholderText("Select trophy file (.trp)")
-        self.trophy_entry.setStyleSheet("""
-            QLineEdit {
-                padding: 8px;
-                border: 2px solid #3498db;
-                border-radius: 15px;
-                font-size: 14px;
-            }
-        """)
         
         browse_button = QPushButton("Browse")
-        browse_button.setStyleSheet("""
-            QPushButton {
-                padding: 8px 15px;
-                background: #3498db;
-                color: white;
-                border: none;
-                border-radius: 15px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background: #2980b9;
-            }
-        """)
         browse_button.clicked.connect(self.browse_trophy)
         
-        pkg_button = QPushButton("From PKG")
-        pkg_button.setStyleSheet(browse_button.styleSheet())
-        pkg_button.setToolTip("Pick a trophy file from the loaded PKG")
+        pkg_button = QPushButton("From contents")
+        pkg_button.setToolTip("Pick a trophy file from the loaded source")
         pkg_button.clicked.connect(self.pick_pkg_trophy)
         
         file_layout.addWidget(self.trophy_entry)
@@ -1116,10 +1232,8 @@ class MainWindow(QMainWindow):
         np_layout.addWidget(self.trophy_npcommid_entry, 1)
         np_layout.addWidget(np_apply_btn)
         self.trophy_npcommid_hint = QLabel(
-            "Se il config dei trofei è cifrato (ESFM), il tipo/grade restano sconosciuti "
-            "finché non viene fornito l'NP Comm ID del gioco. Non è nel PKG: si trova ad es. "
-            "nei dati trofeo della console, cercando \"<gioco> NPWR\" nei forum trofei, o "
-            "decifrando il config con un token PSN."
+            "Only needed when the trophy config (ESFM) is encrypted. The NPWR identifier "
+            "can be recovered from console trophy data or trusted trophy databases."
         )
         self.trophy_npcommid_hint.setWordWrap(True)
         np_layout.addWidget(self.trophy_npcommid_hint, 2)
@@ -1150,22 +1264,15 @@ class MainWindow(QMainWindow):
         
         # Trophy image viewer
         self.trophy_image_viewer = QLabel()
+        self.trophy_image_viewer.setObjectName("previewCanvas")
         self.trophy_image_viewer.setAlignment(Qt.AlignCenter)
-        self.trophy_image_viewer.setStyleSheet("""
-            QLabel {
-                background-color: white;
-                border: 1px solid #3498db;
-                border-radius: 5px;
-                min-height: 300px;
-            }
-        """)
+        self.trophy_image_viewer.setMinimumHeight(180)
         right_panel.addWidget(self.trophy_image_viewer)
         
         # Trophy details
         self.trophy_details = QTextEdit()
         self.trophy_details.setReadOnly(True)
         self.trophy_details.setMaximumHeight(150)
-        self.trophy_details.setStyleSheet(self.trophy_info.styleSheet())
         right_panel.addWidget(self.trophy_details)
         
         # Navigation buttons
@@ -1173,9 +1280,6 @@ class MainWindow(QMainWindow):
         self.prev_trophy_button = QPushButton("Previous")
         self.next_trophy_button = QPushButton("Next")
         
-        for button in [self.prev_trophy_button, self.next_trophy_button]:
-            button.setStyleSheet(browse_button.styleSheet())
-            
         self.prev_trophy_button.clicked.connect(self.show_previous_trophy)
         self.next_trophy_button.clicked.connect(self.show_next_trophy)
         
@@ -1195,9 +1299,6 @@ class MainWindow(QMainWindow):
         self.trophy_recompile_button = QPushButton("Recompile TRP")
         self.trophy_decrypt_button = QPushButton("Decrypt Trophy")
         
-        for button in [self.trophy_edit_button, self.trophy_recompile_button, self.trophy_decrypt_button]:
-            button.setStyleSheet(browse_button.styleSheet())
-            
         self.trophy_edit_button.clicked.connect(self.edit_trophy_info)
         self.trophy_recompile_button.clicked.connect(self.recompile_trp)
         self.trophy_decrypt_button.clicked.connect(self.decrypt_trophy)
@@ -1218,9 +1319,8 @@ class MainWindow(QMainWindow):
         self.esmf_file_entry.setPlaceholderText("Select ESMF file")
         browse_button = QPushButton("Browse")
         browse_button.clicked.connect(lambda: self.browse_file(self.esmf_file_entry, "ESMF files (*.ESMF)"))
-        pkg_button = QPushButton("From PKG")
-        pkg_button.setStyleSheet(browse_button.styleSheet())
-        pkg_button.setToolTip("Pick an ESMF file from the loaded PKG")
+        pkg_button = QPushButton("From contents")
+        pkg_button.setToolTip("Pick an ESMF file from the loaded source")
         pkg_button.clicked.connect(self.pick_pkg_esmf)
         file_layout.addWidget(self.esmf_file_entry)
         file_layout.addWidget(browse_button)
@@ -1264,35 +1364,13 @@ class MainWindow(QMainWindow):
         file_layout = QHBoxLayout()
         
         self.ps5_game_path_entry = QLineEdit()
-        self.ps5_game_path_entry.setPlaceholderText("Select eboot.bin or param.json file")
-        self.ps5_game_path_entry.setStyleSheet("""
-            QLineEdit {
-                padding: 8px;
-                border: 2px solid #3498db;
-                border-radius: 15px;
-                font-size: 14px;
-            }
-        """)
+        self.ps5_game_path_entry.setPlaceholderText("Select eboot.bin, param.json or param.sfo file")
         
         browse_button = QPushButton("Browse")
-        browse_button.setStyleSheet("""
-            QPushButton {
-                padding: 8px 15px;
-                background: #3498db;
-                color: white;
-                border: none;
-                border-radius: 15px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background: #2980b9;
-            }
-        """)
         browse_button.clicked.connect(self.browse_ps5_game_file)
         
-        pkg_button = QPushButton("From PKG")
-        pkg_button.setStyleSheet(browse_button.styleSheet())
-        pkg_button.setToolTip("Pick eboot.bin/param.json from the loaded PKG")
+        pkg_button = QPushButton("From contents")
+        pkg_button.setToolTip("Pick eboot.bin / param.json / param.sfo from the loaded source")
         pkg_button.clicked.connect(self.pick_pkg_ps5)
         
         file_layout.addWidget(self.ps5_game_path_entry)
@@ -1306,157 +1384,157 @@ class MainWindow(QMainWindow):
         self.ps5_game_info_table.setColumnCount(2)
         self.ps5_game_info_table.setHorizontalHeaderLabels(["Parameter", "Value"])
         self.ps5_game_info_table.horizontalHeader().setStretchLastSection(True)
-        self.ps5_game_info_table.setStyleSheet("""
-            QTableWidget {
-                border: 1px solid #bdc3c7;
-                border-radius: 5px;
-                gridline-color: #ecf0f1;
-            }
-            QHeaderView::section {
-                background-color: #3498db;
-                color: white;
-                padding: 8px;
-                border: none;
-            }
-            QTableWidget::item {
-                padding: 5px;
-            }
-            QTableWidget::item:selected {
-                background-color: #e8f0fe;
-                color: #2c3e50;
-            }
-        """)
+        self.ps5_game_info_table.setShowGrid(False)
+        self.ps5_game_info_table.setAlternatingRowColors(False)
         layout.addWidget(self.ps5_game_info_table)
         # Track edits so closeEvent can warn about unsaved changes
         self.ps5_game_info_table.itemChanged.connect(self._on_ps5_table_edited)
         
         # Control buttons
         button_layout = QHBoxLayout()
-        save_button = QPushButton("Save Changes")
+        self.ps5_save_button = QPushButton("Save Changes")
         reload_button = QPushButton("Reload")
         
-        for button in [save_button, reload_button]:
-            button.setStyleSheet("""
-                QPushButton {
-                    padding: 8px 20px;
-                    background: #3498db;
-                    color: white;
-                    border: none;
-                    border-radius: 15px;
-                    font-weight: bold;
-                    min-width: 120px;
-                }
-                QPushButton:hover {
-                    background: #2980b9;
-                }
-            """)
-        
-        save_button.clicked.connect(self.save_ps5_game_info)
+        self.ps5_save_button.clicked.connect(self.save_ps5_game_info)
+        self.ps5_save_button.setEnabled(False)
         reload_button.clicked.connect(self.reload_ps5_game_info)
         
         button_layout.addStretch()
-        button_layout.addWidget(save_button)
+        button_layout.addWidget(self.ps5_save_button)
         button_layout.addWidget(reload_button)
         button_layout.addStretch()
         
         layout.addLayout(button_layout)
 
     def browse_ps5_game_file(self):
-        """Browse for PS5 game file"""
+        """Browse for a PS5/PS4 game file"""
         filename, _ = QFileDialog.getOpenFileName(
             self,
-            "Select eboot.bin or param.json",
+            "Select eboot.bin, param.json or param.sfo",
             "",
-            "PS5 Game Files (eboot.bin param.json);;All files (*.*)"
+            "Game Files (eboot.bin param.json param.sfo);;All files (*.*)"
         )
         if filename:
             self.ps5_game_path_entry.setText(filename)
             self.load_ps5_game_info(filename)
 
-    def _on_ps5_table_edited(self, _item):
-        """Mark the app as having unsaved changes when the PS5 table is edited."""
+    def _on_ps5_table_edited(self, item):
+        """Mark the app as having unsaved changes when an editable row is edited."""
+        if item.data(Qt.UserRole) == "__header__":
+            return
         if not getattr(self, '_loading_ps5', False):
             self._dirty = True
 
     def load_ps5_game_info(self, file_path):
-        """Load PS5 game info"""
+        """Load game info (eboot.bin + param.json/param.sfo) into the table."""
         try:
             # Create PS5GameInfo instance
             self.ps5_game_info = PS5GameInfo()
-            
+
             # Process the directory containing the file
             directory = os.path.dirname(file_path)
-            info = self.ps5_game_info.process(directory)
-            
+            result = self.ps5_game_info.process(directory)
+            if "error" in result:
+                raise ValueError(result["error"])
+
             # Populate without marking the app dirty (guard flag)
             self._loading_ps5 = True
-            
-            # Clear and resize table
-            self.ps5_game_info_table.setRowCount(0)
-            
-            # Add info to table
-            for key, value in info.items():
-                row = self.ps5_game_info_table.rowCount()
-                self.ps5_game_info_table.insertRow(row)
-                
-                # Add key and value
-                self.ps5_game_info_table.setItem(row, 0, QTableWidgetItem(str(key)))
-                self.ps5_game_info_table.setItem(row, 1, QTableWidgetItem(str(value)))
-            
-            # Adjust columns
-            self.ps5_game_info_table.resizeColumnsToContents()
+            table = self.ps5_game_info_table
+            table.setRowCount(0)
+
+            for group in result["groups"]:
+                # Group header row spanning both columns
+                row = table.rowCount()
+                table.insertRow(row)
+                header_item = QTableWidgetItem(str(group["title"]))
+                header_item.setData(Qt.UserRole, "__header__")
+                header_item.setFlags(header_item.flags() & ~Qt.ItemIsEditable)
+                font = header_item.font()
+                font.setBold(True)
+                header_item.setFont(font)
+                table.setItem(row, 0, header_item)
+                table.setSpan(row, 0, 1, 2)
+
+                for label, value, editable, target in group["rows"]:
+                    row = table.rowCount()
+                    table.insertRow(row)
+                    key_item = QTableWidgetItem(str(label))
+                    value_item = QTableWidgetItem(str(value))
+                    if not editable:
+                        key_item.setFlags(key_item.flags() & ~Qt.ItemIsEditable)
+                        value_item.setFlags(value_item.flags() & ~Qt.ItemIsEditable)
+                    # The param.json target path for save-back (None = read-only)
+                    key_item.setData(Qt.UserRole, target)
+                    table.setItem(row, 0, key_item)
+                    table.setItem(row, 1, value_item)
+
+            table.resizeColumnsToContents()
             self._loading_ps5 = False
             self._dirty = False
-            
+
+            editable = result.get("editable")
+            self.ps5_save_button.setEnabled(editable == "param.json")
+            if editable == "param.json":
+                self.ps5_save_button.setToolTip("Save changes back to sce_sys/param.json")
+            else:
+                self.ps5_save_button.setToolTip(
+                    "Saving is only available for PS5 packages (param.json)"
+                )
+
         except Exception as e:
             self._loading_ps5 = False
-            QMessageBox.critical(self, "Error", f"Failed to load PS5 game info: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to load game info: {str(e)}")
 
     def save_ps5_game_info(self):
-        """Save PS5 game info changes"""
+        """Save editable PS5 param.json values back to the extracted copy."""
         try:
             if not hasattr(self, 'ps5_game_info'):
-                QMessageBox.warning(self, "Warning", "No PS5 game info loaded")
+                QMessageBox.warning(self, "Warning", "No game info loaded")
                 return
-                
+
             # Get file path
             file_path = self.ps5_game_path_entry.text()
             if not file_path:
                 QMessageBox.warning(self, "Warning", "No file selected")
                 return
-                
-            # Collect changes from table
+
+            if getattr(self.ps5_game_info, "editable", None) != "param.json":
+                QMessageBox.information(
+                    self, "Save",
+                    "Saving is only supported for PS5 packages (param.json); "
+                    "PS4 param.sfo is shown read-only."
+                )
+                return
+
+            # Collect only editable rows (header rows carry no target path).
             changes = {}
-            for row in range(self.ps5_game_info_table.rowCount()):
-                key = self.ps5_game_info_table.item(row, 0).text()
-                value = self.ps5_game_info_table.item(row, 1).text()
-                changes[key] = value
-            
-            # Update the main_dict in PS5GameInfo
-            self.ps5_game_info.main_dict = changes
-            
-            # Save changes to param.json
-            param_json_path = os.path.join(os.path.dirname(file_path), "sce_sys/param.json")
-            if os.path.exists(param_json_path):
-                with open(param_json_path, "r+") as f:
-                    existing_data = json.load(f)
-                    for key, value in changes.items():
-                        if key in existing_data:
-                            existing_data[key] = value
-                    f.seek(0)
-                    json.dump(existing_data, f, indent=4)
-                    f.truncate()
-                
-                self._dirty = False
-                QMessageBox.information(self, "Success", "Changes saved successfully")
-            else:
+            table = self.ps5_game_info_table
+            for row in range(table.rowCount()):
+                key_item = table.item(row, 0)
+                value_item = table.item(row, 1)
+                if key_item is None or value_item is None:
+                    continue
+                target = key_item.data(Qt.UserRole)
+                if not target or target == "__header__":
+                    continue
+                changes[target] = value_item.text()
+
+            param_json_path = os.path.join(
+                os.path.dirname(file_path), "sce_sys", "param.json"
+            )
+            if not os.path.exists(param_json_path):
                 QMessageBox.warning(self, "Error", "param.json file not found")
-                
+                return
+            applied = self.ps5_game_info.save_param_json(param_json_path, changes)
+            self._dirty = False
+            QMessageBox.information(
+                self, "Success", f"Saved {applied} change(s) to param.json"
+            )
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save changes: {str(e)}")
 
     def reload_ps5_game_info(self):
-        """Reload PS5 game info"""
+        """Reload game info"""
         file_path = self.ps5_game_path_entry.text()
         if file_path:
             self.load_ps5_game_info(file_path)
@@ -1595,154 +1673,13 @@ class MainWindow(QMainWindow):
             self.bruteforce_log.append(error_msg)
             QMessageBox.critical(self, "Error", error_msg)
 
-    def setup_trp_create_tab(self):
-        """Setup the TRP creation tab"""
-        layout = QVBoxLayout(self.trp_create_tab)
-        
-        # Trophy info
-        info_group = QGroupBox("Trophy Information")
-        info_layout = QGridLayout()
-        
-        # Title input
-        self.trp_title_edit = QLineEdit()
-        self.trp_title_edit.setPlaceholderText("Enter trophy title")
-        info_layout.addWidget(QLabel("Title:"), 0, 0)
-        info_layout.addWidget(self.trp_title_edit, 0, 1)
-        
-        # NPCommID input
-        self.trp_npcommid_edit = QLineEdit()
-        self.trp_npcommid_edit.setPlaceholderText("Enter NPCommID")
-        info_layout.addWidget(QLabel("NPCommID:"), 1, 0)
-        info_layout.addWidget(self.trp_npcommid_edit, 1, 1)
-        
-        # Trophy count
-        self.trp_trophy_count = QSpinBox()
-        self.trp_trophy_count.setRange(1, 100)
-        self.trp_trophy_count.setValue(1)
-        info_layout.addWidget(QLabel("Trophy Count:"), 2, 0)
-        info_layout.addWidget(self.trp_trophy_count, 2, 1)
-        
-        info_group.setLayout(info_layout)
-        layout.addWidget(info_group)
-        
-        # File list
-        files_group = QGroupBox("Trophy Files")
-        files_layout = QVBoxLayout()
-        
-        self.trophy_files_list = QTreeWidget()
-        self.trophy_files_list.setHeaderLabels(["Name", "Size"])
-        files_layout.addWidget(self.trophy_files_list)
-        
-        # Add file buttons
-        add_buttons = QHBoxLayout()
-        add_file_button = QPushButton("Add Trophy Files")
-        add_file_button.clicked.connect(self.add_trophy_files)
-        add_pkg_button = QPushButton("Add from PKG")
-        add_pkg_button.setToolTip("Add trophy images from the loaded PKG")
-        add_pkg_button.clicked.connect(self.add_pkg_trophy_files)
-        add_buttons.addWidget(add_file_button)
-        add_buttons.addWidget(add_pkg_button)
-        files_layout.addLayout(add_buttons)
-        
-        files_group.setLayout(files_layout)
-        layout.addWidget(files_group)
-        
-        # Create button
-        create_button = QPushButton("Create TRP")
-        create_button.clicked.connect(self.create_trp)
-        layout.addWidget(create_button)
-        
-        # Log display
-        self.trp_create_log = QTextEdit()
-        self.trp_create_log.setReadOnly(True)
-        layout.addWidget(self.trp_create_log)
-
-    def add_trophy_files(self):
-        """Add trophy files to the list"""
-        files, _ = QFileDialog.getOpenFileNames(
-            self,
-            "Select Trophy Files",
-            "",
-            "Trophy Files (*.png *.jpg *.jpeg)"
-        )
-        
-        if files:
-            for file_path in files:
-                try:
-                    with open(file_path, 'rb') as f:
-                        data = f.read()
-                    
-                    file_name = os.path.basename(file_path)
-                    size = len(data)
-                    
-                    item = QTreeWidgetItem(self.trophy_files_list)
-                    item.setText(0, file_name)
-                    item.setText(1, FileUtils.format_size(size))
-                    item.setData(0, Qt.UserRole, {
-                        'path': file_path,
-                        'data': data,
-                        'size': size
-                    })
-                    
-                except Exception as e:
-                    QMessageBox.warning(self, "Error", f"Failed to add file {file_path}: {str(e)}")
-
-    def create_trp(self):
-        """Create TRP file"""
-        if not self.trophy_files_list.topLevelItemCount():
-            QMessageBox.warning(self, "Warning", "Please add trophy files first")
-            return
-            
-        title = self.trp_title_edit.text()
-        npcommid = self.trp_npcommid_edit.text()
-        
-        if not title or not npcommid:
-            QMessageBox.warning(self, "Warning", "Please enter title and NPCommID")
-            return
-            
-        try:
-            # Get save location
-            output_path, _ = QFileDialog.getSaveFileName(
-                self,
-                "Save TRP File",
-                "",
-                "TRP files (*.trp)"
-            )
-            
-            if not output_path:
-                return
-                
-            # Create TRP
-            creator = TRPCreator()
-            creator.SetVersion = 1  # Imposta la versione a 1
-            
-            # Raccogli tutti i file
-            files = []
-            root = self.trophy_files_list.invisibleRootItem()
-            for i in range(root.childCount()):
-                item = root.child(i)
-                file_data = item.data(0, Qt.UserRole)
-                files.append(file_data['path'])
-            
-            # Crea il file TRP
-            try:
-                creator.Create(output_path, files)
-                self.trp_create_log.append(f"TRP file created successfully: {output_path}")
-                QMessageBox.information(self, "Success", "TRP file created successfully")
-            except Exception as e:
-                raise Exception(f"Failed to create TRP: {str(e)}")
-            
-        except Exception as e:
-            self.trp_create_log.append(f"Error creating TRP: {str(e)}")
-            QMessageBox.critical(self, "Error", f"Failed to create TRP: {str(e)}")
-
     def browse_pkg(self):
-        """Browse for PKG file"""
+        """Browse for a supported package or project source."""
         filename, _ = QFileDialog.getOpenFileName(
             self, 
-            "Select PKG file",
+            "Open package, publishing project or file",
             "",
-            "PKG files (*.pkg)"
+            "All files (*.*);;Packages and projects (*.pkg *.gp4 *.gp5);;PKG packages (*.pkg);;Publishing projects (*.gp4 *.gp5)"
         )
         if filename:
             self.pkg_entry.setText(filename)
@@ -1768,53 +1705,50 @@ class MainWindow(QMainWindow):
         if directory:
             entry_widget.setText(directory)
 
-    def extract_pkg(self):
-        """Extract PKG contents"""
+    def extract_pkg_dialog(self):
+        """Extract a package or export the active source.
+
+        A modal dialog asks for the destination directory, then the extraction
+        runs in a background thread to keep the UI responsive.
+        """
         if not self.package:
-            QMessageBox.warning(self, "Warning", "Please load a PKG file first")
+            QMessageBox.warning(self, "Extract", "Load a package, project, or file first.")
             return
-
-        output_dir = self.extract_out_entry.text()
+        output_dir = QFileDialog.getExistingDirectory(
+            self, "Select destination folder"
+        )
         if not output_dir:
-            QMessageBox.warning(self, "Warning", "Please select an output directory")
             return
 
-        # Run extraction in background to keep UI responsive
+        # Extract into a sub-folder named after the package title ID
+        # (e.g. PPSA99099), recovered from the PKG itself.
+        extract_dir = os.path.join(
+            output_dir, self.package.get_title_id_folder_name()
+        )
+
+        self.extract_btn.setEnabled(False)
+
+        class ExtractWorker(QObject):
+            finished = Signal(str)
+            failed = Signal(str)
+
+            def __init__(self, pkg, out_dir):
+                super().__init__()
+                self._pkg = pkg
+                self._out = out_dir
+
+            def run(self):
+                try:
+                    result = self._pkg.dump(self._out)
+                    self.finished.emit(result)
+                except Exception as e:
+                    self.failed.emit(str(e))
+
         try:
-            self.extract_log.append(f"[+] Starting extraction to: {output_dir}")
-
-            class ExtractWorker(QObject):
-                progress = Signal(str)
-                finished = Signal(str)
-                failed = Signal(str)
-
-                def __init__(self, pkg, out_dir):
-                    super().__init__()
-                    self._pkg = pkg
-                    self._out = out_dir
-
-                def run(self):
-                    try:
-                        # Prefer shadPKG for PS4, fallback to internal dump
-                        if isinstance(self._pkg, PackagePS4):
-                            try:
-                                result = self._pkg.extract_via_shadpkg(self._out)
-                            except Exception as e:
-                                Logger.log_warning(f"shadPKG failed, using internal extraction: {e}")
-                                self.progress.emit(f"[-] shadPKG failed, using internal extraction: {e}")
-                                result = self._pkg.dump(self._out)
-                        else:
-                            result = self._pkg.dump(self._out)
-                        self.finished.emit(result)
-                    except Exception as e:
-                        self.failed.emit(str(e))
-
-            # Create thread and worker
             self.extract_thread = QThread(self)
-            self.extract_worker = ExtractWorker(self.package, output_dir)
+            self.extract_worker = ExtractWorker(self.package, extract_dir)
             self.extract_worker.moveToThread(self.extract_thread)
             self.extract_thread.started.connect(self.extract_worker.run)
-            self.extract_worker.progress.connect(self.extract_log.append)
             # Bound methods (not closures) so Qt delivers them in the main
             # thread via queued connection (closures would run in the worker
             # thread and crash on macOS).
@@ -1823,85 +1757,24 @@ class MainWindow(QMainWindow):
             self.extract_thread.finished.connect(self.extract_thread.deleteLater)
             self.extract_thread.start()
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to start extraction: {str(e)}")
+            self.extract_btn.setEnabled(True)
+            QMessageBox.critical(self, "Extract", f"Failed to start extraction: {str(e)}")
 
     def _on_extract_finished(self, msg: str):
         """Main-thread slot: extraction completed."""
         try:
-            self.extract_log.append(msg)
-            QMessageBox.information(self, "Success", "PKG extracted successfully")
+            QMessageBox.information(self, "Extract", msg or "PKG extracted successfully")
         finally:
             self.extract_thread.quit()
+            self.extract_btn.setEnabled(True)
 
     def _on_extract_failed(self, err: str):
         """Main-thread slot: extraction failed."""
         try:
-            QMessageBox.critical(self, "Error", f"Failed to extract PKG: {err}")
+            QMessageBox.critical(self, "Extract", f"Failed to extract PKG: {err}")
         finally:
             self.extract_thread.quit()
-
-
-    def run_pfs_info(self):
-        """Run shadPKG pfs-info in background and display result"""
-        if not self.package:
-            QMessageBox.warning(self, "PFS Info", "Please load a PKG file first")
-            return
-        if not isinstance(self.package, PackagePS4):
-            QMessageBox.warning(self, "PFS Info", "PFS Info è disponibile solo per PKG PS4")
-            return
-
-        # Disable button to prevent multiple runs
-        self.pfs_info_button.setEnabled(False)
-        self.pfs_info_view.clear()
-        self.pfs_info_view.append("[+] Running shadPKG pfs-info...\n")
-
-        class PfsInfoWorker(QObject):
-            finished = Signal(str)
-            failed = Signal(str)
-
-            def __init__(self, pkg):
-                super().__init__()
-                self._pkg = pkg
-
-            def run(self):
-                try:
-                    output = self._pkg.get_pfs_info(as_json=False)
-                    self.finished.emit(output)
-                except Exception as e:
-                    self.failed.emit(str(e))
-
-        try:
-            self.pfs_thread = QThread(self)
-            self.pfs_worker = PfsInfoWorker(self.package)
-            self.pfs_worker.moveToThread(self.pfs_thread)
-            self.pfs_thread.started.connect(self.pfs_worker.run)
-            # Bound methods (not closures) so Qt delivers them in the main
-            # thread via queued connection (closures would run in the worker
-            # thread and crash on macOS).
-            self.pfs_worker.finished.connect(self._on_pfs_info_done)
-            self.pfs_worker.failed.connect(self._on_pfs_info_failed)
-            self.pfs_thread.finished.connect(self.pfs_thread.deleteLater)
-            self.pfs_thread.start()
-        except Exception as e:
-            self.pfs_info_button.setEnabled(True)
-            QMessageBox.critical(self, "PFS Info", f"Failed to start pfs-info: {e}")
-
-    def _on_pfs_info_done(self, text: str):
-        """Main-thread slot: display pfs-info output."""
-        try:
-            self.pfs_info_view.clear()
-            self.pfs_info_view.append(text or "<no output>")
-        finally:
-            self.pfs_thread.quit()
-            self.pfs_info_button.setEnabled(True)
-
-    def _on_pfs_info_failed(self, err: str):
-        """Main-thread slot: show the pfs-info error dialog."""
-        try:
-            QMessageBox.critical(self, "PFS Info", f"Failed: {err}")
-        finally:
-            self.pfs_thread.quit()
-            self.pfs_info_button.setEnabled(True)
+            self.extract_btn.setEnabled(True)
 
     def decrypt_esmf(self):
         """Decrypt ESMF file"""
@@ -2107,9 +1980,9 @@ class MainWindow(QMainWindow):
             "About PKG Tool Box",
             """<h3>PKG Tool Box v1.5.0</h3>
             <p>Created by SeregonWar</p>
-            <p>A tool for managing PS3/PS4/PS5 PKG files.</p>
+            <p>A workspace for PlayStation packages, GP4/GP5 projects, and standalone files.</p>
             <p><a href="https://github.com/seregonwar">GitHub</a> | 
-            <a href="https://ko-fi.com/seregon">Support on Ko-fi</a></p>"""
+            <a href="https://www.seregonwar.com/donations">Support SeregonWar</a></p>"""
         )
 
     def update_info(self, info_dict):
@@ -2125,8 +1998,6 @@ class MainWindow(QMainWindow):
         output_dir = os.path.join(os.path.dirname(filename), "output")
         
         # Update entries in various tabs
-        if hasattr(self.extract_tab, 'extract_out_entry'):
-            self.extract_tab.extract_out_entry.setText(output_dir)
         if hasattr(self.bruteforce_tab, 'bruteforce_out_entry'):
             self.bruteforce_tab.bruteforce_out_entry.setText(output_dir)
 
@@ -2134,11 +2005,10 @@ class MainWindow(QMainWindow):
         """Setup keyboard shortcuts"""
         shortcuts = {
             'Ctrl+O': self.browse_pkg,
-            'Ctrl+E': lambda: self.tab_widget.setCurrentWidget(self.extract_tab),
-            'Ctrl+I': lambda: self.tab_widget.setCurrentWidget(self.info_tab),
+            'Ctrl+I': lambda: self.show_section(self.info_tab),
             'Ctrl+F': self.file_browser.file_search.setFocus,
             'Ctrl+B': self.toggle_sidebar,  # Toggle sidebar
-            'Ctrl+W': lambda: self.tab_widget.setCurrentWidget(self.wallpaper_viewer),
+            'Ctrl+W': lambda: self.show_section(self.contents_workspace, self.wallpaper_viewer),
             'Ctrl+T': self.show_theme_menu,  # Open theme menu
             'F5': self.refresh_all,
             'F11': self.toggle_fullscreen
@@ -2148,20 +2018,17 @@ class MainWindow(QMainWindow):
             sc = QShortcut(QKeySequence(key), self)
             sc.activated.connect(func)
 
-        # Alt+1..9 to jump to primary sections
+        # Alt+1..4 follows the visible primary navigation.
         tab_widgets = [
             self.info_tab,
-            self.file_browser,
-            self.wallpaper_viewer,
-            self.extract_tab,
+            self.contents_workspace,
             self.modify_tab,
-            self.trophy_tab,
-            self.esmf_decrypter_tab,
+            self.tools_workspace,
         ]
         for i, widget in enumerate(tab_widgets, start=1):
             seq = QKeySequence(f"Alt+{i}")
             qs = QShortcut(seq, self)
-            qs.activated.connect(lambda w=widget: self.tab_widget.setCurrentWidget(w))
+            qs.activated.connect(lambda w=widget: self.show_section(w))
 
     def setup_search(self):
         """Setup global search"""
@@ -2193,9 +2060,16 @@ class MainWindow(QMainWindow):
                     results.append(('File', file_info['name']))
         
         # Cerca nelle info
-        for key, value in self.info_tree.items():
-            if text.lower() in str(value).lower():
-                results.append(('Info', f"{key}: {value}"))
+        info_table = getattr(self.info_tab, "info_table", None)
+        if info_table is not None:
+            for row in range(info_table.rowCount()):
+                key_item = info_table.item(row, 0)
+                value_item = info_table.item(row, 1)
+                if not key_item or not value_item:
+                    continue
+                key, value = key_item.text(), value_item.text()
+                if text.lower() in value.lower() or text.lower() in key.lower():
+                    results.append(('Info', f"{key}: {value}"))
         
         # Mostra risultati
         self.show_search_results(results)
@@ -2468,12 +2342,12 @@ class MainWindow(QMainWindow):
     # Selezione di file estratti dal PKG caricato
     # ------------------------------------------------------------------
     def _pick_pkg_file(self, file_filter=None, multi=False,
-                       title="Select a file from the loaded PKG"):
+                       title="Select a file from the loaded source"):
         """Apre il picker dei file del PKG caricato. Ritorna i file_info
         selezionati (vuoto se annullato o senza PKG)."""
         if not self.package:
             QMessageBox.information(
-                self, "PKG", "Load a PKG file first to pick files from it."
+                self, "Contents", "Load a package, project, or file first."
             )
             return []
         dlg = PkgFilePickerDialog(
@@ -2505,14 +2379,24 @@ class MainWindow(QMainWindow):
             shutil.rmtree(out_root, ignore_errors=True)
         os.makedirs(out_root, exist_ok=True)
 
+        # Search the PFS payloads too: on PS5 packages eboot.bin lives inside
+        # the PFS image, not in the CNT entry table.
+        files = (
+            self.package.get_all_files().values()
+            if hasattr(self.package, "get_all_files")
+            else self.package.files.values()
+        )
         if folder:
             prefix = folder + "/"
-            needed = [f for f in self.package.files.values()
-                      if f.get("name", "").startswith(prefix)]
+            needed = [f for f in files if f.get("name", "").startswith(prefix)]
         else:
-            # File alla radice: estrai solo ciò che serve a PS5GameInfo
-            needed = [f for f in self.package.files.values()
-                      if f.get("name") in ("eboot.bin", "sce_sys/param.json")]
+            # File alla radice: estrai ciò che serve a GameInfo (eboot.bin +
+            # param.json per PS5, param.sfo per PS4). Il nome può essere
+            # "sce_sys/param.json" oppure "param.json" a seconda di come il
+            # PKG archivia i nomi CNT.
+            root_names = ("eboot.bin", "sce_sys/param.json", "sce_sys/param.sfo",
+                          "param.json", "param.sfo")
+            needed = [f for f in files if f.get("name") in root_names]
         if not needed:
             needed = [file_info]
 
@@ -2521,7 +2405,10 @@ class MainWindow(QMainWindow):
             out_path = os.path.join(out_root, rel)
             os.makedirs(os.path.dirname(out_path), exist_ok=True)
             with open(out_path, "wb") as fh:
-                fh.write(self.package.read_file(f["id"]))
+                # An encrypted eboot.bin entry (PS4) is written raw so the
+                # parser can report it as encrypted instead of failing.
+                allow_encrypted = str(rel).endswith("eboot.bin")
+                fh.write(self.package.read_file(f["id"], allow_encrypted=allow_encrypted))
         return os.path.join(out_root, folder) if folder else out_root
 
     def pick_pkg_trophy(self):
@@ -2546,10 +2433,10 @@ class MainWindow(QMainWindow):
         )
 
     def pick_pkg_ps5(self):
-        """Seleziona eboot.bin/param.json dal PKG e carica le info PS5."""
+        """Seleziona eboot.bin/param.json/param.sfo dal PKG e carica le info."""
         infos = self._pick_pkg_file(
-            file_filter=[".bin", ".json"],
-            title="Select eboot.bin or param.json from the PKG",
+            file_filter=[".bin", ".json", ".sfo"],
+            title="Select eboot.bin, param.json or param.sfo from the PKG",
         )
         if not infos:
             return
@@ -2559,25 +2446,6 @@ class MainWindow(QMainWindow):
         )
         self.ps5_game_path_entry.setText(picked_path)
         self.load_ps5_game_info(picked_path)
-
-    def add_pkg_trophy_files(self):
-        """Aggiunge immagini trofeo dal PKG alla lista Create TRP."""
-        infos = self._pick_pkg_file(
-            file_filter=[".png", ".jpg", ".jpeg"], multi=True,
-            title="Select trophy images from the PKG",
-        )
-        for info in infos:
-            path = self._extract_pkg_file(info, subdir="trp_src")
-            with open(path, "rb") as f:
-                data = f.read()
-            item = QTreeWidgetItem(self.trophy_files_list)
-            item.setText(0, os.path.basename(path))
-            item.setText(1, FileUtils.format_size(len(data)))
-            item.setData(0, Qt.UserRole, {
-                "path": path,
-                "data": data,
-                "size": len(data),
-            })
 
     def display_selected_trophy(self, item, column):
         """Display selected trophy information"""
@@ -2829,12 +2697,14 @@ class MainWindow(QMainWindow):
         self.help_menu.setTitle(self.translator.translate("Help"))
         
         # Update actions
-        self.open_action.setText(self.translator.translate("Open PKG"))
+        self.open_action.setText(self.translator.translate("Open source…"))
         self.exit_action.setText(self.translator.translate("Exit"))
         
         # Update tab names
-        self.tab_widget.setTabText(0, self.translator.translate("Info"))
-        self.tab_widget.setTabText(1, self.translator.translate("File Browser"))
+        self.tab_widget.setTabText(0, self.translator.translate("Overview"))
+        self.tab_widget.setTabText(1, self.translator.translate("Contents"))
+        self.tab_widget.setTabText(2, self.translator.translate("Inspect & edit"))
+        self.tab_widget.setTabText(3, self.translator.translate("Tools"))
 
         
         # Force update
@@ -2852,14 +2722,103 @@ class MainWindow(QMainWindow):
             pass
         return False
 
-    def show_update_dialog(self, version, download_url):
-        """Show update dialog when new version is available"""
-        dialog = UpdateDialog(version, download_url, self)
-        dialog.exec()
+    def show_update_banner(self, version, download_url, assets=None):
+        """Show the in-app banner when a newer release is detected."""
+        self._update_info = {
+            "version": version,
+            "download_url": download_url,
+            "assets": assets or [],
+        }
+        self.update_banner_label.setText(
+            f"New version <b>{version}</b> available "
+            f"(you're on {UpdateChecker.CURRENT_VERSION})"
+        )
+        self.update_download_btn.setEnabled(True)
+        self.update_install_btn.setEnabled(
+            pick_asset_for_current_platform(self._update_info["assets"]) is not None
+        )
+        self.update_banner.setVisible(True)
+
+    def _open_update_page(self):
+        """Open the release page for the detected update in the browser."""
+        if self._update_info:
+            QDesktopServices.openUrl(QUrl(self._update_info["download_url"]))
+
+    def _install_update(self):
+        """Download the platform installer and launch it (auto-install)."""
+        if not self._update_info:
+            return
+        asset = pick_asset_for_current_platform(self._update_info["assets"])
+        if asset is None:
+            QMessageBox.information(
+                self, "Update",
+                "No installer is available for your platform yet.\n"
+                "Use Download to open the release page.",
+            )
+            return
+        url = asset.get("browser_download_url")
+        name = asset.get("name", "PkgToolBox-update")
+        dest = os.path.join(os.path.expanduser("~"), ".pkgtoolbox", "updates", name)
+        self.update_install_btn.setEnabled(False)
+        self.update_install_btn.setText("Downloading…")
+        self.progress_bar.setRange(0, 0)  # busy indicator until we know the size
+        self.progress_bar.show()
+        self.update_checker.download_asset(url, dest)
+
+    def _on_update_download_progress(self, received, total):
+        if total > 0:
+            self.progress_bar.setRange(0, total)
+            self.progress_bar.setValue(received)
+        else:
+            self.progress_bar.setRange(0, 0)
+
+    def _on_update_download_finished(self, path):
+        self.progress_bar.hide()
+        self.update_install_btn.setText("Install")
+        self.update_install_btn.setEnabled(True)
+        try:
+            launch_downloaded_asset(path)
+            self.update_banner.hide()
+        except Exception as e:
+            Logger.log_error(f"Failed to launch installer: {e}")
+            QMessageBox.warning(
+                self, "Update",
+                f"The update was downloaded but could not be launched:\n{e}",
+            )
+
+    def _style_update_banner(self):
+        """Restyle the update banner with the active theme colors."""
+        if not hasattr(self, 'update_banner'):
+            return
+        tc = self._current_theme_colors()
+        accent = tc.get("accent", "#3b82f6")
+        bg = tc.get("secondary_bg", tc.get("background", "#1e293b"))
+        text = tc.get("text", "#e2e8f0")
+        border = tc.get("border", "#334155")
+        hover = tc.get("hover", "#334155")
+        self.update_banner.setStyleSheet(
+            "QFrame#updateBanner {"
+            f"background-color: {bg}; border: 1px solid {accent}; border-radius: 10px;"
+            "}"
+            f"QLabel {{ color: {text}; font-size: 13px; }}"
+            f"QPushButton {{ color: {text}; background-color: transparent;"
+            f"border: 1px solid {border}; border-radius: 6px; padding: 5px 12px; }}"
+            f"QPushButton:hover {{ background-color: {hover}; }}"
+            f"QPushButton#updateInstallBtn {{ background-color: {accent};"
+            f"color: #ffffff; border: none; }}"
+            f"QPushButton#updateInstallBtn:hover {{ background-color: {accent}; }}"
+            f"QPushButton#updateDismissBtn {{ border: none; padding: 0; }}"
+        )
 
     def handle_update_error(self, error_msg):
-        """Handle errors during update check"""
+        """Handle errors during update check or download."""
         Logger.log_error(f"Update check failed: {error_msg}")
+        # Reset any in-flight download UI state
+        if hasattr(self, 'update_install_btn'):
+            self.update_install_btn.setEnabled(True)
+            self.update_install_btn.setText("Install")
+        if hasattr(self, 'progress_bar'):
+            self.progress_bar.hide()
 
     def closeEvent(self, event):
         """Ask for confirmation before exiting.

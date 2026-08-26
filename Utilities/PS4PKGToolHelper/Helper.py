@@ -5,7 +5,6 @@ class Helper:
     first_launch = True
     finalize_pkg_process = True
     ps4pkg_tool_temp_directory = "path/to/temp/directory"  
-    orbis_pub_cmd = os.path.join(ps4pkg_tool_temp_directory, "orbis-pub-cmd.exe")
     ps5_bc_json_file = os.path.join(ps4pkg_tool_temp_directory, "ps5bc.json")
     ps4pkg_tool_log_file = os.path.join(ps4pkg_tool_temp_directory, "PS4PKGToolLog.txt")
 

@@ -31,12 +31,6 @@ utilities_datas, utilities_binaries, utilities_hiddenimports = collect_all('Util
 # Includi il pacchetto dell'interfaccia grafica (serve per bundlare i JSON delle traduzioni)
 gui_datas, gui_binaries, gui_hiddenimports = collect_all('GUI')
 
-# Includi la cartella con gli strumenti esterni necessari a runtime (shadPKG, orbis-pub-cmd, ...)
-external_tools_tree = Tree(
-    os.path.join(PROJECT_ROOT, 'packages', 'external_tools'),
-    prefix=os.path.join('packages', 'external_tools'),
-)
-
 # Percorso icona eseguibile (formato diverso per piattaforma)
 def resolve_icon_path():
     if sys.platform == 'darwin':
@@ -59,7 +53,9 @@ a = Analysis(
     pathex=[PROJECT_ROOT],
     binaries=[],
     datas=[(os.path.join(PROJECT_ROOT, 'PS4PKGToolTemp'), 'PS4PKGToolTemp'),
-           (os.path.join(PROJECT_ROOT, 'icons'), 'icons')] + utilities_datas + gui_datas,
+           (os.path.join(PROJECT_ROOT, 'icons'), 'icons'),
+           (os.path.join(PROJECT_ROOT, 'logos'), 'logos'),
+           (os.path.join(PROJECT_ROOT, 'assets'), 'assets')] + utilities_datas + gui_datas,
     hiddenimports=['tools.PS4_Passcode_Bruteforcer', 'tools.PS5_Game_Info'] +
                   utilities_hiddenimports + gui_hiddenimports,
     hookspath=[],
@@ -99,7 +95,6 @@ coll = COLLECT(
     a.binaries,
     a.zipfiles,
     a.datas,
-    external_tools_tree,
     strip=False,
     upx=use_upx,
     upx_exclude=[],
@@ -113,6 +108,9 @@ if sys.platform == 'darwin':
         name='PkgToolBox.app',
         icon=icon_path,
         bundle_identifier='com.seregonwar.PkgToolBox',
+        # Without NSHighResolutionCapable macOS renders the whole app at 1x
+        # on Retina displays -> blurry/pixelated UI (PyInstaller #4337).
+        info_plist={'NSHighResolutionCapable': True},
     )
 
 # Copia la cartella PS4PKGToolTemp nell'output (serve per settings.json/trofei)

@@ -1,6 +1,4 @@
-"""
-Bruteforce tab widget for PS4 passcode bruteforcing functionality
-"""
+"""Encryption-status and passcode-readiness UI."""
 import os
 import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
@@ -32,8 +30,14 @@ class BruteforceTab(BaseTab):
         output_group.setLayout(output_layout)
         
         # Passcode input group
-        passcode_group = QGroupBox("Passcode Operations")
+        passcode_group = QGroupBox("Passcode status (internal engine)")
         passcode_layout = QVBoxLayout()
+        capability_note = QLabel(
+            "Plaintext PKG metadata is extracted internally. Protected PFS passcode "
+            "verification stays disabled until the key pipeline is validated end-to-end."
+        )
+        capability_note.setWordWrap(True)
+        passcode_layout.addWidget(capability_note)
         
         # Manual passcode input
         manual_layout = QHBoxLayout()
@@ -68,7 +72,8 @@ class BruteforceTab(BaseTab):
         self.brute_threads_spin = QSpinBox()
         self.brute_threads_spin.setRange(1, 32)
         self.brute_threads_spin.setValue(1)
-        self.brute_threads_spin.setToolTip("Number of parallel workers")
+        self.brute_threads_spin.setEnabled(False)
+        self.brute_threads_spin.setToolTip("Reserved for the verified internal verifier")
         control_layout.addWidget(self.brute_threads_spin)
 
         # Seed
@@ -77,12 +82,13 @@ class BruteforceTab(BaseTab):
         self.brute_seed_edit.setPlaceholderText("optional integer")
         self.brute_seed_edit.setToolTip("Optional integer seed for deterministic traversal")
         self.brute_seed_edit.setMaximumWidth(160)
+        self.brute_seed_edit.setEnabled(False)
         control_layout.addWidget(self.brute_seed_edit)
 
         # Control buttons
         button_layout = QHBoxLayout()
         
-        self.brute_start_button = QPushButton("Start Bruteforce")
+        self.brute_start_button = QPushButton("Check encryption status")
         self.brute_start_button.clicked.connect(self.run_bruteforce)
         self.brute_start_button.setStyleSheet("""
             QPushButton {
@@ -103,6 +109,7 @@ class BruteforceTab(BaseTab):
         
         self.brute_stop_button = QPushButton("Stop")
         self.brute_stop_button.setEnabled(False)
+        self.brute_stop_button.setVisible(False)
         self.brute_stop_button.clicked.connect(self.stop_bruteforce)
         self.brute_stop_button.setStyleSheet("""
             QPushButton {
@@ -118,6 +125,7 @@ class BruteforceTab(BaseTab):
         """)
         
         self.brute_reset_button = QPushButton("Reset")
+        self.brute_reset_button.setVisible(False)
         self.brute_reset_button.setToolTip("Stop and clear progress (.brutestate/.success)")
         self.brute_reset_button.clicked.connect(self.reset_bruteforce)
         self.brute_reset_button.setStyleSheet("""
@@ -165,9 +173,10 @@ class BruteforceTab(BaseTab):
         self.tested_count_label = QLabel("Shown: 0 (max 1000)")
         stats_layout.addWidget(self.tested_count_label)
         stats_group.setLayout(stats_layout)
+        stats_group.setVisible(False)
         
         # Log display
-        log_group = QGroupBox("Bruteforce Log")
+        log_group = QGroupBox("Engine report")
         log_layout = QVBoxLayout()
         self.bruteforce_log = QTextEdit()
         self.bruteforce_log.setReadOnly(True)
