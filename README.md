@@ -13,6 +13,7 @@
 [![Stars](https://img.shields.io/github/stars/seregonwar/PkgToolBox?style=flat-square)](https://github.com/seregonwar/PkgToolBox/stargazers)
 [![Forks](https://img.shields.io/github/forks/seregonwar/PkgToolBox?style=flat-square)](https://github.com/seregonwar/PkgToolBox/network/members)
 [![Repository Views](https://hits.sh/github.com/seregonwar/PkgToolBox.svg?label=views)](https://hits.sh/github.com/seregonwar/PkgToolBox/)
+<a href="https://trendshift.io/repositories/181918?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-181918" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/181918/daily?language=Python" alt="seregonwar%2FPkgToolBox | Trendshift" width="250" height="55"/></a>
 
 </div>
 
